@@ -1,0 +1,29 @@
+qa/13-stage.log — todo 13 happy-path evidence: Studfun stage detection + GET /api/stage + capture-kit read-only form follow-up (fixture-driven, hermetic)
+date: 2026-08-28 05:24 CST  host uv run, no compose contact, no live school traffic
+
+detection matrix (fixture × expected × shipped):
+  studfun_closed_live_1151.html (REAL)        -> 關閉 / variant=null / params=null / reason=closed_heading / writable=false
+  studfun_open_ssform_provisional.html        -> 加退選 / ssform / 9 params / reason=ssform_link / writable=true
+  studfun_open_stage5_provisional.html        -> 初選 / stage5 / 9 params / reason=stage5_link / writable=false (flag off) | true (flag on)
+  studfun_drift.html                          -> 未知 / null / null / reason=drift_no_marker / writable=false (HTTP 200, no exception)
+  ssform_prestep_provisional.html (form page) -> need_confirmation=true / writable=false
+
+== uv run pytest tests/test_stage_detect.py tests/test_stage_api.py tests/test_capture_readonly_open.py -v ==
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 24 items
+
+tests/test_stage_detect.py .........                                     [ 37%]
+tests/test_stage_api.py ...........                                      [ 83%]
+tests/test_capture_readonly_open.py ....                                 [100%]
+
+=============================== warnings summary ===============================
+tests/test_stage_api.py: 10 warnings
+  /Users/timmy/Code/nsysu_crs/backend/.venv/lib/python3.12/site-packages/starlette/testclient.py:455: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 24 passed, 10 warnings in 0.35s ========================

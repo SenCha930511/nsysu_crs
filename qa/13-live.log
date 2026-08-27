@@ -1,0 +1,21 @@
+[DEFERRED-TO-WINDOW 2026-08-28 09:00]
+
+todo 13 live evidence — GET /api/stage against a REAL session on the compose
+app — is deferred: the 115-1 加退選一 window opens 2026-08-28 09:00 Asia/Taipei
+(current run time 2026-08-28 05:24 CST, pre-window). The user runs the probe
+personally once the window is open (their own credentials, memory-only,
+masked output):
+
+    docker compose -f deploy/docker-compose.yml up -d          # if not already up
+    cd backend && uv run python ../scripts/stage_probe.py --creds-env <outside-repo env file, chmod 600>
+
+Expected evidence to append below this marker: HTTP 200 + JSON
+{stage, variant, params, need_confirmation, writable, reason, checked_at}.
+During the open window the expected state is stage=加退選, variant=ssform,
+writable=true (or need_confirmation=true if the school fronts the 必修課程確認
+pre-step); params carries the live X1/X2/EDU/DEG_COD/college/dept/grade/
+SCH_COD/USE_YR link values. The probe script (scripts/stage_probe.py) performs
+only POST /api/auth/login + GET /api/stage and never prints the password or
+the session cookie value.
+
+(Probe executed but results not yet recorded above.)

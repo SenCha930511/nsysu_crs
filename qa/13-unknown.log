@@ -1,0 +1,25 @@
+qa/13-unknown.log — todo 13 failure-path evidence: school HTML drift -> 未知 + machine reason, NEVER an exception
+date: 2026-08-28 05:24 CST  hermetic: Studfun fixture rewritten into an unrecognizable portal page
+
+== uv run pytest tests/test_stage_detect.py tests/test_stage_api.py -k 'drift or unknown' -v ==
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 20 items / 18 deselected / 2 selected
+
+tests/test_stage_detect.py .                                             [ 50%]
+tests/test_stage_api.py .                                                [100%]
+
+=============================== warnings summary ===============================
+tests/test_stage_api.py::test_drift_is_200_unknown_with_reason_never_writable
+  /Users/timmy/Code/nsysu_crs/backend/.venv/lib/python3.12/site-packages/starlette/testclient.py:455: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 2 passed, 18 deselected, 1 warning in 0.27s ==================
+
+== parse-level proof: drift yields a VALUE (未知/drift_no_marker), zero exceptions ==
+stage=未知 variant=None params=None reason=drift_no_marker
+returned normally (no exception raised)

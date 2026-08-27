@@ -1,0 +1,24 @@
+<!-- provisional: synthetic 必修課程確認 pre-step gate page (plan todo 13 needConfirmation).
+     The two detection anchors are pinned byte-for-byte to the edwinchu detector
+     (course_selection_service.dart L197-L207, MIT (c) 2026 Edwin Chu):
+     a 送出 (NOT 提交) submit button + the onclick that injects
+     <input type=hidden name=step value=2> into #step_id and re-clicks send.
+     Replace with a live capture when the school actually serves this page. -->
+<html>
+<head>
+<meta http-equiv="Content-Language" content="zh-tw">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>必修課程確認</title>
+</head>
+<body>
+<p><b>必修課程確認</b>(請先確認下列必修課程無誤，送出後才會進入加退選作業)</p>
+<form name="f1" method="post" action="ssprs.asp">
+<div id="step_id"></div>
+<table border="1">
+<tr><th>課號</th><th>課程名稱</th><th>學分</th><th>必選修</th></tr>
+<tr><td>GE101</td><td>國文</td><td>3</td><td>必</td></tr>
+</table>
+<input type="submit" name="send" value="送出" onclick="document.getElementById('step_id').innerHTML='&lt;input type=hidden name=step value=2 &gt;';document.all['send'].click();">
+</form>
+</body>
+</html>

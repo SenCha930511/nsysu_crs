@@ -5,7 +5,12 @@ outbound requests it performs are:
 
 - SSO2 login POSTs to ``Studcheck_sso2.asp`` (two with real credentials, one
   with a deliberately wrong password for the failure-marker fixture), and
-- pure GET reads (``Studfun.asp``, ``slt_result.asp``).
+- pure GET reads (``Studfun.asp``, ``slt_result.asp``), plus — when Studfun
+  exposes a write-form link (window open) — ONE pure GET of that linked form
+  page (``ssform.asp``/``saddstage5.asp``), saved verbatim so every hidden
+  input is recorded. The open-state Studfun copy is saved as
+  ``studfun_open_live_1151``; the closed-named fixture is never overwritten
+  by an open-state page (todo 13's closed detection pins it).
 
 No ``ssprs``/write-form POST of any kind, no replay probes, no course codes
 are ever submitted. The supervised write mini-protocol in ``protocol.py`` is
@@ -26,6 +31,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Final
+from urllib.parse import urljoin
 
 import anyio
 import httpx
@@ -231,27 +237,52 @@ async def run_readonly(
             "HTTP 302 + Location contains main_frame + >=1 Set-Cookie observed live "
             f"(cookie names in qa/{READONLY_LOG_NAME})"))
 
-        # (b) GET Studfun - closed-state fixture + actual marker.
+        # (b) GET Studfun - state fixture (open/closed) + actual marker; an
+        # exposed write-form link is followed with one more pure GET below.
         ctx.record(f"GET {STUDFUN_URL}",
                    "pure read of the write-entry page; no form fields sent")
         response_b = await _get(ctx, STUDFUN_URL, jar1)
         studfun_html = decode_body(response_b.content)
-        ctx.save_fixture("studfun_closed_live_1151", response_b.content)
         write_link = find_write_link(scrape_form(studfun_html))
+        studfun_stem = ("studfun_open_live_1151" if write_link is not None
+                        else "studfun_closed_live_1151")
+        ctx.save_fixture(studfun_stem, response_b.content)
         marker_lines = _fragments_with_hints(ctx.scrub(studfun_html), _STUDFUN_HINTS)
         ctx.slog(f"  Studfun write link: {write_link or 'NONE (selection closed)'}; "
                  f"marker fragments: {marker_lines or 'none'}")
-        closed_finding = (
-            f"HTTP {response_b.status_code}; no ssform/saddstage5 link present "
-            f"(selection closed); observed fragments: {' / '.join(marker_lines) or '(none)'}; "
-            "fixture backend/tests/fixtures/studfun_closed_live_1151.html"
-        )
-        results.append(ctx.probe(
-            "Studfun closed-state marker",
-            "CONFIRMED" if write_link is None else "UNVERIFIED",
-            closed_finding if write_link is None else
-            f"write link {write_link} PRESENT though window expected closed - inspect "
-            "studfun_closed_live_1151.html"))
+        if write_link is None:
+            results.append(ctx.probe(
+                "Studfun closed-state marker", "CONFIRMED",
+                f"HTTP {response_b.status_code}; no ssform/saddstage5 link present "
+                f"(selection closed); observed fragments: "
+                f"{' / '.join(marker_lines) or '(none)'}; "
+                "fixture backend/tests/fixtures/studfun_closed_live_1151.html"))
+        else:
+            # Read-only form follow-up: plain GET of the already-linked page,
+            # saved so ALL hidden inputs are on record. Nothing is posted.
+            form_url = urljoin(STUDFUN_URL, write_link)
+            variant = "saddstage5" if "saddstage5" in form_url else "ssform"
+            ctx.record(
+                f"GET {form_url} (form page follow-up)",
+                "pure GET of the already-linked form page; no fields are sent "
+                "anywhere - the page is saved only to expose every hidden input",
+            )
+            response_form = await _get(ctx, form_url, jar1)
+            ctx.save_fixture(f"{variant}_live_1151", response_form.content)
+            hidden_names = [
+                name for name, _ in scrape_form(decode_body(response_form.content)).hidden
+            ]
+            ctx.slog(f"  form captured ({variant}_live_1151): "
+                     f"{len(hidden_names)} hidden inputs {hidden_names}")
+            results.append(ctx.probe(
+                "Studfun open-state capture (read-only form follow-up)", "CONFIRMED",
+                f"write link present; fixtures backend/tests/fixtures/{studfun_stem}.html "
+                f"+ {variant}_live_1151.html ({len(hidden_names)} hidden inputs "
+                f"visible: {hidden_names}); zero form submissions"))
+            results.append(ctx.probe(
+                "Studfun closed-state marker", "UNVERIFIED",
+                "a write-form link is present (window open) - the closed marker "
+                "is not observable this round"))
 
         # (c) GET slt_result - real column layout vs provisional.
         ctx.record(f"GET {SLT_RESULT_URL}", "pure read of the student's selections page")
