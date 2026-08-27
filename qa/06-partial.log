@@ -1,0 +1,9 @@
+qa/06-partial.log — todo 6 failure-path evidence: mock mid-run page failure beyond retries => previous snapshot intact + ingest_runs.ok=false (Acceptance: 中途500→舊快照+ok=false; also covers happy ingest, in-place upsert, vanished-row deletion, layout-break abort, in-scrape dedup)
+cmd: docker compose exec worker uv run --no-sync --with pytest pytest -p no:cacheprovider -o addopts= tests/test_catalog_db.py -v   [2026-08-28 00:47:33 CST, tests run against the REAL compose Postgres]
+--------------------------------------------------------------------------------
+tests/test_catalog_db.py::test_full_ingest_persists_snapshot_and_meta PASSED [ 20%]
+tests/test_catalog_db.py::test_second_run_updates_in_place_and_deletes_vanished PASSED [ 40%]
+tests/test_catalog_db.py::test_mid_run_failure_keeps_previous_snapshot PASSED [ 60%]
+tests/test_catalog_db.py::test_layout_break_aborts_without_touching_snapshot PASSED [ 80%]
+tests/test_catalog_db.py::test_duplicate_rows_within_one_scrape_dedup PASSED [100%]
+============================== 5 passed in 0.32s ===============================

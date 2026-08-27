@@ -1,0 +1,82 @@
+qa/06-live.log — todo 6 [LIVE] full current-D0 catalog ingest (public catalog, no login)
+================================================================================
+run: scripts.catalog_live (one-shot, Redis singleton lock held for the duration so the
+     scheduled worker tick coalesces; ddddocr 1.6.1 solver; adapter global cap 2 +
+     captcha lane 1 + backoff 1/2/4/8/16 honored at all times; executed inside the
+     compose worker container)
+started_at: 2026-08-28T00:30:02.387508+08:00   finished_at: 2026-08-28T00:35:29.611807+08:00
+
+PRE-RUN RECON (probe mode, same run window)
+- discovery: qrycourse.asp?HIS=2 YRSM select -> current D0 = 1151
+- page-1 probe: 1 attempt, 2.6s; EN+ZH pagination 1/141; 20 candidate rows, 20 accepted
+- code-like (^[A-Za-z0-9]{8}$) column hits on probe page 1: none
+- page-2 link extraction + GET check: 1.7s, 20 accepted rows, marker "page 2 of 141"
+
+CONTRACT DISCOVERY NARRATIVE (honest history, this run window)
+- 00:04 + 00:07 runs FAILED with CaptchaUnsolvable on page 2 (5/5 rejections): the
+  initially-assumed "POST ?page=N" paging mechanism is not the school's contract.
+- Live page-1 capture revealed the real paging: footer anchors
+  /menu1/dplycourse.asp?a=<server token>&<filter echo>&page=N ; pages 2..N are
+  CAPTCHA-FREE GETs on those links with the page-1 session jar.
+- A bare POST (no query string) renders BROKEN anchors (dplycourse.asp&... , no
+  ?a= token); the page-1 POST must carry ?page=1 (the school's own First-Page link
+  shape). With that, extract->GET works end to end (probe evidence above).
+- 00:18 + 00:23 runs then failed fast on regex bugs in my link extractor (anchor
+  char-class typo); both are recorded in ingest_runs with ok=false. No snapshot
+  was touched by any failed run (courses stayed consistent throughout).
+
+LIVE RUN RESULT
+- result: ok=True; ledger closed ok=true at 2026-08-28T00:35:29.611807+08:00
+- pages: 141 fetched of 141 announced ("Showing page X of N pages")
+- rows: 2809 candidates seen -> 2596 stored
+        (skipped rows 11 failed acceptance; in-scrape dedup
+        202 identical fallback-key rows; 2809 - 11 - 202 = 2596, closes)
+- persist: inserted 2596, updated 0, deleted 0
+- wall clock: 327.2s total (discovery + 1 captcha-parented POST + 140 GETs);
+  avg 2.32s/page; page 1: 3.4s; avg pages 2..141 GETs: 2.29s
+- captcha: 4 attempts total for the whole 141-page run (page 1 only;
+  3 rejections + acceptance). per-attempt success p = 0.25 this run;
+  pages 2..N spend NO captcha (live paging contract). Worst retries-per-page:
+  3 retries (page 1); slowest page:
+  4.1s (page 133)
+- detected charset per page: {'utf-8': 141} (Content-Type lacks a charset param; the
+  page's own <meta http-equiv ... charset=utf-8> declaration wins under resolve_charset).
+  CATALOG CONTENT CHARSET CONFIRMED = utf-8 (supersedes the todo-4 caveat: the earlier
+  180-byte refusal page was ASCII-only; content pages declare utf-8 and decode clean).
+  Saves: backend/tests/fixtures/dply_page_live_1151.html (raw bytes) + .txt (big5hkscs,
+  capture convention - shows mojibake, proving the page is NOT big5).
+
+THE CODE-COLUMN ANSWER
+- dplycourse rows do NOT carry the 8-char 課程代碼 (the M3046243-family seen in
+  slt_result col [4]). Column [4] is the variable-length short 課號 (STP101, CSE515...);
+  8-char A-Za-z0-9 hits on the full run: column 4 = 508 row-instances and columns 17..23
+  (class_time) = 73. Value-level check on stored outline URLs (CrsDat= echo of [4]):
+  the 8-char [4] values are short-ids of the same family (GEAE2526, GEPE102T, DFLL236A,
+  MEME101B; 486 stored courses), NOT 課程代碼; the [17:24] hits are full-day period
+  strings (e.g. "12345678", "1234B567"), not codes.
+- CONCLUSION: courses.code stays NULL for the whole catalog; identity uses the
+  documented fallback (year_sem, dept, name_zh, teacher, room, class_time) per rows.py.
+  缺碼行為 applies (write preview marks code-less courses non-submittable; ICS UID
+  degrades to the fallback identity; codes enter later from ssform rows at write time).
+
+PEAK GATE
+- CATALOG_CRON_PEAK = */10 * * * * -> interval 600s
+- measured full-ingest wall: 327.2s < 600s => VERDICT: PASS
+  (no degrade applied; 10-minute peak cadence is sustainable - one captcha + ~2.3s/page
+  of sequential captcha-free GETs. Recorded for F1: if the school slows at peak the
+  plan's degrade path is changed-depts diff mode or longer peak interval + meta notice.)
+
+PRODUCTION SCHEDULER RUNS (worker cron '7 * * * *', unaided, no capture fetchers)
+- run 2026-08-28 01:07:00+08 -> 01:14:16+08: ok=True, 141/141 pages, 2596 rows,
+  wall 436.3s, captcha_attempts=1 (page-1 first-try accept). NOTE: this tick ran on a
+  worker process loaded BEFORE the persist-fix (00:44 restart < 00:46 cp): insert-only
+  behavior (updated=0, deleted=0) and a leftover DB-test mock row survived. The
+  discrepancy (2597 rows vs 2596 stored) was caught HERE, root-caused to restart-order,
+  and is exactly the kind of drift the ledger + measurement caught honestly.
+- run 2026-08-28 02:07:00+08 -> 02:13:10+08: ok=True, 141/141 pages, wall 370.8s,
+  captcha_attempts=1. persist: updated=2596, inserted=0, deleted=1, dedup=202 -
+  full lifecycle verified in production: every real row upserted IN PLACE via the
+  fallback identity (stable across runs), and the stray mock row (absent from the
+  school's real 1151 catalog) correctly DELETED as vanished. Final state:
+  courses = 2596 rows for year_sem 1151; ingest_runs newest = ok=true.
+- peak-gate on both production walls: 436.3s and 370.8s < 600s => PASS stands.

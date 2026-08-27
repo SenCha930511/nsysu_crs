@@ -232,3 +232,58 @@ Student id masked in-place as `M153****24` inside the slt_result fixture.
   (`tests/test_selcrs_encoding_fixtures.py`,
   `tests/test_selcrs_charset.py`); HKSCS round-trip + marker tolerance
   unchanged. Full suite **120 passed** (`qa/03-encoding.log`).
+
+### follow-up 2026-08-28 00:0x–01:0x (Asia/Taipei) - todo 6 live catalog ingest
+
+One full current-D0 ingest through the real pipeline (141 pages, 2596 rows,
+327.2s wall, ok=true; evidence `qa/06-live.log`; fixture
+`backend/tests/fixtures/dply_page_live_1151.html` + `.txt`).
+
+**(i) Live paging contract (supersedes the provisional "POST ?page=N" assumption):**
+page 1 = captcha-spending `POST /menu1/dplycourse.asp` whose URL MUST carry
+`?page=1` — a bare POST gets a response whose paging anchors are broken
+(`dplycourse.asp&...`, no token); with the query, the footer embeds
+`/menu1/dplycourse.asp?a=<server token>&<filter echo>&page=N`. Pages 2..N are
+**captcha-free GETs** on those embedded links with the page-1 session jar
+(the `a` token binds the result set to that session). Confirmed end-to-end:
+page-2 GET → 20 accepted rows, marker "page 2 of 141". Pagination markers:
+page footers carry BOTH forms on one line (「第 1 / 141 頁」 + "Showing page 1
+of 141 pages"); the parser takes the EN form first. adapter:
+`fetch_catalog_page` (POST, `params={"page": 1}`) / `fetch_catalog_page_get`.
+
+**(ii) dplycourse rows and the 8-char course code:** dplycourse has **no
+課程代碼 column** — the 8-char `M3046243`-family seen in slt_result col [4]
+never appears anywhere in 141 pages (2809 rows). The row's `[4]` is the
+variable-length **short 課號** (`STP101`, `CSE515`): 486 stored courses have
+8-char short-ids of the same family (`GEAE2526`, `GEPE102T`, `DFLL236A`,
+`MEME101B` — sampled via the stored outline URL's `CrsDat=` echo), and
+`[17:24]` class_time can carry 8-period full-day strings (`12345678`,
+`1234B567`) — neither is a course code. **Conclusion: `courses.code` stays
+NULL for every catalog row; identity = the documented fallback
+`(year_sem, dept, name_zh, teacher, room, class_time)` (`rows.py`), which the
+202-collision in-scrape dedup rate confirmed is granular enough.** Codes
+enter the system later from ssform rows at write time (plan: 自 ssform 行補齊).
+缺碼行為: write preview marks code-less courses 「無課號」-non-submittable; the
+ICS UID degrades to `sha1(year_sem|dept|name_zh|teacher|room|class_time|
+weekday|period-block)@nsysu-course-wrapper` (todo 12 slots the fallback
+identity into its `code` position), as already specified in the plan.
+
+**(iii) Catalog content charset CONFIRMED = utf-8:** content pages declare
+`<meta http-equiv="Content-Type" content="text/html; charset=utf-8">` and
+decode cleanly (all 141 pages resolved to `utf-8`; Content-Type header lacks
+a charset param, so the meta branch of `resolve_charset` wins). This closes
+the finding-(g) caveat: the earlier 180-byte refusal page was ASCII-only and
+could not prove anything about content pages. The big5hkscs-decoded fixture
+`.txt` shows mojibake exactly because the page is not big5 (capture
+convention). big5hkscs remains the right DECODE FALLBACK for undeclared
+Big5-era pages, and the HKSCS round-trip guarantee is unchanged.
+
+**(iv) Ingest cost + peak-gate verdict:** wall for a full run = 327.2s
+(discovery GET + 1 captcha-parented POST at 4 attempts + 140 sequentially
+issued page GETs; avg 2.3s/page after page 1's ~7s solve). Captcha spend per
+full 141-page run: 4 attempts on page 1 only (p = 0.25 this run; ongoing
+accuracy tracking stays in `qa/05-accuracy.log`). Verdict vs the
+`CATALOG_CRON_PEAK` 600s interval: **PASS, no degrade applied** — one
+captcha solve + captcha-free GETs leaves ~45% headroom. If school-side peak
+latency later blows the budget, the plan's degrade path is changed-depts
+diff mode or a longer peak interval plus a meta announcement.

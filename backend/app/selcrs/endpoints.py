@@ -199,6 +199,26 @@ async def get_slt_result(
     return _require_200(response, "slt_result.asp")
 
 
+async def fetch_qrycourse(
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> str:
+    """GET menu1/qrycourse.asp?HIS=2 (catalog discovery page) as decoded HTML.
+
+    Public endpoint, no captcha: rides the plain global lane (the catalog
+    pipeline's only non-captcha school call; todo 6 parses the ``YRSM``
+    <select> from it).
+    """
+    async with build_client(transport=transport) as client:
+        response = await request_school(
+            client,
+            "GET",
+            f"{SELCRS_BASE_URL}/menu1/qrycourse.asp",
+            params={"HIS": "2"},
+        )
+    return _require_200(response, "qrycourse.asp")
+
+
 async def fetch_catalog_page(
     query: CatalogQuery,
     *,
@@ -206,7 +226,7 @@ async def fetch_catalog_page(
     cookies: httpx.Cookies,
     transport: httpx.AsyncBaseTransport | None = None,
 ) -> str:
-    """POST menu1/dplycourse.asp for one catalog page; decoded HTML out.
+    """POST menu1/dplycourse.asp for catalog page 1; decoded HTML out.
 
     The caller (catalog pipeline, todo 6) owns pagination + parsing and must
     pass the SAME per-run jar that solved ``validcode`` (captcha answer binds
@@ -214,16 +234,50 @@ async def fetch_catalog_page(
     the captcha-parented lane: fully serialized process-wide and still inside
     the global school cap of 2 (plan: 驗證碼相關請求 per-run jar +
     semaphore=1 全程序列化).
+
+    Two live-verified paging-contract facts (2026-08-28, qa/06-live.log):
+
+    - The POST URL must carry the ``?page=1`` query: the school only embeds
+      the session-bound ``?a=<token>`` paging anchors when the request URL
+      has a query string; a bare POST renders broken ``dplycourse.asp&...``
+      links and pagination is impossible.
+    - Pages 2..N do NOT re-POST: they are GETs on those embedded anchors -
+      see fetch_catalog_page_get.
     """
     async with build_client(cookies=cookies, transport=transport) as client:
         response = await request_school(
             client,
             "POST",
             f"{SELCRS_BASE_URL}/menu1/dplycourse.asp",
+            params={"page": 1},
             data=_catalog_form(query, validcode),
             captcha_parented=True,
         )
     return _require_200(response, "dplycourse.asp")
+
+
+async def fetch_catalog_page_get(
+    cookies: httpx.Cookies,
+    page_path: str,
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> str:
+    """GET one catalog result page via its embedded link; decoded HTML out.
+
+    The school's paging footer (page 1's response) carries anchors
+    ``/menu1/dplycourse.asp?a=<server token>&<filter echo>&page=N``; the
+    ``a`` token binds the result set to the page-1 session, so this GET must
+    ride the SAME jar the captcha-spending POST used. No captcha is involved,
+    so the request goes through the plain global lane (cap 2) like any other
+    read. ``page_path`` is the root-relative href verbatim from the page -
+    the adapter never constructs paging URLs itself (the school's parameter
+    echo is authoritative).
+    """
+    async with build_client(cookies=cookies, transport=transport) as client:
+        response = await request_school(
+            client, "GET", f"{SELCRS_BASE_URL}{page_path}"
+        )
+    return _require_200(response, "dplycourse.asp?page")
 
 
 async def get_write_form(
