@@ -1,0 +1,19 @@
+=== QA todo 1 failure path (bad DATABASE_URL) - 2026-08-27 20:32:08 CST ===
+DATABASE_URL set to: postgresql://QApostgres:QApw123@postgres-dead.invalid:5499/wrapper (dead host)
+
+--- HTTP code + body of /api/health ---
+http code: 503
+body:
+{"status":"unavailable","postgres":{"status":"down","error":"gaierror"},"redis":{"status":"ok","error":null}}
+
+--- via caddy ---
+http code: 503
+
+--- assertions ---
+PASS: http code is 503
+PASS: body does not contain 'postgres-dead.invalid'
+PASS: body does not contain 'QApostgres'
+PASS: body does not contain 'QApw123'
+PASS: body does not contain '5499'
+PASS: body does not contain 'postgresql://'
+PASS: body does not contain 'redis://'

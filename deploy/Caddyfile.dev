@@ -1,0 +1,9 @@
+# Dev variant: proxies to the Vite dev server instead of static artifacts.
+# Mounted over /etc/caddy/Caddyfile by docker-compose.dev.yml.
+:80 {
+	@api path /api/*
+	reverse_proxy @api app:8000
+
+	# Vite dev server (hot reload; Caddy proxies websockets automatically).
+	reverse_proxy frontend:5173
+}

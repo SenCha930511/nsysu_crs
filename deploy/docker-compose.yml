@@ -1,0 +1,88 @@
+# Production-ish local stack: caddy (frontend + TLS entry), FastAPI app,
+# worker, Postgres, Redis. Dev overrides live in docker-compose.dev.yml.
+name: nsysu-crs
+
+services:
+  app:
+    build: ../backend
+    restart: unless-stopped
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      TZ: Asia/Taipei
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  worker:
+    build: ../backend
+    restart: unless-stopped
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      TZ: Asia/Taipei
+    command: ["python", "-m", "app.worker"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Taipei
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nsysu_crs
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nsysu_crs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-bookworm
+    restart: unless-stopped
+    # Credentials (selcrs cookies) and write-queue keys live here: noeviction
+    # only. volatile-* / allkeys-* policies are FORBIDDEN for this instance -
+    # they would silently evict credential/queue keys (see plan todo 1 / runbook).
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "noeviction"]
+    environment:
+      TZ: Asia/Taipei
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.caddy
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Taipei
+    ports:
+      - "80:80"
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  pgdata:

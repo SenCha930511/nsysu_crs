@@ -1,0 +1,44 @@
+# Dev overrides: hot-reload backend (uvicorn --reload) + Vite dev server.
+# Postgres/Redis stay identical to the prod-ish stack.
+#
+# Usage:
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml up --build
+services:
+  app:
+    command:
+      - sh
+      - -c
+      - "uv sync --locked && uv run uvicorn app.main:create_app --factory --reload --host 0.0.0.0 --port 8000"
+    volumes:
+      - ../backend:/app
+      - /app/.venv
+
+  worker:
+    volumes:
+      - ../backend:/app
+      - /app/.venv
+
+  frontend:
+    image: node:26-bookworm-slim
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - "npm ci && npm run dev -- --host 0.0.0.0"
+    environment:
+      TZ: Asia/Taipei
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+
+  caddy:
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
+
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"

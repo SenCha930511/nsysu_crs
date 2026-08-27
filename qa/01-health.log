@@ -1,0 +1,55 @@
+=== QA todo 1 happy path - 2026-08-27 20:31:50 CST ===
+
+--- docker compose -f deploy/docker-compose.yml config -q ---
+exit code: 0
+
+--- docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml config -q (dev variant also validates) ---
+exit code: 0
+
+--- docker compose -f deploy/docker-compose.yml up --build -d : all services up ---
+NAME                   IMAGE                  COMMAND                   SERVICE    CREATED              STATUS                    PORTS
+nsysu-crs-app-1        nsysu-crs-app          "uvicorn app.main:cr…"   app        About a minute ago   Up 52 seconds (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+nsysu-crs-caddy-1      nsysu-crs-caddy        "caddy run --config …"   caddy      15 seconds ago       Up 14 seconds             443/tcp, 0.0.0.0:80->80/tcp, [::]:80->80/tcp, 2019/tcp, 443/udp
+nsysu-crs-postgres-1   postgres:16-bookworm   "docker-entrypoint.s…"   postgres   2 minutes ago        Up 2 minutes (healthy)    5432/tcp
+nsysu-crs-redis-1      redis:7-bookworm       "docker-entrypoint.s…"   redis      2 minutes ago        Up 2 minutes (healthy)    6379/tcp
+nsysu-crs-worker-1     nsysu-crs-worker       "python -m app.worker"    worker     About a minute ago   Up 52 seconds             8000/tcp
+
+--- curl -sf http://localhost:8000/api/health (app direct) ---
+{"status":"ok","postgres":{"status":"ok","error":null},"redis":{"status":"ok","error":null}}
+http code: 200
+
+--- curl -sf http://localhost/api/health (via caddy) ---
+{"status":"ok","postgres":{"status":"ok","error":null},"redis":{"status":"ok","error":null}}
+http code: 200
+
+--- curl -sf http://localhost/ (frontend via caddy) ---
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NSYSU Course Wrapper</title>
+    <script type="module" crossorigin src="/assets/index-CUJR2bMJ.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BL5QWnkG.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+
+http code: 200
+
+--- TZ check: date +%Z in every container ---
+app       CST
+worker    CST
+postgres  CST
+redis     CST
+caddy     CST
+
+--- restore check: .env restored, app health 200 again ---
+restored http code: 200
+
+--- pytest (mocked db/redis, plus real probe dead-host paths) ---
+....                                                                     [100%]
+4 passed in 0.14s
+pytest exit code: 0

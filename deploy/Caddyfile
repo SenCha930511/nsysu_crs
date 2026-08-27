@@ -1,0 +1,22 @@
+# NSYSU Course Wrapper - single HTTP entry for local dev and the VPS.
+#
+# Local:  no domain needed - this serves http://localhost on port 80.
+# VPS:    replace the `:80` site address with a real domain (e.g.
+#         `crs.example.com`) and Caddy will obtain + renew automatic HTTPS
+#         certificates. Do NOT enable TLS without a public domain.
+:80 {
+	root * /srv
+	encode zstd gzip
+
+	# API goes to the FastAPI app. `handle` blocks are mutually exclusive and
+	# ordered, so /api/* can never fall through to the SPA fallback.
+	handle /api/* {
+		reverse_proxy app:8000
+	}
+
+	# Everything else: the built frontend (SPA fallback to index.html).
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,0 +1,15 @@
+# Build frontend static assets, then serve them from Caddy (local / VPS entry).
+FROM node:26-bookworm-slim AS frontend-build
+WORKDIR /build
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# caddy official image is alpine-based: add tzdata so `date +%Z` honors TZ.
+FROM caddy:2-alpine
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Taipei
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=frontend-build /build/dist /srv
+EXPOSE 80
