@@ -1,0 +1,68 @@
+qa/08-login-ok.log — todo 8 happy-path evidence: SSO2 login -> site session -> me -> logout
+(Acceptance: 三態路由正確；cookie 旗標測試；mock 登入→me 200 + pytest suite)
+
+PART 1 — mock-school scripted flow (REAL app + FakeRedis, login_sso2 scripted;
+           credential values below are test constants, never real)
+cmd: docker compose -f deploy/docker-compose.yml run --rm --no-deps -v "$PWD/backend:/app" -v /app/.venv worker uv run --no-sync python -m scripts.qa08_mock_flows --scenario login   [2026-08-28 03:14 CST]
+--------------------------------------------------------------------------------
+ Container nsysu-crs-worker-run-1a9640d0fa44 Creating 
+ Container nsysu-crs-worker-run-1a9640d0fa44 Created 
+/app/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+[OK] login SUCCESS -> 200 :: {"student_no":"M153000024"}
+[OK] Set-Cookie flags httpOnly+Secure+SameSite=Lax :: session_id=<sid>; HttpOnly; Path=/; SameSite=lax; Secure
+[OK] selcrs parked Redis-only (SLIDING=1800 / HARD=7200; site session 7d): [["ASPSESSIONIDQATEST", "QA08-mock-cookie-value"]]
+[OK] me -> 200 :: {"student_no":"M153000024"}
+[OK] logout clears site session + selcrs; me -> 401 :: me-after-logout=401 redis-empty=True
+
+PART 2 — pytest suite (tests-after; DB-backed cases against REAL compose Postgres)
+cmd: docker compose -f deploy/docker-compose.yml run --rm --no-deps -v "$PWD/backend:/app" -v /app/.venv worker uv run --no-sync --with pytest pytest -p no:cacheprovider -o addopts= tests/test_auth_api.py tests/test_auth_lockout.py tests/test_auth_sessions.py tests/test_auth_db.py -v   [2026-08-28 03:14 CST]
+--------------------------------------------------------------------------------
+ Container nsysu-crs-worker-run-86254aa7ca47 Creating 
+ Container nsysu-crs-worker-run-86254aa7ca47 Created 
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+Installed 5 packages in 28ms
+Bytecode compiled 459 files in 126ms
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /root/.cache/uv/builds-v0/.tmpOSpGGM/bin/python
+rootdir: /app
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 26 items
+tests/test_auth_api.py::test_login_success_issues_flagged_cookie_and_parks_selcrs_in_redis PASSED [  3%]
+tests/test_auth_api.py::test_me_roundtrip_and_logout_clears_everything PASSED [  7%]
+tests/test_auth_api.py::test_me_missing_and_bogus_session_fail_identically PASSED [ 11%]
+tests/test_auth_api.py::test_credential_fail_is_401_with_school_marker_and_no_session PASSED [ 15%]
+tests/test_auth_api.py::test_wrong_password_and_no_such_student_are_indistinguishable PASSED [ 19%]
+tests/test_auth_api.py::test_fifth_failure_locks_and_locked_attempts_never_reach_school PASSED [ 23%]
+tests/test_auth_api.py::test_success_never_clears_the_failure_log PASSED [ 26%]
+tests/test_auth_api.py::test_unknown_is_503_feeding_breaker_never_lockout PASSED [ 30%]
+tests/test_auth_api.py::test_breaker_open_serves_local_503_with_zero_school_calls PASSED [ 34%]
+tests/test_auth_api.py::test_ip_limit_counts_every_attempt_in_the_clock_hour PASSED [ 38%]
+tests/test_auth_api.py::test_no_password_or_cookie_value_leaks_into_any_log PASSED [ 42%]
+tests/test_auth_api.py::test_login_rejects_malformed_bodies PASSED       [ 46%]
+tests/test_auth_lockout.py::test_failures_expire_individually PASSED     [ 50%]
+tests/test_auth_lockout.py::test_fifth_failure_locks_and_lock_is_fixed_and_unextending PASSED [ 53%]
+tests/test_auth_lockout.py::test_window_returns_clean_after_lock_expires PASSED [ 57%]
+tests/test_auth_lockout.py::test_lock_is_scoped_per_student PASSED       [ 61%]
+tests/test_auth_lockout.py::test_ip_window_is_the_fixed_clock_hour PASSED [ 65%]
+tests/test_auth_lockout.py::test_ip_buckets_are_per_ip PASSED            [ 69%]
+tests/test_auth_sessions.py::test_cookie_round_trip_canonical_order PASSED [ 73%]
+tests/test_auth_sessions.py::test_site_session_is_sliding_seven_days PASSED [ 76%]
+tests/test_auth_sessions.py::test_unknown_session_resolves_to_none PASSED [ 80%]
+tests/test_auth_sessions.py::test_logout_drops_site_session_and_both_selcrs_keys PASSED [ 84%]
+tests/test_auth_sessions.py::test_selcrs_sliding_refreshes_but_hard_cap_wins PASSED [ 88%]
+tests/test_auth_sessions.py::test_selcrs_hard_anchor_is_nx_at_issuance PASSED [ 92%]
+tests/test_auth_db.py::test_upsert_and_supersede_rule PASSED             [ 96%]
+tests/test_auth_db.py::test_first_login_creates_the_student_row PASSED   [100%]
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+    from starlette.testclient import TestClient as TestClient  # noqa
+tests/test_auth_api.py::test_me_roundtrip_and_logout_clears_everything
+tests/test_auth_api.py::test_me_roundtrip_and_logout_clears_everything
+tests/test_auth_api.py::test_me_roundtrip_and_logout_clears_everything
+tests/test_auth_api.py::test_me_missing_and_bogus_session_fail_identically
+tests/test_auth_api.py::test_no_password_or_cookie_value_leaks_into_any_log
+tests/test_auth_api.py::test_no_password_or_cookie_value_leaks_into_any_log
+    return super().request(
+======================== 26 passed, 7 warnings in 0.53s ========================

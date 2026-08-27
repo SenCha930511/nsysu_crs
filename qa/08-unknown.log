@@ -1,0 +1,26 @@
+qa/08-unknown.log — todo 8 breaker evidence: UNKNOWN -> 熔斷；breaker-open 就地 503 且零外呼
+(Acceptance: UNKNOWN 進熔斷計數、永不進帳號鎖定；breaker-open 時 login 一律就地 503 不打學校)
+
+PART 1 — mock-school scripted UNKNOWN flow; school_calls counter proves ZERO outbound [2026-08-28 03:14 CST]
+cmd: ... worker uv run --no-sync python -m scripts.qa08_mock_flows --scenario unknown
+--------------------------------------------------------------------------------
+ Container nsysu-crs-worker-run-385e95688b8c Creating 
+ Container nsysu-crs-worker-run-385e95688b8c Created 
+/app/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+[OK] 5x UNKNOWN -> 5x 503, 5 school calls, streak=5 -> breaker OPENS :: statuses=[503, 503, 503, 503, 503] streak=5
+[OK] breaker-open attempt 1 -> LOCAL 503, school_calls still 5 (ZERO outbound) :: {"detail":"school_unavailable"}
+[OK] breaker-open attempt 2 -> LOCAL 503, school_calls still 5 (ZERO outbound) :: {"detail":"school_unavailable"}
+[OK] breaker-open attempt 3 -> LOCAL 503, school_calls still 5 (ZERO outbound) :: {"detail":"school_unavailable"}
+[OK] no account lockout recorded through any of this
+
+PART 2 — pytest (breaker state machine: open/half-open probe/recovery/no-feedback) [2026-08-28 03:14 CST]
+cmd: ... pytest tests/test_auth_breaker.py tests/test_auth_api.py -v -k 'breaker or unknown'
+--------------------------------------------------------------------------------
+tests/test_auth_breaker.py::test_five_unknowns_open_the_breaker_and_local_503s_do_not_feedback PASSED [ 16%]
+tests/test_auth_breaker.py::test_recovery_admits_one_probe_and_coherent_answer_closes PASSED [ 33%]
+tests/test_auth_breaker.py::test_failed_probe_restamps_the_open_instant PASSED [ 50%]
+tests/test_auth_breaker.py::test_coherent_answer_mid_streak_resets_the_count PASSED [ 66%]
+tests/test_auth_api.py::test_unknown_is_503_feeding_breaker_never_lockout PASSED [ 83%]
+tests/test_auth_api.py::test_breaker_open_serves_local_503_with_zero_school_calls PASSED [100%]
+================= 6 passed, 10 deselected, 1 warning in 0.28s ==================

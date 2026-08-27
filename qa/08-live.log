@@ -1,0 +1,50 @@
+qa/08-live.log — todo 8 [LIVE][CREDS] evidence: real SSO2 login through the compose app
+date: 2026-08-28 03:03 CST
+student: M153****24  (password + all cookie values masked; masking map in /tmp only, deleted after run)
+
+== image rebuild + app/worker restart (todo-8 code) ==
+ Image nsysu-crs-worker Built 
+ Container nsysu-crs-redis-1 Healthy 
+ Container nsysu-crs-redis-1 Healthy 
+health ok after 1s
+
+== STEP 1: POST /api/auth/login {student_no: M153****24, password: <masked>} (curl -sv; request body withheld by grep) ==
+< HTTP/1.1 200 OK
+< content-type: application/json
+< set-cookie: session_id=<session-id-masked>; HttpOnly; Path=/; SameSite=lax; Secure
+response body: {"student_no":"M153****24"}
+site session cookie received: yes (value masked below); jar file: /tmp/qa08_cookies.txt
+
+== Redis state after login (masked key suffixes; values never printed) ==
+key selcrs:<suffix-masked> ttl=1800
+key selcrs_hard:<suffix-masked> ttl=7200
+key site_session:<suffix-masked> ttl=604799
+selcrs jar format: JSON list of [name, value] pairs, 3 cookies, names: ASPSESSIONIDQQDASQCS,BIGipServerPL-Selcrs,TS01b534ab
+students rows now: M153****24
+
+== STEP 2: GET /api/auth/me with the site session ==
+{"student_no":"M153****24"}
+
+== STEP 3: POST /api/auth/logout, then me again ==
+{"ok":true}
+me after logout -> HTTP 401 body={"detail":"not_authenticated"}
+selcrs keys after logout: 0 (must be 0)
+site_session keys after logout: 0 (must be 0)
+
+== STEP 4: secrecy greps over app+access log (docker compose logs app) ==
+[CLEAN] raw password: 0 matches in /tmp/qa08_app_access.log
+[CLEAN] base64md5(password) transform: 0 matches in /tmp/qa08_app_access.log
+[CLEAN] selcrs cookie value (a school-issued session secret): 0 matches in /tmp/qa08_app_access.log
+[CLEAN] selcrs cookie value (a school-issued session secret): 0 matches in /tmp/qa08_app_access.log
+[CLEAN] selcrs cookie value (a school-issued session secret): 0 matches in /tmp/qa08_app_access.log
+access-log lines for /api/auth/* during the run (path+status only; no bodies ever logged):
+app-1  | INFO:     192.168.117.1:49502 - "POST /api/auth/login HTTP/1.1" 200 OK
+app-1  | INFO:     192.168.117.1:49506 - "GET /api/auth/me HTTP/1.1" 200 OK
+app-1  | INFO:     192.168.117.1:49518 - "POST /api/auth/logout HTTP/1.1" 200 OK
+app-1  | INFO:     192.168.117.1:49530 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:53472 - "POST /api/auth/login HTTP/1.1" 200 OK
+app-1  | INFO:     192.168.117.1:53474 - "GET /api/auth/me HTTP/1.1" 200 OK
+app-1  | INFO:     192.168.117.1:53480 - "POST /api/auth/logout HTTP/1.1" 200 OK
+app-1  | INFO:     192.168.117.1:53486 - "GET /api/auth/me HTTP/1.1" 401 Unauthorized
+
+DONE

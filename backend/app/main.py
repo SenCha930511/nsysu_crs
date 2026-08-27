@@ -3,8 +3,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import redis.asyncio as aioredis
 from fastapi import FastAPI
 
+from app.api.auth import router as auth_router
 from app.api.catalog import router as catalog_router
 from app.api.courses import router as courses_router
 from app.api.health import router as health_router
@@ -18,7 +20,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # Lazy-connect (no dial at startup): Redis outage must not kill boot; reads stay up.
+        redis_client = aioredis.Redis.from_url(resolved.redis_url, decode_responses=True)
+        app.state.redis = redis_client
         yield
+        await redis_client.aclose()
         await app.state.db_engine.dispose()
 
     app = FastAPI(title="NSYSU Course Wrapper", version="0.1.0", lifespan=lifespan)
@@ -29,4 +35,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health_router)
     app.include_router(catalog_router)
     app.include_router(courses_router)
+    app.include_router(auth_router)
     return app

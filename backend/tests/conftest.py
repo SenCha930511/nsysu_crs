@@ -3,8 +3,15 @@
 from collections.abc import Awaitable, Callable
 
 import httpx
+import pytest
 
 RequestHandler = Callable[[httpx.Request], Awaitable[httpx.Response]]
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    """Repo-wide anyio runner backend (async tests use @pytest.mark.anyio)."""
+    return "asyncio"
 
 
 class StubTransport(httpx.AsyncBaseTransport):
