@@ -73,6 +73,25 @@ def parse_form_hidden_inputs(html: str) -> dict[str, str]:
     return hidden
 
 
+def parse_form_action(html: str) -> str | None:
+    """The submit URL (``action``) of the write form, verbatim as scraped.
+
+    The replay model posts where the FORM says to post (ssprs.asp /
+    saddstage5prs.asp, resolved against the same-session form URL by the
+    caller with ``urljoin``) - the endpoint is school state, never a constant
+    this codebase asserts (plan todo 14: patch-over-scraped-form).
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    for tag in soup.find_all("form"):
+        action = tag.get("action")
+        if isinstance(action, str) and action.strip():
+            return action.strip()
+        if isinstance(action, list) and action:
+            candidate = str(action[0]).strip()
+            return candidate or None
+    return None
+
+
 def parse_send_value(html: str) -> str | None:
     """Value of the form's ``<input type="submit" name="send">`` (提交), if any."""
     soup = BeautifulSoup(html, "html.parser")

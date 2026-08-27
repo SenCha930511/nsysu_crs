@@ -130,6 +130,41 @@ Every school client gets a dedicated `ssl.SSLContext` with
   budget (worst 4), but p = 0.438 < 50% → recorded as gate-risk pending
   batches 2–3 and the user/decision branch for the accuracy remedy.
 
+## Write engine (todo 15) — implementation-pinned facts (2026-08-28)
+
+- **ssprs response shape is PROVISIONAL**: no archived reply exists anywhere
+  (checked edwinchu `course_selection_service.dart` at fe64ddb — reads
+  only; Hua777 `Req.py`/`Agent.py` — fire-and-forget POST with NO response
+  parsing). `backend/tests/fixtures/ssprs_resp_*_provisional.html` and the
+  marker vocab in `app/write/response.py` are the archaeological
+  expectation (per-course verdict row keyed by 課號); the parser NEVER
+  guesses — ambiguity/absence degrade to `parse_failed` with the raw
+  excerpt. First live reply comes from `scripts/send_probe.py` in the
+  加退選一 window.
+- **Worker replay scope**: the engine replays ONLY the scraped hidden
+  inputs + `send` (the live form is authoritative at submit time); the
+  Studfun-params fallback merge is a preview-side concern (todo 14 shows
+  the would-be payload pre-confirm).
+- **Outcome enum** (`app/write/outcomes.py`): `success`, `failed` (business,
+  terminal), `transport_failed` (after 1+2 engine retries, adapter
+  backoff 1s/2s), `parse_failed`, `階段逾時` (session dead or login bounce),
+  `unknown-reconciled` (dup-like business failure after a transport retried
+  POST; upgraded only by the end-of-job slt_result reconcile — which is
+  never retried itself — with `manual_resync_needed` otherwise surfaced in
+  the jobs API), `session_superseded`, internal `pending` (fail-closed
+  pre-insert placeholder).
+- **Audit salt**: `stuid_hash = sha256(APP_SECRET + '|' + student_no)` —
+  stable per student for correlation; raw student numbers never written to
+  write_jobs/write_audit/queues/logs.
+- **Queue mechanics**: Redis-only tickets (`writeq:jobs`, noeviction-pinned
+  instance); job row commits BEFORE the RPUSH; worker claims are
+  dwell-guarded (WRITE_QUEUE_DWELL_MAX=600 → honest `cancelled`); a lost
+  ticket leaves a queued row that the dwell sweep reaps; terminal writes
+  are guarded non-terminal-only so a mid-run supersede is never clobbered.
+- **Redis-down honesty**: an app-level `RedisError` handler hard-fails
+  login + `/api/write/*` with 503 while Postgres reads keep serving
+  (qa/15-redisdown.log live matrix).
+
 ## Live probes
 
 | date       | probe                        | result |

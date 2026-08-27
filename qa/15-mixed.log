@@ -1,0 +1,42 @@
+qa/15-mixed.log — todo 15 mixed-verdict evidence: 3 ops (ok / 額滿 / 必修 violation) mapped back to the right course codes by the response parser [PROVISIONAL fixture vocab]
+date: 2026-08-28 07:01 CST  compose-run, mocked school, REAL Postgres
+
+== scenario: mixed ==
+--- scenario: mixed ---
+[OK] mixed: batch executed end-to-end, no rollback
+[OK] mixed: ok / 額滿 / 必修 mapped back by course code :: {"M3046243": "failed", "GEAE2526": "success", "MEME101B": "failed"}
+[OK] mixed: school messages stored per op :: MEME101B='2 MEME101B 加 02 加選失敗：名額已滿（額滿）'
+RESULT: PASS
+
+== scenario: parser (provisional fixture table) ==
+--- scenario: parser ---
+parser fixture: ssprs_resp_mixed_provisional.html [PROVISIONAL until live capture]
+  GEAE2526 -> success :: 1 GEAE2526 加 01 加選成功
+  MEME101B -> failed :: 2 MEME101B 加 02 加選失敗：名額已滿（額滿）
+  M3046243 -> failed :: 3 M3046243 退 退選失敗：必修課程不得退選
+[OK] parser: per-code verdict mapping locked (provisional vocab)
+RESULT: PASS
+
+== pytest -v (response parser: all provisional fixtures + drift/bounce/ambiguity) ==
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+Installed 5 packages in 29ms
+Bytecode compiled 459 files in 120ms
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /root/.cache/uv/builds-v0/.tmpqpn3by/bin/python
+rootdir: /app
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 11 items
+tests/test_write_response_parser.py::test_all_ok_maps_success_to_the_right_codes PASSED [  9%]
+tests/test_write_response_parser.py::test_mixed_verdicts_map_by_code_not_row_order PASSED [ 18%]
+tests/test_write_response_parser.py::test_duplicate_like_failure_is_flagged PASSED [ 27%]
+tests/test_write_response_parser.py::test_drift_page_yields_parse_failed_with_excerpt_never_guessed PASSED [ 36%]
+tests/test_write_response_parser.py::test_a_code_absent_from_the_page_is_parse_failed_with_page_excerpt PASSED [ 45%]
+tests/test_write_response_parser.py::test_non_tabular_lines_still_key_by_code PASSED [ 54%]
+tests/test_write_response_parser.py::test_ambiguous_fragment_is_parse_failed_never_guessed PASSED [ 63%]
+tests/test_write_response_parser.py::test_failure_wording_containing_success_shape_is_not_a_success PASSED [ 72%]
+tests/test_write_response_parser.py::test_login_bounce_raises_session_expired_and_is_detected PASSED [ 81%]
+tests/test_write_engine.py::test_mixed_verdicts_map_back_to_the_right_codes PASSED [ 90%]
+tests/test_write_engine.py::test_unparseable_response_is_parse_failed_with_excerpt_never_guessed PASSED [100%]
+============================== 11 passed in 0.30s ==============================

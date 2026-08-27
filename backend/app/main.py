@@ -4,7 +4,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import redis.asyncio as aioredis
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from redis.exceptions import RedisError
 
 from app.api.auth import router as auth_router
 from app.api.catalog import router as catalog_router
@@ -14,6 +16,8 @@ from app.api.plans import router as plans_router
 from app.api.selections import router as selections_router
 from app.api.stage import router as stage_router
 from app.api.write import router as write_router
+from app.api.write_jobs import router as write_jobs_router
+from app.api.write_submit import router as write_submit_router
 from app.config import Settings
 from app.db import build_engine, build_session_factory
 from app.write.csrf import CsrfMiddleware
@@ -37,6 +41,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Runtime engine + per-request session factory (todo 7); disposed on shutdown.
     app.state.db_engine = build_engine(resolved)
     app.state.session_factory = build_session_factory(app.state.db_engine)
+
+    @app.exception_handler(RedisError)
+    async def redis_unavailable_handler(
+        _request: Request, _exc: RedisError
+    ) -> JSONResponse:
+        """Redis-down honesty (plan todo 15 Acceptance): every credential /
+        write path hard-fails 503 while Postgres-backed reads (courses,
+        catalog meta) never touch Redis and keep serving."""
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"detail": "redis_unavailable"},
+        )
+
     app.add_middleware(CsrfMiddleware)
     app.include_router(health_router)
     app.include_router(catalog_router)
@@ -46,4 +63,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(plans_router)
     app.include_router(stage_router)
     app.include_router(write_router)
+    app.include_router(write_submit_router)
+    app.include_router(write_jobs_router)
     return app

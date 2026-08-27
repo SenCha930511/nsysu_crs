@@ -1,0 +1,30 @@
+qa/15-superseded.log — todo 15 supersede evidence: login during queued -> session_superseded terminal + distinct UI message + worker no-op
+date: 2026-08-28 07:01 CST  compose-run, mocked school, REAL Postgres
+
+== scenario: superseded ==
+--- scenario: superseded ---
+[OK] superseded: login during queued -> session_superseded
+[OK] superseded: distinct UI message :: 你已在別處重新登入，此批送單已取消，請重新預檢
+[OK] superseded: worker never posts a superseded job
+RESULT: PASS
+
+== pytest -v (jobs view: owner-only, distinct terminal messages, reconcile flag) ==
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+Installed 5 packages in 43ms
+Bytecode compiled 459 files in 129ms
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /root/.cache/uv/builds-v0/.tmpaAbAnU/bin/python
+rootdir: /app
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 7 items
+tests/test_write_jobs_api.py::test_unknown_or_foreign_job_is_a_flat_404 PASSED [ 14%]
+tests/test_write_jobs_api.py::test_owner_view_surfaces_audit_outcomes_in_canonical_order PASSED [ 28%]
+tests/test_write_jobs_api.py::test_superseded_job_carries_the_distinct_ui_message PASSED [ 42%]
+tests/test_write_jobs_api.py::test_dwell_cancelled_job_carries_its_own_message PASSED [ 57%]
+tests/test_write_jobs_api.py::test_unknown_reconciled_ops_flag_manual_resync PASSED [ 71%]
+tests/test_write_jobs_api.py::test_foreign_students_job_is_404_not_403 PASSED [ 85%]
+tests/test_write_engine.py::test_job_superseded_mid_run_posts_nothing_and_keeps_terminal_status PASSED [100%]
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+========================= 7 passed, 1 warning in 0.81s =========================

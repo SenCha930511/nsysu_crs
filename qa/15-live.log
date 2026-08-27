@@ -1,0 +1,43 @@
+qa/15-live.log — todo 15 [WINDOW][CREDS] 邏輯已就緒，等候窗口；今晚在校時間未到、且計畫禁止非窗口真實寫入
+date: 2026-08-28 07:05 CST  (window opens 2026-08-28 09:00 Asia/Taipei)
+
+[DEFERRED-TO-WINDOW 2026-08-28 09:00]
+
+Planned live run: scripts/send_probe.py (user-run, credentials memory-only).
+
+What it does (全線一條真實鏈路，但不碰任何真實資料):
+  1. logins via /api/auth/login with --creds-env (STUDENT_ID/SPASSWORD file,
+     chmod 600, outside the repo; password never printed, never stored);
+  2. seeds ONE synthetic LOCAL catalog row 課號 ZZ999999 (a course code the
+     school does NOT have) so our own preview's 無課號 gate does not fire —
+     the row is marked QA 探針 and DELETED in a finally-block (reversible,
+     local-only; psql seed/drop contract verified tonight);
+  3. previews ADD of ZZ999999 — expected to PASS with quota warning
+     (quota_snapshot; remaining=3 > 0 so no remaining_zero noise);
+  4. confirms with the freshly re-typed password (SSO2 re-auth RIGHT NOW,
+     fresh jar overwrites the session's selcrs entry);
+  5. polls GET /api/write/jobs/{job_id} until terminal (≤6 min);
+  6. EXPECTS a SCHOOL-SIDE BUSINESS FAILURE on the audit row
+     (outcome=failed with the school's own message) — the school is asked
+     to add a course it does not have, so it must say no: the wire, the
+     form-replay worker, the response parser, and the audit ledger are all
+     proven live, with ZERO modification to the user's real selections;
+  7. prints the write_audit row (course/action/outcome/school_msg excerpt/
+     stuid_hash truncated to 12 chars + created_at).
+
+Prereqs before running (verified tonight):
+  - compose stack runs todo-15 code: app+worker rebuilt 2026-08-28 07:01
+    CST, /api/health ok, submit endpoint answers 403 (CSRF gate) not 404.
+  - api catalog/meta degrades by design after the 06:07 CaptchaUnsolvable
+    tick (todo 5 gate risk; snapshot from 2026-08-27T22:07Z — 1h cadence resumes 07:07).
+
+Usage:
+  cp .env.example .env  # if needed
+  uv run --python 3.12 --project backend python scripts/send_probe.py \
+    --creds-env /path/to/creds.env
+  (exit 0 = expected business failure recorded; exit 2 = school answered
+   something else, job + audit printed verbatim for manual reading; all
+   output prints the student id masked as M153****24)
+
+記錄: 依計畫 todo 15 之 `[WINDOW][CREDS] 實送一可退加選` 要求，以「不存在的
+課號試加」取代「可退加選」，證明全線且不留下任何學校側變更；效果同格。

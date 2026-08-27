@@ -1,0 +1,28 @@
+qa/15-auditfail.log — todo 15 fail-closed audit evidence: audit sink down -> the send never proceeds (ZERO school calls), job failed before school contact
+date: 2026-08-28 07:01 CST  compose-run, mocked school, REAL Postgres
+
+== scenario: auditfail ==
+write job 0cb97530-3cc7-4624-82f8-0cf86f8280b0: audit pre-insert failed; zero school contact: SQLAlchemyError('scripted audit sink outage')
+--- scenario: auditfail ---
+[OK] auditfail: job failed-honest
+[OK] auditfail: ZERO school calls (fail-closed proof)
+[OK] auditfail: no half-written audit rows
+RESULT: PASS
+
+== pytest -v (fail-closed + terminal-state machine: superseded no-op, expired 階段逾時) ==
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+Installed 5 packages in 31ms
+Bytecode compiled 459 files in 126ms
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /root/.cache/uv/builds-v0/.tmptCUMhi/bin/python
+rootdir: /app
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 5 items
+tests/test_write_engine.py::test_audit_sink_down_means_zero_school_calls_and_a_failed_job PASSED [ 20%]
+tests/test_write_engine.py::test_ticket_for_a_superseded_job_is_a_no_op PASSED [ 40%]
+tests/test_write_engine.py::test_dead_session_at_dequeue_marks_every_op_stage_expired PASSED [ 60%]
+tests/test_write_engine.py::test_form_page_login_bounce_is_stage_expired_without_post PASSED [ 80%]
+tests/test_write_engine.py::test_submit_response_login_bounce_is_stage_expired PASSED [100%]
+============================== 5 passed in 0.38s ===============================

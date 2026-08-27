@@ -1,0 +1,94 @@
+qa/15-submit.log — todo 15 happy-path evidence: preview -> confirm(re-auth) -> queue -> engine form-replay POST -> per-op success + audit rows (mocked school, REAL compose Postgres, FakeRedis)
+date: 2026-08-28 07:00 CST  compose-run inside network, no live school traffic
+
+== docker compose run worker python -m scripts.qa15_evidence --scenario submit ==
+ Container nsysu-crs-worker-run-600d71a2b7a7 Creating 
+ Container nsysu-crs-worker-run-600d71a2b7a7 Created 
+/app/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+--- scenario: submit ---
+[OK] submit: 2 adds + 1 drop -> 202 queued :: body={'job_id': '86431bfc-3c87-4b6a-8b62-ac49533df3ba', 'status': 'queued', 'payload_hash': '4cb2d03802a022f26f438595a99b2a934fa21dbf4fd044bbe9bb316b7281af04'}
+[OK] submit: fresh SSO2 jar overwrote the session's selcrs entry
+[OK] submit: FIFO ticket binds job + session_ref
+[OK] engine: job -> done with all ops executed
+[OK] engine: 3 audit rows, all success :: {"M3046243": "success", "GEAE2526": "success", "MEME101B": "success"}
+[OK] engine: stuid_hash salted everywhere, raw id nowhere
+[OK] engine: exactly one POST with Referer:<form_url> :: https://selcrs.nsysu.edu.tw/menu4/addcourse/ssprs.asp
+[OK] engine: hidden replay + D/C/T overwrite only
+[OK] jobs view: done, per-op outcomes, no terminal message
+RESULT: PASS
+
+== scenario: whitelist (queue payload scan) + dwell + reconcile ==
+--- scenario: whitelist ---
+[OK] whitelist: ticket keys == whitelist exactly
+[OK] whitelist: no password/cookie/secret-shaped fields
+RESULT: PASS
+--- scenario: dwell ---
+[OK] dwell: >WRITE_QUEUE_DWELL_MAX -> cancelled
+[OK] dwell: zero school calls
+[OK] dwell: cancelled carries its own message
+RESULT: PASS
+--- scenario: reconcile ---
+[OK] reconcile: dup-like after retry upgraded to the real state :: {"GEAE2526": "success"}
+[OK] reconcile: dead session leaves unknown-reconciled :: {"GEAE2526": "unknown-reconciled"}
+[OK] reconcile: jobs view flags manual_resync_needed
+RESULT: PASS
+
+== pytest -v (submit happy + engine core behaviors incl. dwell/reconcile/whitelist) ==
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+Installed 5 packages in 28ms
+Bytecode compiled 459 files in 128ms
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /root/.cache/uv/builds-v0/.tmpKNXajy/bin/python
+rootdir: /app
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 13 items
+tests/test_write_submit_api.py::test_submit_enqueues_with_fresh_jar_and_clean_ticket PASSED [  7%]
+tests/test_write_engine.py::test_happy_full_batch_replays_hidden_and_posts_once PASSED [ 15%]
+tests/test_write_engine.py::test_stale_job_is_cancelled_with_zero_school_calls PASSED [ 23%]
+tests/test_write_engine.py::test_sweep_cancels_only_stale_active_jobs PASSED [ 30%]
+tests/test_write_engine.py::test_one_transport_failure_retries_once_with_adapter_backoff PASSED [ 38%]
+tests/test_write_engine.py::test_transport_budget_is_exactly_two_retries_then_terminal PASSED [ 46%]
+tests/test_write_engine.py::test_dup_like_after_retry_becomes_unknown_reconciled_then_upgraded PASSED [ 53%]
+tests/test_write_engine.py::test_dup_like_after_retry_with_dead_session_stays_unknown_reconciled PASSED [ 61%]
+tests/test_write_engine.py::test_reconcile_query_failure_is_not_retried PASSED [ 69%]
+tests/test_write_engine.py::test_dup_like_after_retry_without_slt_presence_reconciles_to_failed PASSED [ 76%]
+tests/test_write_queue.py::test_serialized_ticket_carries_only_whitelisted_fields_and_no_secret_shape PASSED [ 84%]
+tests/test_write_queue.py::test_enqueue_rpush_onto_the_fifo PASSED       [ 92%]
+tests/test_write_queue.py::test_loop_executes_a_popped_ticket_and_sweeps PASSED [100%]
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+======================== 13 passed, 1 warning in 0.96s =========================
+
+== audit lifecycle: scripts/audit_lifecycle.py dry-run + apply (real DB, 0 eligible rows tonight) ==
+mode: DRY-RUN
+hot cutoff (archived_at null, created_at <): 2026-05-29T23:00:41.365473+00:00
+hot rows to archive: 0
+archive written: (none)
+archive-retention cutoff (archived_at <): 2025-08-27T23:00:41.365473+00:00
+archive files deleted: 0
+mode: APPLY
+hot cutoff (archived_at null, created_at <): 2026-05-29T23:00:42.714217+00:00
+hot rows to archive: 0
+archive written: (none)
+archive-retention cutoff (archived_at <): 2025-08-27T23:00:42.714217+00:00
+archive files deleted: 0
+
+== pytest -v (PII lifecycle: dry-run/apply/redaction/archive-expiry) ==
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+Installed 5 packages in 32ms
+Bytecode compiled 459 files in 133ms
+============================= test session starts ==============================
+platform linux -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0 -- /root/.cache/uv/builds-v0/.tmphBBGEq/bin/python
+rootdir: /app
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collecting ... collected 5 items
+tests/test_write_audit_lifecycle.py::test_dry_run_reports_without_touching_anything PASSED [ 20%]
+tests/test_write_audit_lifecycle.py::test_apply_archives_redacted_and_deletes_hot_rows PASSED [ 40%]
+tests/test_write_audit_lifecycle.py::test_archive_files_age_out_and_are_deleted_with_meta_marked PASSED [ 60%]
+tests/test_write_audit_lifecycle.py::test_dry_run_does_not_delete_archives PASSED [ 80%]
+tests/test_write_audit_lifecycle.py::test_redacted_row_shape_keeps_the_hashed_correlation_key PASSED [100%]
+============================== 5 passed in 0.29s ===============================

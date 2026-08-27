@@ -1,0 +1,58 @@
+qa/15-redisdown.log — todo 15 Redis-down honesty: login + /api/write/* hard-fail 503 while /api/courses + /api/catalog/meta keep serving from Postgres (live compose matrix)
+date: 2026-08-28 07:03 CST  LIVE compose stack (todo-15 code deployed), no school traffic
+note: app+worker images rebuilt to deploy todo-15 code before this matrix; Postgres/Redis volumes + catalog data untouched
+
+-- baseline health (compose up, redis up) --
+{"status":"ok","postgres":{"status":"ok","error":null},"redis":{"status":"ok","error":null}}  <- %{http_code} is 200
+
+-- docker compose stop redis --
+ Container nsysu-crs-redis-1 Stopping 
+ Container nsysu-crs-redis-1 Stopped 
+
+-- matrix with redis DOWN --
+{"detail":"redis_unavailable"}
+POST /api/auth/login -> 503
+GET /api/courses?page=1 -> 200
+{"ok":false,"updated_at":"2026-08-27T22:07:03.766707Z","row_count":null,"source":"self-scrape"}
+GET /api/catalog/meta -> 200
+{"detail":"redis_unavailable"}
+POST /api/write/submit -> 503
+{"detail":"redis_unavailable"}
+POST /api/write/preview -> 503
+{"detail":"redis_unavailable"}
+GET /api/write/jobs/<uuid> -> 503
+{"status":"unavailable","postgres":{"status":"ok","error":null},"redis":{"status":"down","error":"ConnectionError"}}
+GET /api/health (redis down, postgres ok) -> 503
+
+-- compose state during outage (worker restart-loops by design: schedule lock dial raises, restart policy pulls it back when redis returns) --
+nsysu-crs-app-1 running
+nsysu-crs-caddy-1 running
+nsysu-crs-postgres-1 running
+nsysu-crs-worker-1 restarting
+
+-- docker compose start redis (restore) --
+ Container nsysu-crs-redis-1 Starting 
+ Container nsysu-crs-redis-1 Started 
+{"status":"ok","postgres":{"status":"ok","error":null},"redis":{"status":"ok","error":null}}
+GET /api/health after redis restore -> 200
+
+-- compose intact after matrix --
+nsysu-crs-app-1 running
+nsysu-crs-caddy-1 running
+nsysu-crs-postgres-1 running
+nsysu-crs-redis-1 running
+nsysu-crs-worker-1 running
+
+== pytest -v (hermetic redis-down double: auth+write 503, CSRF gate prime) ==
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 5 items
+tests/test_redis_down_api.py .....                                       [100%]
+tests/test_redis_down_api.py::test_write_preview_hard_fails_503_when_redis_is_down
+tests/test_redis_down_api.py::test_write_submit_hard_fails_503_when_redis_is_down
+tests/test_redis_down_api.py::test_write_jobs_hard_fails_503_when_redis_is_down
+    return super().request(
+======================== 5 passed, 3 warnings in 0.29s =========================

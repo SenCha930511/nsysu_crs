@@ -73,6 +73,30 @@ def canonical_segments(ops: Iterable[CanonicalOp]) -> str:
     return "|".join(segments)
 
 
+def parse_canonical_segments(segments: str) -> tuple[CanonicalOp, ...]:
+    """Inverse of ``canonical_segments`` (todo 15 confirm: the stored record
+    carries only the segments string; the submit side re-derives the ops and,
+    with the student number, the payload_hash preimage). Raises ValueError on
+    any malformed segment - a corrupt record must not enqueue."""
+    ops: list[CanonicalOp] = []
+    for segment in segments.split("|"):
+        action, separator, rest = segment.partition(":")
+        if not separator or action not in ACTION_ORDER:
+            raise ValueError(f"malformed canonical segment: {segment!r}")
+        code, separator, tt = rest.partition(":")
+        if not separator or not code:
+            raise ValueError(f"malformed canonical segment: {segment!r}")
+        if action == "+":
+            if not tt.isdigit():
+                raise ValueError(f"add segment without TT: {segment!r}")
+            ops.append(CanonicalOp(action=action, code=code, priority=int(tt)))
+        else:
+            if tt:
+                raise ValueError(f"non-add segment carrying TT: {segment!r}")
+            ops.append(CanonicalOp(action=action, code=code))
+    return tuple(ops)
+
+
 def canonical_string(student_no: str, ops: Iterable[CanonicalOp]) -> str:
     """``student_no|act:code:TT|...`` - the payload-hash preimage. Total:
     sorting + collapse happen HERE too, so any op order yields the same
