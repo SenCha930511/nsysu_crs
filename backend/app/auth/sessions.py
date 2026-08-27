@@ -40,6 +40,10 @@ def _selcrs_hard_key(session_id: str) -> str:
     return f"selcrs_hard:{session_id}"
 
 
+def _selections_key(session_id: str) -> str:
+    return f"selections:{session_id}"
+
+
 async def create_site_session(redis: AuthRedis, student_no: str) -> str:
     """Mint a fresh site session id and store its owner (7d sliding)."""
     session_id = uuid.uuid4().hex
@@ -58,9 +62,16 @@ async def resolve_site_session(redis: AuthRedis, session_id: str) -> str | None:
 
 
 async def delete_site_session(redis: AuthRedis, session_id: str) -> None:
-    """Logout: drop the site session and BOTH selcrs keys with it."""
+    """Logout: drop the site session and every session-scoped row with it.
+
+    Includes the todo-9 selections snapshot: session-scoped cache only,
+    purged here (or by its own TTL) - never left to outlive the session.
+    """
     await redis.delete(
-        _site_key(session_id), _selcrs_key(session_id), _selcrs_hard_key(session_id)
+        _site_key(session_id),
+        _selcrs_key(session_id),
+        _selcrs_hard_key(session_id),
+        _selections_key(session_id),
     )
 
 

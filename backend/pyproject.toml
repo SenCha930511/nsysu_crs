@@ -31,3 +31,6 @@ package = false
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+markers = [
+    "provisional: pins the superseded provisional 7-column slt_result layout (todo-4 provisional fixture; the real layout is 14-column per verified-facts (c))",
+]

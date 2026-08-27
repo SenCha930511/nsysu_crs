@@ -1,0 +1,67 @@
+qa/09-live.log — todo 9 [LIVE][CREDS] evidence: real login -> my-selections sync through the compose app
+date: 2026-08-28 03:38 CST
+student: M153****24  (password + all cookie values masked; temp secrets in /tmp only, deleted after run)
+note: an earlier draft of this driver failed at login validation (HTTP 422, body builder bug) — that attempt
+      never reached the school (pydantic rejects pre-pipeline); the login+sync below is the ONE real run.
+
+== STEP 0: endpoints mounted, catalog intact ==
+POST /api/me/selections/sync (no session) -> HTTP 401 (expect 401)
+GET  /api/me/selections      (no session) -> HTTP 401 (expect 401)
+courses before: 2596
+
+== STEP 1: POST /api/auth/login {student_no: M153****24, password: <masked>} ==
+HTTP 200  body: {"student_no":"M153****24"}
+site session cookie received: yes (value masked; key suffix ...779b)
+
+== STEP 2: POST /api/me/selections/sync (REAL school read: exactly ONE GET slt_result.asp) ==
+HTTP 200
+synced_at : 2026-08-28T03:38:30+08:00
+items     : 7
+by state  : {'失敗': 2, '選上': 5}
+codes     : ['M30400B1', 'M3046243', 'M3046255', 'M3046327', 'M3046353']
+diff      : added=7 removed=0 unchanged=0 (first sync: all added)
+unknown   : 7/7 items unknown=true (courses.code is NULL catalog-wide: join ran, matched nothing, dropped nothing)
+
+== STEP 3: GET /api/me/selections serves the cached snapshot (zero school calls) ==
+HTTP 200
+synced_at : 2026-08-28T03:38:30+08:00 | items: 7 | identical to sync payload: True
+
+== STEP 4: second sync -> frozen diff (previous snapshot now exists) ==
+HTTP 200
+diff      : added=0 removed=0 unchanged=7 (school unchanged between syncs -> all unchanged)
+
+== STEP 5: Redis state (masked key suffixes; values never printed) ==
+key selections:<suffix-masked> ttl=604800
+key selcrs:<suffix-masked> present
+key selcrs_hard:<suffix-masked> present
+
+== STEP 6: secrecy greps over compose app log (docker compose logs app, full) ==
+[CLEAN] raw password: 0 matches in /tmp/qa09_todo9/app_access.log
+[CLEAN] base64md5(password) transform: 0 matches in /tmp/qa09_todo9/app_access.log
+[CLEAN] site session_id value: 0 matches in /tmp/qa09_todo9/app_access.log
+[CLEAN] selcrs cookie value (a school-issued session secret): 0 matches in /tmp/qa09_todo9/app_access.log
+[CLEAN] selcrs cookie value (a school-issued session secret): 0 matches in /tmp/qa09_todo9/app_access.log
+[CLEAN] selcrs cookie value (a school-issued session secret): 0 matches in /tmp/qa09_todo9/app_access.log
+access-log lines for /api/me/selections during the run (path+status only; no bodies ever logged):
+app-1  | INFO:     192.168.117.1:40892 - "POST /api/me/selections/sync HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:40900 - "GET /api/me/selections HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:37962 - "POST /api/me/selections/sync HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:37978 - "GET /api/me/selections HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:37998 - "POST /api/me/selections/sync HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:47382 - "GET /api/me/selections HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:47396 - "POST /api/me/selections/sync HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:47412 - "GET /api/me/selections HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:48126 - "POST /api/me/selections/sync HTTP/1.1" 401 Unauthorized
+app-1  | INFO:     192.168.117.1:48138 - "GET /api/me/selections HTTP/1.1" 401 Unauthorized
+
+== STEP 7: logout -> session-scoped selections cache purged ==
+logout HTTP 200
+selections keys after logout: 0 (must be 0)
+selcrs keys after logout:     0 (must be 0)
+site_session keys after logout: 0 (must be 0)
+GET /api/me/selections after logout -> HTTP 401 (expect 401)
+
+== STEP 8: catalog untouched ==
+courses after: 2596 (must be 2596)
+
+DONE

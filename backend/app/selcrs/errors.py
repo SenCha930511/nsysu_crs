@@ -25,3 +25,17 @@ class SelcrsUnavailable(SelcrsError):
         # never a raw server dump (could echo submitted data at parse-boundary).
         super().__init__(detail)
         self.detail: Final = detail
+
+
+class SelcrsSessionExpired(SelcrsError):
+    """The school bounced a session-bound read back to its login page.
+
+    Deterministic per-user state (the parked jar is dead), NOT school
+    misbehaviour: deliberately NOT a SelcrsUnavailable subclass, so it never
+    feeds the breaker and never counts toward lockout. Surfaced to the site
+    user as 401 SELCRS_EXPIRED (frontend drives re-login).
+    """
+
+    def __init__(self, detail: str = "school session expired") -> None:
+        super().__init__(detail)
+        self.detail: Final = detail

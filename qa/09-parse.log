@@ -1,0 +1,20 @@
+qa/09-parse.log — todo 9 happy-path evidence: slt_result parser + selections API (fixture-driven, hermetic)
+date: 2026-08-28 03:33 CST  host uv run, no compose contact (DB-backed tests skip on host by design)
+
+== real fixture parse summary (backend/tests/fixtures/slt_result_live_1151.html; no page text echoed) ==
+rows parsed: 7
+by state   : {'選上': 5, '失敗': 2}
+spot-check : {'code': 'M3046243', 'course_no': 'CSE515', 'state': '選上', 'name': '高等電腦網路', 'credit': 3, 'teacher': '林俊宏', 'room_text': '三2,3,4(工EC 5012)', 'times': '三2,3,4', 'room': '工EC 5012'}
+codes      : ['M30400B1', 'M3046243', 'M3046255', 'M3046327', 'M3046353']
+
+== uv run pytest tests/test_selections_parse.py tests/test_selections_api.py -v ==
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 19 items
+tests/test_selections_parse.py .........                                 [ 47%]
+tests/test_selections_api.py ..........                                  [100%]
+tests/test_selections_api.py: 13 warnings
+======================= 19 passed, 13 warnings in 0.33s ========================
