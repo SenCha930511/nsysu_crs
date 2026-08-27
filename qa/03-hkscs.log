@@ -1,0 +1,19 @@
+=== qa/03-hkscs.log - big5hkscs decode policy (HKSCS-only 喆 must not crash) ===
+$ uv run pytest -v tests/test_selcrs_big5hkscs.py
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 3 items
+
+tests/test_selcrs_big5hkscs.py ...                                       [100%]
+
+============================== 3 passed in 0.01s ===============================
+exit=0
+
+$ uv run python - (policy demo: roundtrip 喆, plain big5 rejected, replace policy)
+adapter encoding: big5hkscs
+big5hkscs roundtrip of 喆 snippet equal: True
+plain big5 encode(喆) -> UnicodeEncodeError: 'big5' codec can't encode character '\u5586' in position 16: illegal multibyte sequence
+bad bytes under replace policy: '前段��後段'
