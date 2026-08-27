@@ -42,11 +42,22 @@ cd backend && uv python install 3.12 && uv sync && uv run uvicorn app.main:creat
 cd frontend && npm install && npm run dev   # proxies /api to localhost:8000
 ```
 
+### Database migrations (Alembic)
+
+```bash
+docker compose -f deploy/docker-compose.yml exec app alembic upgrade head    # apply
+docker compose -f deploy/docker-compose.yml exec app alembic downgrade base  # roll back
+```
+
+Alembic runs inside the `app` container, so `DATABASE_URL` resolves against the compose Postgres with no host port. Autogenerate for later todos: `docker compose -f deploy/docker-compose.yml exec app alembic revision --autogenerate -m "<slug>"`.
+
 ### Tests
 
 ```bash
 cd backend && uv run pytest
 ```
+
+Credential storage policy (no passwords, selcrs cookies in Redis only): see [`docs/architecture.md`](docs/architecture.md).
 
 TZ is pinned to `Asia/Taipei` everywhere (images + compose env). Redis is pinned to `--maxmemory 128mb --maxmemory-policy noeviction`; volatile-\*/allkeys-\* eviction policies are forbidden for this instance because credential and write-queue keys must never be silently evicted.
 

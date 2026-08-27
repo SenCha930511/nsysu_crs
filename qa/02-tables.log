@@ -1,0 +1,95 @@
+=== QA todo 2 happy path (schema) - 2026-08-27 20:44:05 CST ===
+
+--- alembic upgrade head (inside app container, DATABASE_URL from .env) ---
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_initial_schema, initial schema: Redis-only credential policy + idempotency index
+exit code: 0
+
+--- alembic current ---
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+0001_initial_schema (head)
+
+--- psql \dt ---
+                  List of relations
+ Schema |           Name           | Type  |  Owner   
+--------+--------------------------+-------+----------
+ public | alembic_version          | table | postgres
+ public | courses                  | table | postgres
+ public | ingest_runs              | table | postgres
+ public | plan_items               | table | postgres
+ public | plans                    | table | postgres
+ public | students                 | table | postgres
+ public | write_audit              | table | postgres
+ public | write_audit_archive_meta | table | postgres
+ public | write_jobs               | table | postgres
+(9 rows)
+
+
+--- psql \d write_jobs (partial unique index evidence) ---
+                             Table "public.write_jobs"
+    Column    |           Type           | Collation | Nullable |      Default      
+--------------+--------------------------+-----------+----------+-------------------
+ id           | uuid                     |           | not null | gen_random_uuid()
+ student_id   | uuid                     |           | not null | 
+ status       | text                     |           | not null | 
+ ops          | jsonb                    |           | not null | 
+ payload_hash | text                     |           | not null | 
+ created_at   | timestamp with time zone |           | not null | now()
+ started_at   | timestamp with time zone |           |          | 
+ finished_at  | timestamp with time zone |           |          | 
+Indexes:
+    "pk_write_jobs" PRIMARY KEY, btree (id)
+    "ix_write_jobs_student_id" btree (student_id)
+    "uq_write_jobs_active_payload_hash" UNIQUE, btree (payload_hash) WHERE status = ANY (ARRAY['queued'::text, 'running'::text])
+Check constraints:
+    "ck_write_jobs_status_valid" CHECK (status = ANY (ARRAY['queued'::text, 'running'::text, 'done'::text, 'failed'::text, 'cancelled'::text, 'session_superseded'::text]))
+Foreign-key constraints:
+    "fk_write_jobs_student_id_students" FOREIGN KEY (student_id) REFERENCES students(id)
+Referenced by:
+    TABLE "write_audit" CONSTRAINT "fk_write_audit_job_id_write_jobs" FOREIGN KEY (job_id) REFERENCES write_jobs(id)
+
+
+=== downgrade base + re-upgrade round trip - 2026-08-27 20:44:18 CST ===
+
+--- alembic downgrade base ---
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade 0001_initial_schema -> , initial schema: Redis-only credential policy + idempotency index
+exit code: 0
+
+--- psql \dt after downgrade (all app tables gone) ---
+              List of relations
+ Schema |      Name       | Type  |  Owner   
+--------+-----------------+-------+----------
+ public | alembic_version | table | postgres
+(1 row)
+
+
+--- alembic upgrade head (re-upgrade) ---
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001_initial_schema, initial schema: Redis-only credential policy + idempotency index
+exit code: 0
+
+--- psql \dt after re-upgrade ---
+                  List of relations
+ Schema |           Name           | Type  |  Owner   
+--------+--------------------------+-------+----------
+ public | alembic_version          | table | postgres
+ public | courses                  | table | postgres
+ public | ingest_runs              | table | postgres
+ public | plan_items               | table | postgres
+ public | plans                    | table | postgres
+ public | students                 | table | postgres
+ public | write_audit              | table | postgres
+ public | write_audit_archive_meta | table | postgres
+ public | write_jobs               | table | postgres
+(9 rows)
+
+
+--- alembic current ---
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+0001_initial_schema (head)
