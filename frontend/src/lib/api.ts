@@ -4,6 +4,12 @@
  *   POST /api/auth/login|logout, GET /api/auth/me - site session (todo 8)
  *   GET/POST/PATCH/DELETE /api/plans[...]     - multi-plan CRUD (todo 11)
  *   GET  /api/me/selections, POST .../sync    - real selections (todo 9)
+ *   GET  /api/stage                           - live school stage probe (todo 13)
+ *   POST /api/write/preview|submit, GET /api/write/jobs/{id} - write flow (todo 14/15/16)
+ *
+ * CSRF (todo 14): every /api/write/* call must echo the login-response
+ * csrf_token in the X-CSRF-Token header (the matching cookie is httpOnly,
+ * so the body echo is the only JS-readable channel).
  *
  * 401 policy seam: any non-login 401 means the site session is gone (or the
  * school jar expired - SELCRS_EXPIRED). The route layer registers one global
@@ -142,6 +148,8 @@ interface RequestOptions {
   method?: string;
   body?: unknown;
   signal?: AbortSignal;
+  /** Opaque CSRF token echoed from the login body; required on /api/write/*. */
+  csrfToken?: string;
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -151,6 +159,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       Accept: "application/json",
       ...(options.body !== undefined
         ? { "Content-Type": "application/json" }
+        : {}),
+      ...(options.csrfToken !== undefined
+        ? { "X-CSRF-Token": options.csrfToken }
         : {}),
     },
     ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
@@ -218,10 +229,16 @@ export function fetchCatalogMeta(signal?: AbortSignal): Promise<CatalogMeta> {
 
 // ---------- auth (session cookie is httpOnly; fetch carries it same-origin) ----------
 
+export interface LoginResponse {
+  student_no: string;
+  /** Double-submit CSRF token for /api/write/* (rotates on every login). */
+  csrf_token: string;
+}
+
 export function login(
   studentNo: string,
   password: string,
-): Promise<{ student_no: string }> {
+): Promise<LoginResponse> {
   return request("/api/auth/login", {
     method: "POST",
     body: { student_no: studentNo, password },
@@ -281,4 +298,135 @@ export function fetchSelections(): Promise<SelectionsResponse> {
 
 export function syncSelections(): Promise<SelectionSyncResponse> {
   return request("/api/me/selections/sync", { method: "POST" });
+}
+
+// ---------- stage probe (session-gated; no CSRF - read-only) ----------
+
+export interface StageInfo {
+  /** "加退選" | "初選" | "關閉" | "未知" */
+  stage: string;
+  /** "ssform" | "stage5" | null (null when closed/unknown) */
+  variant: string | null;
+  params: Record<string, string> | null;
+  need_confirmation: boolean;
+  writable: boolean;
+  /** Machine forensics: "ssform_link" | "closed_heading" | ... */
+  reason: string;
+  checked_at: string;
+}
+
+export function fetchStage(signal?: AbortSignal): Promise<StageInfo> {
+  return request<StageInfo>("/api/stage", signal !== undefined ? { signal } : {});
+}
+
+// ---------- write flow (session + CSRF-gated; todo 14/15) ----------
+
+export interface WriteOpIn {
+  action: "+" | "-";
+  /** Catalog UUID or 8-char school code (server resolves both). */
+  course_id: string;
+  /** Required for "+": int 1-20, unique within the batch. Forbidden for "-". */
+  priority?: number | null;
+  /** For "-": must exactly equal the resolved course's 8-char code. */
+  drop_confirm_text?: string | null;
+}
+
+export interface QuotaOut {
+  restrict: number | null;
+  select_n: number | null;
+  selected_n: number | null;
+  remaining: number | null;
+  ingested_at: string | null;
+}
+
+export interface OpVerdictOut {
+  index: number;
+  action: string;
+  course_id: string;
+  code: string | null;
+  writable: boolean;
+  /** "ok" | "無課號" | "同批加退混雜" | "不在已選" | "衝堂" */
+  verdict: string;
+  /** For 衝堂: the clashing code; else null. */
+  detail: string | null;
+  warnings: string[];
+  quota: QuotaOut | null;
+}
+
+export interface PreviewResponse {
+  stage: string;
+  variant: string | null;
+  form_url: string | null;
+  writable: boolean;
+  ops: OpVerdictOut[];
+  warnings: string[];
+  quota_as_of: string | null;
+  payload: Record<string, string> | null;
+  /** Single-use confirm token (5 min TTL); null when any op is blocked. */
+  confirm_token: string | null;
+  payload_hash: string | null;
+  canonical_ops: string | null;
+}
+
+export interface SubmitResponse {
+  job_id: string;
+  status: string;
+  payload_hash: string;
+}
+
+export interface JobOpOut {
+  code: string;
+  action: string;
+  priority: number | null;
+  /** Outcome enum or null while the audit row is still pending. */
+  outcome: string | null;
+  /** Verbatim school message (raw excerpt for parse_failed). */
+  school_msg: string | null;
+}
+
+export interface JobView {
+  job_id: string;
+  /** queued | running | done | failed | cancelled | session_superseded */
+  status: string;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  ops: JobOpOut[];
+  message: string | null;
+  /** "manual_resync_needed" when any op is unknown-reconciled. */
+  reconcile: string | null;
+}
+
+export function previewWrite(
+  ops: WriteOpIn[],
+  csrfToken: string,
+): Promise<PreviewResponse> {
+  return request("/api/write/preview", {
+    method: "POST",
+    body: { ops },
+    csrfToken,
+  });
+}
+
+export function submitWrite(
+  confirmToken: string,
+  password: string,
+  csrfToken: string,
+): Promise<SubmitResponse> {
+  return request("/api/write/submit", {
+    method: "POST",
+    body: { confirm_token: confirmToken, password },
+    csrfToken,
+  });
+}
+
+export function fetchWriteJob(
+  jobId: string,
+  csrfToken: string,
+  signal?: AbortSignal,
+): Promise<JobView> {
+  return request(`/api/write/jobs/${jobId}`, {
+    csrfToken,
+    ...(signal !== undefined ? { signal } : {}),
+  });
 }

@@ -1,9 +1,9 @@
 /**
- * Routed app (todo 11): the todo-10 read-only core at "/", plus /login,
- * guarded /plans (multi-plan + 志願序) and /selected (real selections).
- * Provider nesting: Router > Auth > Selection > PlansSync - plans sync
- * consumes both the auth status (boot/reset seams) and the selection seam
- * (hydrate silently, write back on change).
+ * Routed app (todo 11/16): the todo-10 read-only core at "/", plus /login,
+ * guarded /plans (multi-plan + 志願序), /selected (real selections) and
+ * /write (送單中心). Provider nesting: Router > Auth > Selection > PlansSync
+ * - plans sync consumes both the auth status (boot/reset seams) and the
+ * selection seam (hydrate silently, write back on change).
  */
 
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -14,6 +14,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import PlansPage from "./pages/PlansPage";
 import SelectedPage from "./pages/SelectedPage";
+import WritePage from "./pages/WritePage";
 import { AuthProvider } from "./state/auth";
 import { PlansSyncProvider } from "./state/plansSync";
 import { SelectionProvider } from "./state/selection";
@@ -41,6 +42,14 @@ function App() {
                   element={
                     <RequireAuth>
                       <SelectedPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="write"
+                  element={
+                    <RequireAuth>
+                      <WritePage />
                     </RequireAuth>
                   }
                 />

@@ -1,4 +1,4 @@
-# DESIGN.md — NSYSU Course Wrapper frontend (todo 10 + 11 scope)
+# DESIGN.md — NSYSU Course Wrapper frontend (todo 10 + 11 + 16 scope)
 
 Read-only core UI: course browser + weekly timetable. This document is the
 token contract for the components under `src/`; later todos (11/12/16) extend
@@ -111,3 +111,44 @@ Bootstrap tokens for everything else: spacing (`g-2`, `mb-1`, `py-*`),
   「未知課程（已不在課目錄）」so the grid never silently drops a row.
 - **No new CSS custom properties were added** for todo 11 surfaces;
   everything traces to `--crs-*` or Bootstrap 5 utilities.
+
+## 7. Todo 16 additions (/write 送單中心)
+
+- **Stage gate** — full-width `alert` on top: `alert-success` when writable
+  (with 重新整理 re-probe button and a 60s auto re-probe while closed), else
+  `alert-warning` with one fixed title per reason (關閉／必修確認前置／初選未
+  開放／格式異動) and the school stage as a `text-bg-secondary` chip. When
+  not writable the whole composer is wrapped in `<fieldset disabled>` plus a
+  muted hint — affordances are DOM-disabled, not just visually dimmed.
+- **Ops composer** — two `table table-sm` sections mirroring the priority-row
+  vocabulary: add rows carry the reuse `.priority-input` 3rem numeric input,
+  teacher/periods meta line, and the same 餘 badge palette as the browser
+  (`text-bg-success` / `text-bg-danger` 額滿）; drop rows show the exact 8-char
+  code as the input `placeholder`, tint `table-danger` once typed-matched,
+  and an `is-invalid` + `invalid-feedback` state while typed-non-matching.
+- **Preview verdicts** — per-op rows tinted purely with Bootstrap table
+  variants: blocked `table-danger` + `XCircleFill`, warn `table-warning` +
+  `ExclamationTriangleFill`, pass untinted + `CheckCircleFill`; the machine
+  verdict is shown verbatim （衝堂 renders `衝堂（與 <code>）`). The 確認送單
+  button stays `disabled` until `canConfirm`: preview writable + zero blocked
+  + token minted + composer unchanged since preview.
+- **Confirm modal** — the modal layer deferred in §5 arrives here, hand-rolled
+  because the bootstrap JS bundle is still not imported: `.crs-modal-backdrop`
+  (fixed inset overlay using the single new token `--crs-modal-backdrop:
+  rgba(0,0,0,.5)` — a shade, not a palette color) + `.crs-modal` flex
+  centering a `card shadow`. It lists the staged diff (+課名/志願， −課名）,
+  re-asserts every drop's typed code with a 課號一致/不符 badge, and requires
+  an inline password field （當次輸入 only, cleared after use, never stored).
+- **Job panel** — status pill from `JOB_STATUS_COPY` tones + spinner while
+  non-terminal; terminal banners: superseded `alert-warning` with the fixed
+  SUPERSEDED_COPY, other terminal messages `alert-danger`. Per-op outcome
+  chips use `text-bg-{tone}` from OUTCOME_COPY; school messages render
+  verbatim after 學校訊息：「…」; parse_failed excerpts use native
+  `<details>` (no JS dependency); 階段逾時 rows carry an inline 重新預檢
+  button.
+- **Reconcile widget** — bordered-top section inside the job panel, terminal
+  only (hidden for session_superseded); the diff table tints matches
+  `table-success` / mismatches `table-danger` with 一致/不一致 badges.
+- **One new CSS custom property** (`--crs-modal-backdrop`); everything else
+  traces to existing `--crs-*`, reuse of `.priority-input`, or Bootstrap 5
+  table/alert/badge variants.

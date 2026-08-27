@@ -1,0 +1,98 @@
+# qa/16-flow.log — todo 16 送單中心 mock flows
+# target: http://localhost/ (Caddy serving the vite-built frontend from nsysu-crs-caddy, rebuilt 2026-08-28)
+# driver: /tmp/qa16/mock_flows.mjs (playwright-core 1.62.1, throwaway, not committed)
+# browser: Brave (system, headless) + throwaway profile; stateful fake backend via route interception; zero installs
+# scenes: A closed gate / B open blocked+warn confirm-disabled->enabled / C confirm modal / D happy 2+1 poll->results->reconcile / E mixed terminal+unknown-reconciled+diff table / F transport_failed+階段逾時 / G session_superseded / H 409 replay + CSRF header assertions
+
+
+=== A closed stage gate -> qa/16-flow-closed.png ===
+[OK] A1 closed banner title 目前為選課關閉期間
+[OK] A2 composer disabled hint visible while closed
+[OK] A3 preview button disabled while closed
+[OK] A4 composer lists plan adds even when disabled
+[OK] A5 qa/16-flow-closed.png captured
+
+=== B open stage: blocked+warn -> confirm disabled -> fix -> enabled ===
+[OK] B1 banner flips to 加退選 after /api/stage 重新整理
+[OK] B2 preview button enabled when writable
+[OK] B3 typed exact code marks drop row 將退選
+[OK] B4 wrong typed code shows 課號不符 and keeps row out
+[OK] B5 blocked row shows machine reason 衝堂（與 M3046243）
+[OK] B6 warn row shows quota stale copy
+[OK] B7 verdict tones blocked,warn,pass,pass (blocked,warn,pass,pass)
+[OK] B8 confirm DISABLED with one blocked row
+[OK] B9 blocked hint explains why confirm is disabled
+[OK] B10 qa/16-flow-open.png captured (one red blocked + one yellow warn)
+[OK] B11 removing blocked op marks preview stale
+[OK] B12 confirm ENABLED after fixing blocked op + re-preview (disabled->enabled transition)
+
+=== C confirm modal -> qa/16-flow-confirm.png ===
+[OK] C1 modal lists staged diff add row
+[OK] C2 modal shows add priority（志願 2）
+[OK] C3 modal lists staged drop row
+[OK] C4 drop code carried from composer re-asserted 課號一致
+[OK] C5 confirm submit disabled until password entered
+[OK] C6 password entered -> submit enabled
+[OK] C7 qa/16-flow-confirm.png captured
+
+=== D happy cycle: 2+1 -> submit -> poll -> results -> reconcile diff ===
+[OK] D1 job panel appears after submit 202
+[OK] D2 poll observed status 排隊中
+[OK] D2 poll observed status 送單中
+[OK] D2 poll observed status 已完成
+[OK] D3 add #1 success shows school message verbatim 加選成功
+[OK] D3b add #2 success shows 加選成功
+[OK] D4 drop success shows 退選成功
+[OK] D5 reconcile: add intent vs school truth 一致
+[OK] D6 reconcile: drop intent vs school truth 一致
+[OK] D7 full mocked happy cycle complete (2 加 + 1 退 -> submit -> poll queued/running/done -> results -> reconcile diff)
+
+=== E mixed terminal incl. unknown-reconciled -> qa/16-flow-results.png ===
+[OK] E1 both drop codes 課號一致 in modal
+[OK] E2 job-2 terminal 已完成
+[OK] E3 failed op shows school raw message
+[OK] E4 failed op labelled 學校拒絕
+[OK] E5 business failure copy contains no auto-retry wording
+[OK] E6 unknown-reconciled manual variant copy
+[OK] E7 reconcile hint badge from job.reconcile flag
+[OK] E8 parse_failed label
+[OK] E9 parse_failed raw excerpt expandable
+[OK] E10 reconcile mismatch row 不一致 (add rejected by school)
+[OK] E11 unknown-reconciled shows truth still 選上 -> 不一致
+[OK] E12 reconcile match row 一致
+[OK] E13 qa/16-flow-results.png captured
+
+=== F transport_failed + 階段逾時 -> qa/16-fail.png ===
+[OK] F1 job-3 terminal 未完成
+[OK] F2 failed job banner message
+[OK] F3 transport_failed label
+[OK] F4 transport_failed hint: retry budget exhausted, no auto resend
+[OK] F5 階段逾時 label
+[OK] F6 階段逾時 row carries re-preview CTA
+[OK] F7 qa/16-fail.png captured
+
+=== G session_superseded -> qa/16-superseded.png ===
+[OK] G1 dedicated superseded copy shown verbatim
+[OK] G2 superseded status label distinct from generic failure
+[OK] G3 superseded job hides the reconcile widget
+[OK] G4 qa/16-superseded.png captured
+
+=== H 409 duplicate_active_job replay ===
+[OK] H1 409 replay shows friendly 此批已確認過 notice
+[OK] H2 replay links to the existing job (job-1, 已完成)
+[OK] H3 replayed job results render
+[OK] H4 X-CSRF-Token header seen on preview
+[OK] H4 X-CSRF-Token header seen on submit
+[OK] H4 X-CSRF-Token header seen on jobs-get
+
+ALL SCENES PASSED
+
+=== vitest (npx vitest run, frontend) ===
+ RUN  v4.1.11 /Users/timmy/Code/nsysu_crs/frontend
+
+
+ Test Files  7 passed (7)
+      Tests  90 passed (90)
+   Start at  07:46:45
+   Duration  148ms (transform 225ms, setup 0ms, import 293ms, tests 28ms, environment 0ms)
+

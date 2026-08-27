@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { to: "/", label: "查課·課表", end: true },
   { to: "/plans", label: "課表組合", end: false },
   { to: "/selected", label: "我的已選", end: false },
+  { to: "/write", label: "送單中心", end: false },
 ];
 
 function AppShell() {
