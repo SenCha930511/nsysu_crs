@@ -1,0 +1,12 @@
+qa/07-badparam.log — todo 7 failure-path evidence: illegal period code → HTTP 400 明確訊息
+(Acceptance: 非法參數 400 明確；plan QA: failure=`period="Z"` → 400)
+cmd: curl -sS -w 'HTTP %{http_code}' 'http://localhost:8000/api/courses?period=Z'   [2026-08-28 02:35 CST, live compose app]
+--------------------------------------------------------------------------------
+HTTP 400
+{"detail":"period must be a single timeslot code (123456789ABCDEF), got 'Z'"}
+
+Same 400-with-clear-message contract for the other illegal params (covered in tests):
+grade=9 → "grade must be one of 0, 1, 2, 3, 4 (0 = 不分年級), got '9'"
+weekday=8 → "weekday must be 1 (Mon) .. 7 (Sun), got 8"
+period without weekday → "period requires weekday (the day to match on)"
+unknown param name → "unknown query parameter 'X'; supported: compulsory, credit, dept, english, grade, page, period, q, weekday, year_sem"
