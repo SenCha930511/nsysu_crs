@@ -94,8 +94,37 @@ Every school client gets a dedicated `ssl.SSLContext` with
 - Chinese-text catalog form fields (`teacher`/`crsname`) are pinned empty at
   the adapter payload builder; enumeration is by codes only.
 
+## Captcha solver: ddddocr pin + gate methodology (todo 5)
+
+- **Provider:** `ddddocr==1.6.1` (exact pin in `backend/pyproject.toml` and
+  `backend/uv.lock`; install evidence `qa/05-pin.log`). Runs on onnxruntime
+  (deps: numpy, onnxruntime, opencv-python, pillow) — **no torch/CapsNet/
+  EfficientCapsNet** anywhere, per the plan's OUT list.
+- **Solver boundary:** raw image bytes in → decoded text out
+  (`app/solver/ocr.py: solve(img_bytes) -> str`); engine built lazily on
+  first solve with `show_ad=False`; provider injectable at the loop.
+- **Loop contract** (`app/solver/loop.py`): fresh BMP → solve → submit; a
+  response containing `Wrong Validation Code` / 「驗證碼錯誤」 (NFKC-folded,
+  whitespace-stripped substring match, alert()/meta wrappers tolerated)
+  triggers a re-fetch of a FRESH BMP into the SAME per-run jar lineage; the
+  5th rejection raises `CaptchaUnsolvable` exactly once (no 6th attempt).
+  Mock evidence: `qa/05-loop.log`, jar isolation `qa/05-jariso.log`.
+- **Gate methodology** (`backend/scripts/captcha_gate.py --pages N`):
+  N consecutive LIVE public-catalog pages through the loop (no login;
+  `dplycourse.asp` with `D0=<year_sem>`, WKDAY rotating 1..7 for distinct
+  slices). Measures captcha accuracy only — row/pagination parsing is todo
+  6 and is deliberately not done. Each batch APPENDS one evidence block to
+  `qa/05-accuracy.log`: per-attempt outcomes, per-depth accepted/reached,
+  per-attempt success rate p (= accepted submissions / total submissions),
+  worst retries-per-page, PASS/FAIL on the ≤5-attempts-per-page budget.
+  Plan gate: ≥20 pages across ≥3 time slots, 100% of pages within budget.
+- **Status `2026-08-27`:** batch 1/3 (evening) appended — 7/7 pages within
+  budget (worst 4), but p = 0.438 < 50% → recorded as gate-risk pending
+  batches 2–3 and the user/decision branch for the accuracy remedy.
+
 ## Live probes
 
 | date       | probe                        | result |
 |------------|------------------------------|--------|
-| 2026-08-27 | `[LIVE]` GET /menu1/validcode.asp via adapter | HTTP 200, 8982-byte BMP (`BM`), ASPSESSION+BIGip cookies issued — saved `qa/03-validcode.bmp` |
+| 2026-08-27 | `[LIVE]` GET /menu1/validcode.asp via adapter | HTTP 200, 8982-byte BMP (`BM`), ASPSESSION+BIGip cookies issued; ddddocr 1.6.1 solved the saved BMP offline as `7995` — saved `qa/03-validcode.bmp` |
+| 2026-08-27 | `[LIVE]` captcha gate batch 1/3 (evening), `--pages 7` | 7/7 pages ≤5 attempts, 0 `CaptchaUnsolvable`, worst 4 retries; per-attempt p = 0.438 (16 attempts / 7 accepted) — `qa/05-accuracy.log` |

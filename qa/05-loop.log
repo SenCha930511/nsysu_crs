@@ -1,0 +1,14 @@
+# qa/05-loop.log — mock loop tests: 5 consecutive wrong codes -> CaptchaUnsolvable after exactly 5 (no 6th),
+# success on attempt 3, fake-solver injection (ddddocr never booted), wrong-code marker tolerance (plan todo 5)
+# cmd: cd backend && uv run pytest tests/test_solver_loop.py -v -k "five_wrong or success_on_third or injected_fake or markers or near_misses"
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 13 items / 1 deselected / 12 selected
+
+tests/test_solver_loop.py ............                                   [100%]
+
+======================= 12 passed, 1 deselected in 0.01s =======================

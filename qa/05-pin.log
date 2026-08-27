@@ -1,0 +1,18 @@
+# qa/05-pin.log — ddddocr pinned version evidence (plan todo 5)
+# cmd: cd backend && uv pip show ddddocr
+
+Name: ddddocr
+Version: 1.6.1
+Location: /Users/timmy/Code/nsysu_crs/backend/.venv/lib/python3.12/site-packages
+Requires: numpy, onnxruntime, opencv-python, pillow
+Required-by:
+
+# pin cross-check: backend/pyproject.toml line
+16:    "ddddocr==1.6.1",
+
+# pin cross-check: backend/uv.lock entries
+94:name = "ddddocr"
+104:sdist = { url = "https://files.pythonhosted.org/packages/07/5f/7c06bbb594b77062e6d0d43f06dc88668aaeb699c8737c84542aaa39da8c/ddddocr-1.6.1.tar.gz", hash = "sha256:1c59d84d63d8703c6c486465a32389c9e41dd92852c794c5e4c0181a5f82d43a", size = 75943309, upload-time = "2026-03-11T10:48:41.681Z" }
+106:    { url = "https://files.pythonhosted.org/packages/0e/48/cbaed3981b8d8d51141b9b4779b811f4728e65d952a1e3e2e5e929539183/ddddocr-1.6.1-py3-none-any.whl", hash = "sha256:c7c70f4ae2d0335440ae8b272eea48c9f6888ecef46785fe2311f0c97a133935", size = 75983593, upload-time = "2026-03-11T10:48:23.702Z" },
+299:    { name = "ddddocr" },
+319:    { name = "ddddocr", specifier = "==1.6.1" },

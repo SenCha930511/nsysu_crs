@@ -1,0 +1,13 @@
+# qa/05-jariso.log — two overlapping loop runs through ONE shared school never share a cookie jar lineage (plan todo 5)
+# cmd: cd backend && uv run pytest tests/test_solver_loop.py -v -k overlapping
+
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 13 items / 12 deselected / 1 selected
+
+tests/test_solver_loop.py .                                              [100%]
+
+======================= 1 passed, 12 deselected in 0.03s =======================
