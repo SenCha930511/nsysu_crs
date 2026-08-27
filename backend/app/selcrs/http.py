@@ -106,6 +106,7 @@ async def request_school(
     data: dict[str, str] | None = None,
     params: dict[str, str | int] | None = None,
     headers: dict[str, str] | None = None,
+    content: str | bytes | None = None,
 ) -> httpx.Response:
     """One school request under throttle + transport-only backoff.
 
@@ -115,15 +116,20 @@ async def request_school(
     must never interleave). The captcha lane is taken ON TOP of the global
     school cap of 2, so every call the adapter makes to the school - captcha
     or not - counts against that global cap.
+
+    ``content`` is a pre-encoded request body for callers that must pin the
+    exact wire bytes - the todo-4 capture kit builds Big5 percent-encoded form
+    bodies itself so saved request bodies are byte-identical replays. Callers
+    pass ``content`` OR ``data``, never both.
     """
     if captcha_parented:
         async with _CAPTCHA_SEMAPHORE, _SCHOOL_SEMAPHORE:
             return await _request_with_backoff(
-                client, method, url, data=data, params=params, headers=headers
+                client, method, url, data=data, params=params, headers=headers, content=content
             )
     async with _SCHOOL_SEMAPHORE:
         return await _request_with_backoff(
-            client, method, url, data=data, params=params, headers=headers
+            client, method, url, data=data, params=params, headers=headers, content=content
         )
 
 
@@ -133,8 +139,9 @@ async def _request_with_backoff(
     url: str,
     *,
     data: dict[str, str] | None,
-    params: dict[str, str | int] | None,
+    params: dict[str, str | int],
     headers: dict[str, str] | None,
+    content: str | bytes | None,
 ) -> httpx.Response:
     """Attempt loop. Semaphore(s) are held by the caller for the whole loop,
     including backoff waits: a school that is timing out must not be hit by a
@@ -143,7 +150,7 @@ async def _request_with_backoff(
     for wait_seconds in BACKOFF_SECONDS:
         try:
             return await client.request(
-                method, url, data=data, params=params, headers=headers
+                method, url, data=data, params=params, headers=headers, content=content
             )
         except httpx.TransportError as exc:
             # Transport-level only: DNS/connect/TLS/timeout/pool issues.

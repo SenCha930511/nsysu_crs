@@ -1,0 +1,9 @@
+[WINDOW-GUARD] Refusing: not inside a course-selection window.
+Now (Asia/Taipei): 2026-08-27 21:41:51 (Thu)
+Live capture is only possible during an active selection window (the school only serves the real write forms then).
+Next window: 115-1 加退選一 - starts 2026-08-28 09:00 (Asia/Taipei), ends 2026-08-31 17:00 (Asia/Taipei).
+When the window opens, run: cd backend && uv run python -m scripts.capture --run
+
+# QA evidence: 'cd backend && uv run python -m scripts.capture --check-window' run 2026-08-27 21:41 Asia/Taipei
+# Observed process exit code: 2
+# Next window start as printed: 2026-08-28 09:00 (Asia/Taipei) - matches 115-1 加退選一

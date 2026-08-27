@@ -1,0 +1,22 @@
+=== qa/04-fixtures.log - todo 4 provisional fixtures + tests ===
+
+## provisional marker grep (first line of each fixture)
+tests/fixtures/dply_page1_provisional.html
+tests/fixtures/saddstage5_provisional.html
+tests/fixtures/slt_result_provisional.html
+tests/fixtures/ssform_provisional.html
+tests/fixtures/studfun_closed_provisional.html
+tests/fixtures/studfun_open_provisional.html
+
+## per-file first line (decoded big5hkscs)
+dply_page1_provisional.html: <!-- provisional: synthetic, replace after 115-1 live capture -->
+saddstage5_provisional.html: <!-- provisional: synthetic, replace after 115-1 live capture -->
+slt_result_provisional.html: <!-- provisional: synthetic, replace after 115-1 live capture -->
+ssform_provisional.html: <!-- provisional: synthetic, replace after 115-1 live capture -->
+studfun_closed_provisional.html: <!-- provisional: synthetic, replace after 115-1 live capture -->
+studfun_open_provisional.html: <!-- provisional: synthetic, replace after 115-1 live capture -->
+
+## full pytest run
+........................................................................ [ 93%]
+.....                                                                    [100%]
+77 passed in 0.83s
