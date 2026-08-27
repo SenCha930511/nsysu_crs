@@ -17,3 +17,22 @@ per-depth accepted/reached: #1 2/7 accepted, #2 2/5 accepted, #3 2/3 accepted, #
 worst retries-per-page: 4 (page 5)
 gate: PASS - every page cleared within <=5-attempt budget
 batch complete 2026-08-27 22:19:09 Asia/Taipei
+================================================================================
+captcha gate | batch 2/3 (late-night 2026-08-28 ~02:50) | started 2026-08-28 02:22:11 Asia/Taipei
+cmd: uv run python -m scripts.captcha_gate --pages 7 | provider ddddocr==1.6.1 (pin evidence: qa/05-pin.log)
+pages are independent loop runs against the PUBLIC catalog (no login): dplycourse D0=1151, WKDAY rotating 1..7; captcha accuracy only - row parsing is todo 6 and is deliberately NOT done here
+--------------------------------------------------------------------------------
+page 1 (WKDAY=1): ACCEPTED -> 1 attempts, 2.6s [ok]
+page 2 (WKDAY=2): ACCEPTED -> 1 attempts, 2.3s [ok]
+page 3 (WKDAY=3): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), attempt 3 rejected (wrong-code marker), ACCEPTED -> 4 attempts, 4.4s [ok]
+page 4 (WKDAY=4): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), attempt 3 rejected (wrong-code marker), ACCEPTED -> 4 attempts, 3.8s [ok]
+page 5 (WKDAY=5): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), attempt 3 rejected (wrong-code marker), attempt 4 rejected (wrong-code marker), attempt 5 rejected (wrong-code marker), gave up -> 5 attempts, 1.6s [CAPTCHA-UNSOLVABLE]
+page 6 (WKDAY=6): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), ACCEPTED -> 3 attempts, 3.0s [ok]
+page 7 (WKDAY=7): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), attempt 3 rejected (wrong-code marker), ACCEPTED -> 4 attempts, 2.9s [ok]
+--------------------------------------------------------------------------------
+pages ok: 6/7 | CaptchaUnsolvable: 1
+attempts: total 22, accepted 6 -> per-attempt success rate p = 0.273 (27.3%)
+per-depth accepted/reached: #1 2/7 accepted, #2 0/5 accepted, #3 1/5 accepted, #4 3/4 accepted, #5 0/1 accepted
+worst retries-per-page: 5 (page 5)
+gate: FAIL - page(s) exhausted the 5-attempt budget
+batch complete 2026-08-28 02:22:32 Asia/Taipei
