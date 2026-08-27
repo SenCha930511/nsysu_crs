@@ -1,4 +1,4 @@
-# DESIGN.md — NSYSU Course Wrapper frontend (todo 10 scope)
+# DESIGN.md — NSYSU Course Wrapper frontend (todo 10 + 11 scope)
 
 Read-only core UI: course browser + weekly timetable. This document is the
 token contract for the components under `src/`; later todos (11/12/16) extend
@@ -75,9 +75,39 @@ Bootstrap tokens for everything else: spacing (`g-2`, `mb-1`, `py-*`),
 ## 5. Accepted debt
 
 - **Native title tooltips** instead of Bootstrap JS tooltips (no bootstrap
-  JS bundle imported yet; revisit when modals arrive in todo 11/16).
+  JS bundle imported yet; revisit when modals arrive in todo 16).
 - **Dept datalist** is populated from depts seen in fetched pages (the API
   has no distinct-dept endpoint; typing any exact dept string works).
 - **Credit filter options** likewise accumulate from fetched pages.
-- Desktop-first layout (grid 15×7 needs width); stacked below `lg`
+- **Desktop-first layout** (grid 15×7 needs width); stacked below `lg`
   breakpoints matches the upstream helper's audience.
+- **window.confirm for plan deletion** (todo 11): native confirm instead of
+  a Bootstrap modal; the destructive confirm-token modal in todo 16 will
+  introduce the modal layer properly.
+
+## 6. Todo 11 additions (auth/plans/selected surfaces)
+
+- **Nav header** — `.app-nav-link` pills inside the brand bar; active route
+  is a light-on-brand pill (`rgba(255,255,255,.18)`), no new tokens. Auth
+  corner: student no + outline-light 登出 button, or a 登入 link when anon.
+- **Login card** — centered `card` (`col-md-8 col-lg-5`) + `box-shadow-sm`;
+  notices use `alert-warning` (expired) vs `alert-info` (required) so the
+  two reason states are distinguishable at a glance.
+- **Plan rows** — `.plan-row` mirrors the browser row language; the ACTIVE
+  plan carries the same brand rail as hover (`inset 3px 0 0 var(--crs-brand)`
+  on `--crs-row-hover-bg`). Primary = `StarFill text-warning` (Bootstrap
+  palette), otherwise `Star text-muted`.
+- **Priority rows** — `.priority-row` list-group-styled stack; drag handle
+  is a bare icon button (`color: var(--bs-secondary-color)`), the drag
+  preview glows with the existing `--crs-brand-glow` ring. The number input
+  is a 3rem centered `form-control-sm`.
+- **Selection cards** — `.selection-card` rows grouped under state badges:
+  選上 `text-bg-success`, 登記加選 `text-bg-info`, 失敗 `text-bg-danger`,
+  any new school state `text-bg-secondary`. Cards are quota-agnostic by
+  contract (the sync payload carries no quota numbers).
+- **Unknown-course marker** — plan items / selection rows whose id joins no
+  catalog row show a `text-bg-secondary` 「目錄查無此課」 badge and stay
+  removable; plan hydration renders them as placeholder blocks named
+  「未知課程（已不在課目錄）」so the grid never silently drops a row.
+- **No new CSS custom properties were added** for todo 11 surfaces;
+  everything traces to `--crs-*` or Bootstrap 5 utilities.

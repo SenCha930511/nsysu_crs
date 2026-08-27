@@ -1,58 +1,56 @@
-import { useState } from "react";
-
-import CourseBrowser from "./components/CourseBrowser";
-import DegradeBanner from "./components/DegradeBanner";
-import ScheduleTable from "./components/ScheduleTable";
-import TotalsPanel from "./components/TotalsPanel";
-import { SelectionProvider, useSelection } from "./state/selection";
-
 /**
- * Read-only core (plan todo 10): course browser on the left, weekly
- * timetable on the right. Hover sync (list row <-> grid blocks) is keyed by
- * course id in this shell. Login / server plans (todo 11), export (todo 12)
- * and write paths (todo 16) are deliberately absent.
+ * Routed app (todo 11): the todo-10 read-only core at "/", plus /login,
+ * guarded /plans (multi-plan + 志願序) and /selected (real selections).
+ * Provider nesting: Router > Auth > Selection > PlansSync - plans sync
+ * consumes both the auth status (boot/reset seams) and the selection seam
+ * (hydrate silently, write back on change).
  */
-function Shell() {
-  const { selected, remove } = useSelection();
-  const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
 
-  return (
-    <>
-      <DegradeBanner />
-      <header className="app-header">
-        <h1 className="h5 mb-0 fw-bold text-white">中山選課小幫手</h1>
-        <span className="app-header-sub small">NSYSU Course Wrapper · 115-1</span>
-      </header>
-      <main className="container-fluid px-3 py-3">
-        <div className="row g-3">
-          <div className="col-12 col-lg-7">
-            <CourseBrowser
-              hoveredCourseId={hoveredCourseId}
-              onCourseHover={setHoveredCourseId}
-            />
-          </div>
-          <div className="col-12 col-lg-5">
-            <div className="schedule-side">
-              <TotalsPanel selectedCourses={selected} />
-              <ScheduleTable
-                selectedCourses={selected}
-                hoveredCourseId={hoveredCourseId}
-                onCourseHover={setHoveredCourseId}
-                onCourseRemove={(course) => remove(course.id)}
-              />
-            </div>
-          </div>
-        </div>
-      </main>
-    </>
-  );
-}
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+
+import AppShell from "./components/AppShell";
+import { RequireAuth } from "./components/RequireAuth";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import PlansPage from "./pages/PlansPage";
+import SelectedPage from "./pages/SelectedPage";
+import { AuthProvider } from "./state/auth";
+import { PlansSyncProvider } from "./state/plansSync";
+import { SelectionProvider } from "./state/selection";
 
 function App() {
   return (
-    <SelectionProvider>
-      <Shell />
-    </SelectionProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <SelectionProvider>
+          <PlansSyncProvider>
+            <Routes>
+              <Route element={<AppShell />}>
+                <Route index element={<HomePage />} />
+                <Route path="login" element={<LoginPage />} />
+                <Route
+                  path="plans"
+                  element={
+                    <RequireAuth>
+                      <PlansPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="selected"
+                  element={
+                    <RequireAuth>
+                      <SelectedPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </PlansSyncProvider>
+        </SelectionProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

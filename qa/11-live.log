@@ -1,0 +1,40 @@
+# STEP 0: health + endpoint gate (2026-08-27T21:00:29.705Z)
+[OK] GET /api/health -> 200
+[OK] GET /api/plans (no session) -> 401
+[OK] GET /api/me/selections (no session) -> 401
+# STEP 1: real SSO2 login via the built /login page
+[OK] login succeeded -> /plans
+[OK] session cookie rides same-origin fetches (Secure on localhost) :: me=200
+# STEP 2: create plan 測試志願A (real POST /api/plans; first plan auto-primary)
+[OK] plan created; first plan auto-primary :: [{"name":"測試志願A","is_primary":true}]
+# STEP 3: pick 2 courses from the catalog (autosave PUT to the real plan)
+[OK] two catalog courses autosaved (replace-all PUT) :: items=2
+# STEP 4: drag priority (keyboard) on /plans -> priorities 1..N autosaved
+[OK] drag moved row 2 to the top and assigned 1..2 :: [{"course":"4bcdda14-ed1d-4407-a3d9-cb9030ef69a3","priority":"1"},{"course":"24cec3e3-e53a-47bd-bc33-9e73d54003d4","priority":"2"}]
+[OK] server-side priorities match the dragged order :: [["4bcdda14-ed1d-4407-a3d9-cb9030ef69a3",1],["24cec3e3-e53a-47bd-bc33-9e73d54003d4",2]]
+# STEP 5: 同步我的已選 (real school read; one GET slt_result.asp)
+[OK] real sync shows the 7 live selections :: {"選上":5,"失敗":2}
+sync diff: （新增 7｜移除 0｜未變 0）
+# STEP 6: cleanup - delete 測試志願A; account left clean
+[OK] test plan deleted; zero plans remain :: []
+# STEP 7: logout
+[OK] after logout /api/auth/me -> 401 :: me=401
+# STEP 8: secrecy greps (app + caddy compose logs since run start)
+[CLEAN] raw password in app+caddy logs: 0 matches
+[skip] site session_id value in app+caddy logs: value unavailable
+[CLEAN] raw password in THIS live log: 0 matches
+[skip] site session_id value in THIS live log: value unavailable
+[CLEAN] raw student id in THIS live log: 0 matches
+
+LIVE E2E PASSED
+
+# STEP 8b: supplemental cookie/header secrecy greps over the same captured logs
+[CLEAN] Cookie: header lines in app+caddy logs: 0
+[CLEAN] session_id= cookie fragments in app+caddy logs: 0
+[CLEAN] ASPSESSION* (school jar) fragments in app+caddy logs: 0
+
+# env note: the 1151 catalog (read-only) was re-ingested during QA after an
+# unrelated container recreation wiped the compose volumes' live snapshot:
+# scripts.catalog_live full run at 2026-08-28 04:56->04:59 CST, 141/141 pages,
+# restore 2596 rows, ok=true (compose worker service, one-off, Redis lock released).
+# Stale lock from a first aborted attempt was removed after verifying its owner was dead.

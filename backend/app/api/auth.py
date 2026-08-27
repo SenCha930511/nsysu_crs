@@ -110,7 +110,13 @@ async def post_login(
         lock_minutes=settings.login_lock_minutes,
     )
     if await failure_log.is_locked(student_no):
-        return _error(status.HTTP_429_TOO_MANY_REQUESTS, _ERR_TOO_MANY)
+        # The login page (todo 11) shows the fixed lock window as the retry
+        # hint; the IP-limiter 429 above has no per-user message.
+        return _error(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            _ERR_TOO_MANY,
+            retry_after_minutes=settings.login_lock_minutes,
+        )
 
     try:
         result: Sso2Result = await login_sso2(

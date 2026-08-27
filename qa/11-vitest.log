@@ -1,0 +1,22 @@
+# qa/11-vitest.log - todo 11 frontend flows (guards/priority/plans-state)
+# date: 2026-08-27T20:32:58Z
+
+## npx vitest run
+ RUN  v4.1.11 /Users/timmy/Code/nsysu_crs/frontend
+
+
+ Test Files  6 passed (6)
+      Tests  62 passed (62)
+   Start at  04:32:58
+   Duration  133ms (transform 150ms, setup 0ms, import 209ms, tests 23ms, environment 0ms)
+
+
+## npm run build (tsc --noEmit && vite build)
+transforming...
+✓ 2150 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.44 kB │ gzip:   0.32 kB
+dist/assets/index-Bl2LKc6c.css  235.39 kB │ gzip:  32.23 kB
+dist/assets/index-Be2HVguy.js   344.15 kB │ gzip: 112.16 kB
+✓ built in 1.26s

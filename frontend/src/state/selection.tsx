@@ -37,6 +37,12 @@ export interface SelectionContextValue {
   remove: (courseId: string) => void;
   toggle: (course: CourseOut) => void;
   clear: () => void;
+  /**
+   * Whole-list replacement (server-plan hydration, todo 11). ``silent``
+   * suppresses the SELECTION_CHANGED_EVENT so the plans sync layer does not
+   * echo a hydration straight back into a PUT.
+   */
+  replace: (courses: CourseOut[], opts?: { silent?: boolean }) => void;
 }
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
@@ -115,6 +121,7 @@ function dispatchChanged(courses: readonly CourseOut[]): void {
 export function SelectionProvider({ children }: { children: ReactNode }) {
   const [selected, setSelected] = useState<CourseOut[]>(hydrateInitial);
   const skipFirstEvent = useRef(true);
+  const silentNext = useRef(false);
 
   // Persist + emit on every post-mount change (hydration itself is not a change).
   useEffect(() => {
@@ -123,6 +130,10 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       return;
     }
     persist(selected);
+    if (silentNext.current) {
+      silentNext.current = false;
+      return;
+    }
     dispatchChanged(selected);
   }, [selected]);
 
@@ -158,9 +169,16 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     setSelected([]);
   }, []);
 
+  const replace = useCallback((courses: CourseOut[], opts?: { silent?: boolean }) => {
+    if (opts?.silent === true) {
+      silentNext.current = true;
+    }
+    setSelected(courses);
+  }, []);
+
   const value = useMemo<SelectionContextValue>(
-    () => ({ selected, isSelected, add, remove, toggle, clear }),
-    [selected, isSelected, add, remove, toggle, clear],
+    () => ({ selected, isSelected, add, remove, toggle, clear, replace }),
+    [selected, isSelected, add, remove, toggle, clear, replace],
   );
 
   return (

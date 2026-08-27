@@ -1,9 +1,15 @@
 /**
- * Typed client for the read-only catalog API (plan todo 7):
- *   GET /api/courses      - paged course query with filters
- *   GET /api/catalog/meta - ingest health banner source
- * Anonymous read access; no auth headers. All other methods/endpoints are
- * out of scope for todo 10 (server plans/login arrive in todo 11).
+ * Typed client for the wrapper API:
+ *   GET  /api/courses, /api/catalog/meta      - anonymous catalog reads (todo 7)
+ *   POST /api/auth/login|logout, GET /api/auth/me - site session (todo 8)
+ *   GET/POST/PATCH/DELETE /api/plans[...]     - multi-plan CRUD (todo 11)
+ *   GET  /api/me/selections, POST .../sync    - real selections (todo 9)
+ *
+ * 401 policy seam: any non-login 401 means the site session is gone (or the
+ * school jar expired - SELCRS_EXPIRED). The route layer registers one global
+ * handler (soft logout + redirect to /login?reason=expired); it decides from
+ * its own auth state whether the user was ever logged in, so a never-logged-in
+ * visitor's 401 (e.g. the initial /api/auth/me probe) does not redirect.
  */
 
 export interface CourseOut {
@@ -60,39 +66,121 @@ export interface CourseQuery {
   page?: number; // 1-based, 50 rows per page (server-fixed)
 }
 
+export interface PlanOut {
+  id: string;
+  name: string;
+  is_primary: boolean;
+  item_count: number;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface PlanItemOut {
+  course_id: string;
+  priority: number | null;
+  added_at: string;
+  /** Embedded catalog row; null for accepted-but-unknown ids. */
+  course: CourseOut | null;
+}
+
+export interface SelectionItem {
+  code: string | null;
+  course_no: string | null;
+  state: string;
+  dept: string;
+  name: string;
+  credit: number | null;
+  compulsory_elective: string;
+  teacher: string;
+  room_text: string;
+  points_priority: number | null;
+  stage: string;
+  year_semest_note: string;
+  times: string | null;
+  room: string | null;
+  unknown: boolean;
+  course_id: string | null;
+}
+
+export interface SelectionsResponse {
+  synced_at: string | null;
+  items: SelectionItem[];
+}
+
+export interface SelectionSyncResponse {
+  synced_at: string;
+  added: SelectionItem[];
+  removed: SelectionItem[];
+  unchanged: SelectionItem[];
+  items: SelectionItem[];
+}
+
 export class ApiError extends Error {
   readonly status: number;
-  constructor(status: number, detail: string) {
+  readonly detail: string;
+  /** Extra fields from the error body (school_msg, retry_after_minutes, ...). */
+  readonly extras: Record<string, unknown>;
+
+  constructor(status: number, detail: string, extras: Record<string, unknown> = {}) {
     super(`API ${status}: ${detail}`);
     this.name = "ApiError";
     this.status = status;
+    this.detail = detail;
+    this.extras = extras;
   }
 }
 
-async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+export type UnauthorizedHandler = (detail: string, path: string) => void;
+
+let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+export function bindUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler;
+}
+
+interface RequestOptions {
+  method?: string;
+  body?: unknown;
+  signal?: AbortSignal;
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(path, {
-    headers: { Accept: "application/json" },
-    ...(signal !== undefined ? { signal } : {}),
+    method: options.method ?? "GET",
+    headers: {
+      Accept: "application/json",
+      ...(options.body !== undefined
+        ? { "Content-Type": "application/json" }
+        : {}),
+    },
+    ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+    ...(options.signal !== undefined ? { signal: options.signal } : {}),
   });
   if (!response.ok) {
     let detail = response.statusText;
+    let extras: Record<string, unknown> = {};
     try {
       const body: unknown = await response.json();
-      if (
-        typeof body === "object" &&
-        body !== null &&
-        "detail" in body &&
-        typeof (body as { detail: unknown }).detail === "string"
-      ) {
-        detail = (body as { detail: string }).detail;
+      if (typeof body === "object" && body !== null) {
+        const record = body as Record<string, unknown>;
+        if (typeof record.detail === "string") {
+          detail = record.detail;
+          const { detail: _dropped, ...rest } = record;
+          extras = rest;
+        }
       }
     } catch {
       // keep statusText
     }
-    throw new ApiError(response.status, detail);
+    if (response.status === 401 && path !== "/api/auth/login") {
+      unauthorizedHandler?.(detail, path);
+    }
+    throw new ApiError(response.status, detail, extras);
   }
   return (await response.json()) as T;
 }
+
+// ---------- catalog (anonymous) ----------
 
 export function fetchCourses(
   query: CourseQuery,
@@ -121,9 +209,76 @@ export function fetchCourses(
   }
   params.set("page", String(query.page ?? 1));
   const qs = params.toString();
-  return getJson<CoursePage>(`/api/courses?${qs}`, signal);
+  return request<CoursePage>(`/api/courses?${qs}`, signal !== undefined ? { signal } : {});
 }
 
 export function fetchCatalogMeta(signal?: AbortSignal): Promise<CatalogMeta> {
-  return getJson<CatalogMeta>("/api/catalog/meta", signal);
+  return request<CatalogMeta>("/api/catalog/meta", signal !== undefined ? { signal } : {});
+}
+
+// ---------- auth (session cookie is httpOnly; fetch carries it same-origin) ----------
+
+export function login(
+  studentNo: string,
+  password: string,
+): Promise<{ student_no: string }> {
+  return request("/api/auth/login", {
+    method: "POST",
+    body: { student_no: studentNo, password },
+  });
+}
+
+export function logout(): Promise<{ ok: boolean }> {
+  return request("/api/auth/logout", { method: "POST" });
+}
+
+export function fetchMe(signal?: AbortSignal): Promise<{ student_no: string }> {
+  return request("/api/auth/me", signal !== undefined ? { signal } : {});
+}
+
+// ---------- plans (session-gated) ----------
+
+export function fetchPlans(): Promise<PlanOut[]> {
+  return request("/api/plans");
+}
+
+export function createPlan(name: string): Promise<PlanOut> {
+  return request("/api/plans", { method: "POST", body: { name } });
+}
+
+export function patchPlan(
+  planId: string,
+  patch: { name?: string; is_primary?: boolean },
+): Promise<PlanOut> {
+  return request(`/api/plans/${planId}`, { method: "PATCH", body: patch });
+}
+
+export function deletePlan(
+  planId: string,
+): Promise<{ ok: boolean; promoted_plan_id: string | null }> {
+  return request(`/api/plans/${planId}`, { method: "DELETE" });
+}
+
+export function fetchPlanItems(planId: string): Promise<PlanItemOut[]> {
+  return request(`/api/plans/${planId}/items`);
+}
+
+export function putPlanItems(
+  planId: string,
+  items: { course_id: string; priority: number | null }[],
+): Promise<PlanItemOut[]> {
+  return request(`/api/plans/${planId}/items`, {
+    method: "PUT",
+    body: { items },
+  });
+}
+
+// ---------- my selections (session-gated) ----------
+
+export function fetchSelections(): Promise<SelectionsResponse> {
+  return request("/api/me/selections");
+}
+
+export function syncSelections(): Promise<SelectionSyncResponse> {
+  return request("/api/me/selections/sync", { method: "POST" });
 }

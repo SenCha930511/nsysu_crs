@@ -205,8 +205,11 @@ def test_fifth_failure_locks_and_locked_attempts_never_reach_school(harness_fact
 
     # When the 6th attempt arrives it is locally 429-rejected BEFORE school
     blocked = harness.login()
-    # Then: still 5 school calls, still 5 log entries (no append, no call)
-    assert blocked.status_code == 429 and blocked.json() == {"detail": "too_many_attempts"}
+    # Then: still 5 school calls, still 5 log entries (no append, no call);
+    # the body carries the fixed lock window as the UI retry hint (todo 11).
+    assert blocked.status_code == 429
+    assert blocked.json()["detail"] == "too_many_attempts"
+    assert blocked.json()["retry_after_minutes"] == 15
     assert len(harness.school.calls) == 5
     assert harness.redis.zcount_peek("loginfail:M153000024") == 5
 

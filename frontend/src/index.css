@@ -176,3 +176,125 @@ body {
 .totals-panel .badge {
   font-size: 0.85rem;
 }
+
+/* ---- Header nav (todo 11) ---- */
+
+.app-nav {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+}
+
+.app-nav-link {
+  color: var(--crs-brand-light);
+  text-decoration: none;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--bs-border-radius);
+  font-size: 0.9rem;
+  transition: background-color 120ms ease;
+}
+
+.app-nav-link:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.app-nav-link-active {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.18);
+  font-weight: 600;
+}
+
+/* ---- Login card ---- */
+
+.login-card {
+  box-shadow: var(--bs-box-shadow-sm);
+}
+
+/* ---- Plans page ---- */
+
+.plan-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: var(--bs-border-radius);
+  transition: background-color 120ms ease;
+}
+
+.plan-row-active {
+  background-color: var(--crs-row-hover-bg);
+  box-shadow: inset 3px 0 0 var(--crs-brand);
+}
+
+.plan-switch {
+  text-align: left;
+  border: none;
+}
+
+.priority-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--bs-border-color-translucent);
+  border-bottom: none;
+  background: var(--bs-body-bg);
+}
+
+.priority-row:first-child {
+  border-top-left-radius: var(--bs-border-radius);
+  border-top-right-radius: var(--bs-border-radius);
+}
+
+.priority-row:last-child {
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+  border-bottom-left-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
+}
+
+.priority-row-dragging {
+  box-shadow: 0 0 0 3px var(--crs-brand-glow);
+  z-index: 1;
+  position: relative;
+}
+
+.drag-handle {
+  border: none;
+  background: transparent;
+  color: var(--bs-secondary-color);
+  cursor: grab;
+  padding: 0.15rem;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.priority-input {
+  width: 3rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.priority-row-main {
+  min-width: 0;
+  flex: 1;
+}
+
+/* ---- Selected page ---- */
+
+.selection-group {
+  border: 1px solid var(--bs-border-color-translucent);
+  border-radius: var(--bs-border-radius);
+}
+
+.selection-card {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.selection-card:last-child {
+  border-bottom: none;
+}

@@ -1,0 +1,21 @@
+# qa/11-plans-api.log - todo 11 plans API tests (REAL compose Postgres)
+# date: 2026-08-27T20:33:49Z
+
+## DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nsysu_crs uv run pytest tests/test_plans_api.py -v
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 9 items
+
+tests/test_plans_api.py .........                                        [100%]
+
+============================== 9 passed in 1.11s ===============================
+
+## full backend suite (regression incl. todo-8 retry_after_minutes)
+........................................................................ [ 90%]
+........................                                                 [100%]
+
+## full backend suite summary
+240 passed, 66 warnings in 2.75s
