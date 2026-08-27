@@ -199,6 +199,21 @@ def parse_studfun(html: str) -> StudfunDetection:
     )
 
 
+def is_writable(
+    detection: StudfunDetection, *, need_confirmation: bool, first_round_write: bool
+) -> bool:
+    """The shared stage->writable policy (GET /api/stage and todo 14's
+    preview both consume this - the preview must agree with what the student
+    sees on /api/stage, to the letter)."""
+    if need_confirmation:
+        return False
+    if detection.stage == STAGE_ADD_DROP:
+        return True
+    if detection.stage == STAGE_FIRST_ROUND:
+        return first_round_write
+    return False
+
+
 def detect_need_confirmation(form_html: str) -> bool:
     """True when the form page is the 必修課程確認 pre-step gate.
 

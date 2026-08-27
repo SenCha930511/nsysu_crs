@@ -127,7 +127,11 @@ def test_login_success_issues_flagged_cookie_and_parks_selcrs_in_redis(harness_f
 
     # Then the contract holds end to end
     assert response.status_code == 200
-    assert response.json() == {"student_no": "M153000024"}
+    body = response.json()
+    assert body["student_no"] == "M153000024"
+    # todo 14 CSRF: the opaque token echoes in the body (cookie is httpOnly);
+    # its set/rotate/flags semantics live in test_write_csrf.py.
+    assert body["csrf_token"]
     cookie = response.headers["set-cookie"]
     for flag in ("session_id=", "HttpOnly", "Secure", "SameSite=lax", "Path=/"):
         assert flag in cookie, cookie

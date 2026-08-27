@@ -1,0 +1,25 @@
+qa/14-replay.log — todo 14 replay evidence: confirm_token single-use via atomic GETDEL (consume once -> record; second consume -> None == todo-15 409 mapping), plus form-replay integrity: both builders pass every non-D/C/T hidden field of the scraped fixtures through byte-identical (D/C/T slot math aside)
+date: 2026-08-28 06:01 CST  host uv run, no compose contact, no live school traffic
+
+== uv run python -m scripts.qa14_evidence --scenario replay ==
+[OK] replay#1 confirm 消費一次 -> record 取回
+[OK] replay#2 第二次 consume -> None (todo15 對應 409)
+[OK] replay-integrity ssform_provisional.html: 非 D/C/T hidden 全數原樣通過 :: 11 hidden fields verbatim, 45 slot keys owned
+[OK] replay-integrity saddstage5_provisional.html: 非 D/C/T hidden 全數原樣通過 :: 11 hidden fields verbatim, 30 slot keys owned
+  proof: D1/C1/T1=-/M3046243/'' D2/C2/T2=+/GEAE2526/'01'
+RESULT: PASS
+
+== uv run pytest tests/test_write_confirm.py tests/test_write_payload.py tests/test_write_canonical.py tests/test_write_timetable.py -v ==
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 28 items
+
+tests/test_write_confirm.py .....                                        [ 17%]
+tests/test_write_payload.py .........                                    [ 50%]
+tests/test_write_canonical.py ........                                   [ 78%]
+tests/test_write_timetable.py ......                                     [100%]
+
+============================== 28 passed in 0.07s ==============================

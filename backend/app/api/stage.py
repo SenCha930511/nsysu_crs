@@ -37,11 +37,10 @@ from app.selcrs.endpoints import SELCRS_BASE_URL, get_studfun, get_write_form
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
 from app.selcrs.jar import deserialize_cookies
 from app.stage.detect import (
-    STAGE_ADD_DROP,
-    STAGE_FIRST_ROUND,
     StudfunDetection,
     StageParams,
     detect_need_confirmation,
+    is_writable,
     parse_studfun,
 )
 
@@ -76,14 +75,15 @@ def _session_id(request: Request) -> str:
     return session_id
 
 
-def _writable(detection: StudfunDetection, *, need_confirmation: bool, first_round_write: bool) -> bool:
-    if need_confirmation:
-        return False
-    if detection.stage == STAGE_ADD_DROP:
-        return True
-    if detection.stage == STAGE_FIRST_ROUND:
-        return first_round_write
-    return False
+def _writable(
+    detection: StudfunDetection, *, need_confirmation: bool, first_round_write: bool
+) -> bool:
+    # Shared policy: app.stage.detect.is_writable (todo 14 preview mirrors it).
+    return is_writable(
+        detection,
+        need_confirmation=need_confirmation,
+        first_round_write=first_round_write,
+    )
 
 
 @router.get("/api/stage", response_model=StageResponse)

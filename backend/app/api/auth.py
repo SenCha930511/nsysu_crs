@@ -48,6 +48,7 @@ from app.selcrs.endpoints import Sso2Result, login_sso2
 from app.selcrs.errors import SelcrsUnavailable
 from app.selcrs.jar import serialize_cookies
 from app.selcrs.sso2 import Sso2Outcome
+from app.write.csrf import csrf_cookie_name, mint_csrf_token, set_csrf_cookie
 
 router: Final = APIRouter()
 
@@ -146,8 +147,13 @@ async def post_login(
         sliding_ttl=settings.selcrs_session_ttl_sliding,
         hard_ttl=settings.selcrs_session_ttl_hard,
     )
+    # CSRF (todo 14): fresh token every login (rotation); body echoes it
+    # because the cookie itself is httpOnly and JS must echo it as
+    # X-CSRF-Token on /api/write/* - a same-origin channel, never logged.
+    csrf_token = mint_csrf_token()
     response = JSONResponse(
-        status_code=status.HTTP_200_OK, content={"student_no": student_no}
+        status_code=status.HTTP_200_OK,
+        content={"student_no": student_no, "csrf_token": csrf_token},
     )
     response.set_cookie(
         SESSION_COOKIE_NAME,
@@ -157,6 +163,7 @@ async def post_login(
         httponly=True,
         samesite="lax",
     )
+    set_csrf_cookie(response, session_id, csrf_token, ttl=settings.csrf_token_ttl)
     return response
 
 
@@ -171,6 +178,14 @@ async def post_logout(
     response.delete_cookie(
         SESSION_COOKIE_NAME, path="/", secure=True, httponly=True, samesite="lax"
     )
+    if session_id is not None:
+        response.delete_cookie(
+            csrf_cookie_name(session_id),
+            path="/",
+            secure=True,
+            httponly=True,
+            samesite="lax",
+        )
     return response
 
 

@@ -58,6 +58,11 @@ class FakeRedis:
         entry = self._values.get(name)
         return entry[0] if entry is not None else None
 
+    async def getdel(self, name: str) -> str | None:
+        self._purge(name)
+        entry = self._values.pop(name, None)
+        return entry[0] if entry is not None else None
+
     async def set(
         self, name: str, value: str, *, nx: bool = False, ex: int | None = None
     ) -> object:
