@@ -1,0 +1,178 @@
+/*
+ * NSYSU Course Wrapper — frontend tokens & component styles.
+ * Bootstrap 5 utility/token classes are the base system; only the values
+ * Bootstrap does not carry live here, as CSS custom properties:
+ * - --crs-brand / --crs-brand-glow: the timetable hover/selection accent,
+ *   inherited from NSYSUSelectorHelper's WEBSITE_COLOR (#009e96 teal).
+ */
+
+:root {
+  --crs-brand: #009e96;
+  --crs-brand-light: #b2e2df;
+  --crs-brand-glow: rgba(0, 158, 150, 0.25);
+  --crs-weekend-bg: #e9ebef;
+  --crs-conflict-bg: var(--bs-warning-bg-subtle);
+  --crs-row-hover-bg: #f3f8f8;
+}
+
+body {
+  background-color: var(--bs-tertiary-bg);
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background-color: var(--crs-brand);
+}
+
+.app-header-sub {
+  color: var(--crs-brand-light);
+}
+
+/* ---- Weekly timetable grid (ScheduleTable) ---- */
+
+.schedule-side {
+  position: sticky;
+  top: 0.75rem;
+}
+
+.schedule-table {
+  font-size: 0.75rem;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.schedule-table th,
+.schedule-table td {
+  padding: 2px;
+  vertical-align: top;
+}
+
+.schedule-timeslot-col {
+  width: 3.4rem;
+}
+
+.schedule-clock {
+  display: block;
+  font-weight: normal;
+  font-size: 0.6rem;
+  color: var(--bs-secondary-color);
+  white-space: pre-line;
+}
+
+.schedule-weekend {
+  background-color: var(--crs-weekend-bg);
+}
+
+/* ---- Course block inside a grid cell (CourseBlock) ---- */
+
+.course-block {
+  position: relative;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  padding: 2px 4px;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-align: center;
+  cursor: default;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.course-block:last-child {
+  margin-bottom: 0;
+}
+
+.course-block-delete {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--crs-brand-light);
+  color: var(--crs-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.course-block:hover .course-block-delete {
+  visibility: visible;
+}
+
+/* ---- Course browser ---- */
+
+.filter-bar {
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  padding: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.course-list-virtuoso {
+  height: calc(100vh - 15rem);
+  min-height: 20rem;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+}
+
+.course-row {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+  transition: background-color 120ms ease;
+}
+
+.course-row-hovered {
+  background-color: var(--crs-row-hover-bg);
+  box-shadow: inset 3px 0 0 var(--crs-brand);
+}
+
+.course-row-selected {
+  background-color: #e6f5f4;
+}
+
+.course-row-conflict {
+  background-color: var(--crs-conflict-bg);
+}
+
+.time-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0 0.35rem;
+  margin: 0.1rem 0.2rem 0.1rem 0;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+}
+
+.quota-badges .badge {
+  margin-right: 0.25rem;
+}
+
+.course-row-main {
+  min-width: 0;
+}
+
+/* ---- Totals panel ---- */
+
+.totals-panel {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.totals-panel .badge {
+  font-size: 0.85rem;
+}

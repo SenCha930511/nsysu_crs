@@ -1,0 +1,71 @@
+# qa/10-live.log — todo 10 Playwright live QA
+# date: 2026-08-28 (Asia/Taipei)
+# target: http://localhost/ (Caddy serving the vite-built frontend; FastAPI app
+#         backed by the real 1151 catalog snapshot, row_count=2596)
+# browser: Brave (Chrome/150.0.7871.182) via Playwright MCP over CDP
+#          (system Chrome stub broken -> Brave + throwaway profile, zero installs)
+# viewport: 1440x900 -> 1440x1230 for the full-grid screenshot
+
+## 1. Load /
+- page title: 中山選課小幫手 · NSYSU Course Wrapper (new bundle via Caddy)
+- waitForSelector('.course-row') OK
+- counter: "共 2596 門" (full catalog loaded via GET /api/courses, 50/page)
+- virtualization: 6 .course-row nodes in DOM for 2596 results (react-virtuoso)
+- grid: 0 .course-block (empty selection)
+
+## 2. Add course #1 (first row)
+- course: 人工智慧導論 (id 45009dac-…, time tags ["四567"], quota 限10 登14 上10 額滿)
+- click button[data-action="add"] -> 已加入
+- grid: 3 blocks at 四5/四6/四7 (correct cell mapping)
+- totals: 已選 1 門 / 總學分 3 / 總時數 3 節
+
+## 3. Drive filters to surface a guaranteed conflict
+- select 星期=4 (Thursday), 節次=5 -> GET /api/courses?weekday=4&period=5
+- counter: "共 148 門"
+- row[0] is the just-picked 人工智慧導論 itself (selected tint, NOT conflict tint
+  - correct: picked rows are not flagged against themselves)
+
+## 4. Conflict row: warning tint + tooltip naming the clashing course
+- row[1] = 智慧人機互動, class contains "course-row-conflict" (warning tint)
+- title tooltip: 與已選 「人工智慧導論」（四567） 衝堂   <- names course + shared slots
+- hover row -> grid blocks of the clashing course turn brand teal rgb(0,158,150)
+- click add -> 9 -> 6 blocks; totals: 已選 2 門 / 總學分 6 / 總時數 6 節 / 衝堂 1 組
+
+## 5. Add course #3 (non-conflicting)
+- 清除條件 -> counter back to 共 2596 門
+- row[1] 基礎程式設計（C++） ["一234"] added
+- totals: 已選 3 門 / 總學分 9 / 總時數 9 節 / 衝堂 1 組
+- grid: 9 blocks; Thu-5/6/7 cells each stack TWO blocks (人工智慧導論 + 智慧人機互動)
+
+## 6. Hover sync (dedicated assertions, both directions)
+- hover 人工智慧導論 row -> row class gains course-row-hovered AND exactly its
+  3 blocks become rgb(0,158,150); the other 6 keep their hash colors
+- hover 基礎程式設計（C++） grid block -> its list row gains course-row-hovered
+- BLOCK-DELETE affordance visible on block hover (trash bubble, top-left)
+
+## 7. Screenshot evidence
+- qa/10-grid.png (1440x1230 desktop viewport, full 15x7 grid)
+  - tbody rows: 15, weekday columns: 7
+  - order verified: A,1..4,B,5..9,C,D,E,F with exact clock labels
+  - weekend columns 六/日 shaded
+
+## 8. localStorage persistence (round-trip)
+- localStorage['nsysu_crs_selected'] =
+  [{"courseId":"45009dac-…"},{"courseId":"41f6aded-…"},{"courseId":"39c8a8b5-…"}]
+  (minimal {courseId}[] shape, exactly the todo-11 seam)
+- nsysu_crs_selected_cache: 3 entries (course snapshots for rehydration)
+- reload -> waitForSelector('.course-block') OK
+- blocks after reload: 9; totals after reload: 已選 3 門 / 9 學分 / 9 節 / 衝堂 1 組
+- PASS: selections persist from localStorage
+
+## 9. Degrade banner via route intercept
+- page.route('**/api/catalog/meta') -> fulfill {ok:false, updated_at:2026-08-27T19:12:23Z, row_count:2596}
+- reload -> [data-testid="degrade-banner"] visible:
+  "課程資料為 2026/8/28 03:12:23 更新（學校目錄暫時無法同步）"
+  (UTC snapshot -> Asia/Taipei local rendering)
+- grid still renders all 9 blocks; catalog rows still load (2596) while degraded
+- qa/10-banner.png captured
+
+## 10. Recovery + console health
+- unroute meta -> reload -> banner gone (0 matches), 9 blocks intact
+- console errors during whole session: NONE

@@ -1,0 +1,28 @@
+# qa/10-vitest.log - todo 10 frontend core
+# date: 2026-08-27T19:55:58Z
+
+## npx vitest run
+
+ RUN  v4.1.11 /Users/timmy/Code/nsysu_crs/frontend
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  03:55:58
+   Duration  98ms (transform 68ms, setup 0ms, import 88ms, tests 9ms, environment 0ms)
+
+
+## npm run build (tsc --noEmit && vite build)
+
+> nsysu-crs-frontend@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 2124 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.44 kB │ gzip:  0.33 kB
+dist/assets/index-DsJkiAsJ.css  233.61 kB │ gzip: 31.87 kB
+dist/assets/index-DTJP3I5D.js   227.24 kB │ gzip: 73.88 kB
+✓ built in 1.11s
