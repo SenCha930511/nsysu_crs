@@ -51,6 +51,14 @@ Test vectors (locked in `tests/test_selcrs_transform.py`; reproducible via
 
 ## Big5-HKSCS decoding policy
 
+> **Superseded 2026-08-27** by per-response charset resolution: this "all
+> school text is big5hkscs" assumption was live-disproved (the 115-1
+> login/read pages are UTF-8 - see *live-verified (115-1)* below).
+> `decode.py` now sniffs the charset per response (Content-Type header →
+> `<meta>` in the first 2 KiB → strict-UTF-8 heuristic), with big5hkscs as
+> the heuristic FALLBACK; every declared `big5` still upgrades to big5hkscs.
+> The HKSCS round-trip guarantee and `errors='replace'` below are unchanged.
+
 - All school text responses are decoded as **big5hkscs** with
   `errors='replace'` (`backend/app/selcrs/decode.py`), never plain `big5`.
   Rationale `[LIVE-in-tests]`: teacher/student names contain HKSCS-only
@@ -198,6 +206,29 @@ Student id masked in-place as `M153****24` inside the slt_result fixture.
   WRONG for these endpoints as of 2026-08-27; the decode layer must detect
   encoding per response (e.g. trust the page's declared charset / try UTF-8
   first) before the SSO2 classifier and the slt_result/Studfun parsers can be
-  trusted live. Catalog endpoints (`validcode.asp`/`dplycourse.asp`) were NOT
-  in tonight's read-only scope: their encoding remains **UNVERIFIED** (the
-  validcode BMP itself is binary and unaffected).
+   trusted live. Catalog endpoints (`validcode.asp`/`dplycourse.asp`) were NOT
+   in tonight's read-only scope: their encoding remains **UNVERIFIED** (the
+   validcode BMP itself is binary and unaffected).
+
+### follow-up 2026-08-27 23:0x (Asia/Taipei) - encoding fix + ONE public catalog probe
+
+- **(g) catalog encoding probe**: CONFIRMED for the probed path —
+  `POST /menu1/dplycourse.asp` (public endpoint) with a deliberately-wrong
+  `ValidCode=0000`, no login, no captcha spent, ONE request through the
+  adapter (legacy TLS + captcha lane) → HTTP **200**, **180-byte** refusal
+  page, `Content-Type: text/html` (no charset param), detected charset
+  **utf-8** under the new per-response sniffing
+  (`backend/scripts/encoding_demo.py --probe-catalog`). Caveat: a 180-byte
+  refusal page may be ASCII-only, and ASCII is a UTF-8 subset (heuristic
+  branch) — this confirms the refusal page, while captcha-passed dplycourse
+  CONTENT pages remain **UNVERIFIED** until a gate batch records one.
+  Evidence `qa/03-encoding.log`.
+- **(h) decoding-policy fix landed**: `backend/app/selcrs/decode.py`
+  resolves charset per response (header → `<meta>` 2 KiB → strict-UTF-8
+  else big5hkscs; declared `big5` upgrades to big5hkscs). The finding-(f)
+  mis-classification is pinned by fixture tests: the live UTF-8 fail page →
+  CREDENTIAL-FAIL, synthetic big5hkscs fail page → CREDENTIAL-FAIL, UTF-8
+  302 → SUCCESS, big5hkscs marker-less page → `SelcrsUnavailable`
+  (`tests/test_selcrs_encoding_fixtures.py`,
+  `tests/test_selcrs_charset.py`); HKSCS round-trip + marker tolerance
+  unchanged. Full suite **120 passed** (`qa/03-encoding.log`).

@@ -6,7 +6,7 @@ school traffic goes through this boundary so throttling, redirects, TLS and
 decoding policies hold globally.
 """
 
-from app.selcrs.decode import SELCRS_TEXT_ENCODING, decode_body
+from app.selcrs.decode import SELCRS_TEXT_ENCODING, decode_body, resolve_charset
 from app.selcrs.endpoints import (
     SELCRS_BASE_URL,
     CatalogQuery,
@@ -46,4 +46,5 @@ __all__ = [
     "login_sso2",
     "post_write",
     "request_school",
+    "resolve_charset",
 ]

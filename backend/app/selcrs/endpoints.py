@@ -32,7 +32,7 @@ SELCRS_BASE_URL: Final = "https://selcrs.nsysu.edu.tw"
 def _require_200(response: httpx.Response, endpoint_name: str) -> str:
     if response.status_code != 200:
         raise SelcrsUnavailable(f"{endpoint_name} responded HTTP {response.status_code}")
-    return decode_body(response.content)
+    return decode_body(response.content, response.headers.get("content-type"))
 
 
 @dataclass(frozen=True, slots=True)

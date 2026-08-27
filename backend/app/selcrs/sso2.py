@@ -9,13 +9,17 @@ Contract (plan todo 3):
 - ``UNKNOWN``:          anything else. Raised as ``SelcrsUnavailable``; feeds
                         the breaker, NEVER the per-account lockout.
 
-Marker tolerance: the school emits the failure line in Big5 with varying
+Marker tolerance: the school emits the failure line with varying
 full/half-width punctuation and unpredictable wrappers
 (``<script>alert('...')</script>`` or ``<meta http-equiv=refresh ...>``).
 We therefore compare on a NORMALIZED body: NFKC flattens full-width
 punctuation/digits to half-width, then all whitespace is dropped, then a
 plain substring search. Wrapper HTML cannot hide the marker because it only
 adds text around it, not inside it.
+
+Encoding: the comparison runs on decoded Unicode AFTER per-response charset
+resolution (decode.py), never on raw bytes - the 115-1 live failure page is
+UTF-8 while Big5-era variants are big5hkscs; both classify identically.
 """
 
 import unicodedata
@@ -27,9 +31,10 @@ import httpx
 from app.selcrs.decode import decode_body
 from app.selcrs.errors import SelcrsUnavailable
 
-# The school's human-readable SSO2 failure phrase (Big5). Archaeological
-# source: .omo/drafts research ("錯密碼回 200 含「學號碼密碼不符」");
-# live-captured confirmation tracked for todo 4 (sso2_fail_*.html).
+# The school's human-readable SSO2 failure phrase. CONFIRMED live 2026-08-27
+# inside the UTF-8 failure page 「資料錯誤﹕學號碼密碼不符，請重新登錄！」
+# (docs/verified-facts.md, live-verified (115-1) (f); earlier source was
+# archaeological, .omo/drafts research "錯密碼回 200 含「學號碼密碼不符」").
 FAILURE_MARKER: Final = "學號碼密碼不符"
 
 
@@ -47,7 +52,7 @@ def _normalize_body(text: str) -> str:
 
 def classify_sso2_response(response: httpx.Response) -> Sso2Outcome:
     """Classify one raw SSO2 POST response. UNKNOWN raises SelcrsUnavailable."""
-    body = decode_body(response.content)
+    body = decode_body(response.content, response.headers.get("content-type"))
     if (
         response.status_code == 302
         and "main_frame" in response.headers.get("location", "")

@@ -1,0 +1,21 @@
+qa/03-encoding.log - per-response charset sniffing fix (selcrs adapter)
+date: 2026-08-27 23:06:20 CST
+
+== 1. full regression: cd backend && uv run pytest ==
+
+........................................................................ [ 60%]
+................................................                         [100%]
+120 passed in 0.90s
+
+== 2. demo: uv run python -m scripts.encoding_demo --probe-catalog ==
+
+fixture                        detected   classification
+-----------------------------  ---------  ----------------------------------------
+sso2_fail_live_1151.html       utf-8      SSO2 CREDENTIAL_FAIL
+sso2_fail_big5_synthetic.html  big5hkscs  SSO2 CREDENTIAL_FAIL
+slt_result_live_1151.html      utf-8      page decode OK ('課程名稱' present, no U+FFFD)
+studfun_closed_live_1151.html  utf-8      page decode OK ('選課關閉' present, no U+FFFD)
+catalog probe: POST /menu1/dplycourse.asp (public, deliberately-wrong ValidCode=0000, ONE request)
+  -> HTTP 200, 180 bytes
+  -> content-type: text/html
+  -> detected charset: utf-8
