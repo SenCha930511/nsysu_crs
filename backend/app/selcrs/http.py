@@ -11,10 +11,12 @@ following invariants cannot drift per call-site:
   server-connect path, so every client gets a dedicated SSL context with
   ``OP_LEGACY_SERVER_CONNECT`` and ``DEFAULT@SECLEVEL=1`` injected.
 - Throttling: the host is fragile at peak (course-selection windows), so a
-  shared process-wide semaphore caps concurrent school requests at 2. The ONE
-  exception is captcha-parented traffic: each catalog run solves its own
-  validcode images serially, so captcha requests hold a separate
-  semaphore-of-1 AND must carry a per-run cookie jar (see endpoints.py).
+  shared process-wide semaphore caps concurrent school requests at 2 - and
+  that cap covers EVERY call the adapter makes to the school. Captcha-related
+  traffic (validcode fetches and the dplycourse POSTs that spend the solved
+  code) additionally funnels through a separate semaphore-of-1, so it is
+  fully serialized process-wide while still counting against the global cap;
+  each catalog run must also carry a per-run cookie jar (see endpoints.py).
 - Transport-level backoff only: TimeoutException/TransportError retry with
   waits of exactly 1, 2, 4, 8, 16s (= 5 attempts), then SelcrsUnavailable.
   HTTP-level outcomes (404/500/unknown bodies) are NOT retried here - they are
@@ -48,7 +50,10 @@ MAX_ATTEMPTS: Final = len(BACKOFF_SECONDS)
 
 # Process-wide gates. Semaphores are module-level by design: the cap must be
 # shared across every concurrent call-site (web request handlers, catalog
-# ingest worker runs) to bound total pressure on the school.
+# ingest worker runs) to bound total pressure on the school. The captcha
+# gate is taken ON TOP of the school gate (never instead of it), so total
+# school concurrency stays <= 2 even while captcha traffic is traffic-shaped
+# down to 1.
 _SCHOOL_SEMAPHORE: Final = anyio.Semaphore(2)
 _CAPTCHA_SEMAPHORE: Final = anyio.Semaphore(1)
 
@@ -105,26 +110,49 @@ async def request_school(
     """One school request under throttle + transport-only backoff.
 
     ``captcha_parented=True`` routes through the semaphore-of-1 lane reserved
-    for validcode-parented requests (catalog run captcha fetches share a
-    per-run jar, and must never interleave with another run's captcha).
-    Every other school request shares the global cap of 2.
+    for captcha-related requests (validcode fetches and the dplycourse POSTs
+    that spend the solved code; each catalog run carries its own jar and runs
+    must never interleave). The captcha lane is taken ON TOP of the global
+    school cap of 2, so every call the adapter makes to the school - captcha
+    or not - counts against that global cap.
     """
-    semaphore = _CAPTCHA_SEMAPHORE if captcha_parented else _SCHOOL_SEMAPHORE
-    async with semaphore:
-        last_error: httpx.TransportError | None = None
-        for wait_seconds in BACKOFF_SECONDS:
-            try:
-                return await client.request(
-                    method, url, data=data, params=params, headers=headers
-                )
-            except httpx.TransportError as exc:
-                # Transport-level only: DNS/connect/TLS/timeout/pool issues.
-                # (TimeoutException is a subclass of TransportError.)
-                last_error = exc
-                await _sleep(wait_seconds)
-        raise SelcrsUnavailable(
-            f"school unreachable after {MAX_ATTEMPTS} transport attempts"
-        ) from last_error
+    if captcha_parented:
+        async with _CAPTCHA_SEMAPHORE, _SCHOOL_SEMAPHORE:
+            return await _request_with_backoff(
+                client, method, url, data=data, params=params, headers=headers
+            )
+    async with _SCHOOL_SEMAPHORE:
+        return await _request_with_backoff(
+            client, method, url, data=data, params=params, headers=headers
+        )
+
+
+async def _request_with_backoff(
+    client: httpx.AsyncClient,
+    method: str,
+    url: str,
+    *,
+    data: dict[str, str] | None,
+    params: dict[str, str | int] | None,
+    headers: dict[str, str] | None,
+) -> httpx.Response:
+    """Attempt loop. Semaphore(s) are held by the caller for the whole loop,
+    including backoff waits: a school that is timing out must not be hit by a
+    fresh request while another is mid-backoff against it."""
+    last_error: httpx.TransportError | None = None
+    for wait_seconds in BACKOFF_SECONDS:
+        try:
+            return await client.request(
+                method, url, data=data, params=params, headers=headers
+            )
+        except httpx.TransportError as exc:
+            # Transport-level only: DNS/connect/TLS/timeout/pool issues.
+            # (TimeoutException is a subclass of TransportError.)
+            last_error = exc
+            await _sleep(wait_seconds)
+    raise SelcrsUnavailable(
+        f"school unreachable after {MAX_ATTEMPTS} transport attempts"
+    ) from last_error
 
 
 __all__ = [

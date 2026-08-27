@@ -71,10 +71,15 @@ Every school client gets a dedicated `ssl.SSLContext` with
 
 ## Throttle / backoff numbers
 
-- Global cap: **2 concurrent** school requests (process-wide semaphore);
-  the school front-end is fragile at selection-window peak.
-- Captcha lane exception: **semaphore of 1** (fully serialized) + per-run
-  cookie jar; concurrent catalog runs never share a jar (asserted in tests).
+- Global cap: **2 concurrent** school requests (process-wide semaphore)
+  covering **every** adapter call to the school; the school front-end is
+  fragile at selection-window peak.
+- Captcha-related requests (validcode fetches **and** the `dplycourse.asp`
+  POSTs that spend the solved code) additionally hold a **separate
+  semaphore of 1** (fully serialized process-wide), taken **on top of** —
+  never instead of — the global cap, so school-wide concurrency never
+  exceeds 2. Per-run cookie jar: concurrent catalog runs never share a jar
+  (all asserted in `tests/test_selcrs_throttle.py`).
 - Transport errors/timeouts: attempts with waits exactly **1, 2, 4, 8, 16s**
   (5 attempts), then `SelcrsUnavailable`. HTTP-level outcomes are not retried
   here (business retry policy = todo 15).

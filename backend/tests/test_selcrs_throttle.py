@@ -7,7 +7,12 @@ import anyio
 import httpx
 import pytest
 
-from app.selcrs.endpoints import fetch_validcode, get_slt_result
+from app.selcrs.endpoints import (
+    CatalogQuery,
+    fetch_catalog_page,
+    fetch_validcode,
+    get_slt_result,
+)
 from tests.conftest import StubTransport
 
 
@@ -101,3 +106,47 @@ async def test_concurrent_validcode_runs_get_isolated_jars() -> None:
     second_value = second.cookies.get("ASPSESSION")
     assert first_value is not None and second_value is not None
     assert first_value != second_value
+
+
+@pytest.mark.anyio
+async def test_captcha_lane_still_counts_against_the_global_cap_of_two() -> None:
+    # Given ordinary school calls racing two concurrent catalog runs' captcha
+    # fetches (all sharing the one fragile school host)
+    transport = _ConcurrencyProbe(body=b"BM-fake-bitmap")
+
+    # When the mixed traffic fires at once
+    async with anyio.create_task_group() as tasks:
+        for _ in range(4):
+            tasks.start_soon(
+                functools.partial(get_slt_result, httpx.Cookies(), transport=transport)
+            )
+        for _ in range(2):
+            tasks.start_soon(lambda: fetch_validcode(transport=transport))
+
+    # Then total in-flight to the school still never exceeded the global cap:
+    # the captcha lane shapes its own traffic down to 1 ON TOP of the shared
+    # cap of 2, never in addition to it
+    assert transport.max_active == 2
+
+
+@pytest.mark.anyio
+async def test_catalog_page_posts_ride_the_serialized_captcha_lane() -> None:
+    # Given two catalog runs posting dplycourse pages concurrently (each POST
+    # spends the captcha answer bound to its own run jar)
+    transport = _ConcurrencyProbe(body=b"<html>page</html>")
+
+    # When both POSTs race
+    async with anyio.create_task_group() as tasks:
+        for _ in range(2):
+            tasks.start_soon(
+                functools.partial(
+                    fetch_catalog_page,
+                    CatalogQuery(year_sem="1151"),
+                    validcode="4242",
+                    cookies=httpx.Cookies(),
+                    transport=transport,
+                )
+            )
+
+    # Then captcha-related requests never overlapped (semaphore of 1)
+    assert transport.max_active == 1

@@ -1,5 +1,6 @@
-=== qa/03-backoff.log - transport timeout x5 -> waits 1,2,4,8,16 -> SelcrsUnavailable ===
-$ uv run pytest -v tests/test_selcrs_backoff.py
+# qa/03-backoff.log — 5 transport failures -> waits exactly [1,2,4,8,16]s -> SelcrsUnavailable (plan todo 3)
+# cmd: cd backend && uv run pytest tests/test_selcrs_backoff.py -v
+
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
 rootdir: /Users/timmy/Code/nsysu_crs/backend
@@ -10,4 +11,3 @@ collected 3 items
 tests/test_selcrs_backoff.py ...                                         [100%]
 
 ============================== 3 passed in 0.02s ===============================
-exit=0

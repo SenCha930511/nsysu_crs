@@ -210,9 +210,10 @@ async def fetch_catalog_page(
 
     The caller (catalog pipeline, todo 6) owns pagination + parsing and must
     pass the SAME per-run jar that solved ``validcode`` (captcha answer binds
-    to that jar's session). Captcha-parented lane is not used here: only the
-    validcode image fetch is; this POST is an ordinary catalog request under
-    the global cap.
+    to that jar's session). This POST spends the captcha answer, so it rides
+    the captcha-parented lane: fully serialized process-wide and still inside
+    the global school cap of 2 (plan: 驗證碼相關請求 per-run jar +
+    semaphore=1 全程序列化).
     """
     async with build_client(cookies=cookies, transport=transport) as client:
         response = await request_school(
@@ -220,6 +221,7 @@ async def fetch_catalog_page(
             "POST",
             f"{SELCRS_BASE_URL}/menu1/dplycourse.asp",
             data=_catalog_form(query, validcode),
+            captcha_parented=True,
         )
     return _require_200(response, "dplycourse.asp")
 

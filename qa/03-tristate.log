@@ -1,20 +1,28 @@
-=== qa/03-tristate.log - SSO2 tri-state + guardrail (plan todo 3 QA happy) ===
-$ uv run pytest -v tests/test_selcrs_tristate.py tests/test_selcrs_guardrail.py
+# qa/03-tristate.log — SSO2 tri-state on mock transport (plan todo 3)
+# cmd: cd backend && uv run pytest tests/test_selcrs_tristate.py -v
+# asserts: SUCCESS needs 302+Location~main_frame+Set-Cookie (each load-bearing),
+#          marker variants (full/half-width punctuation, alert/meta-refresh wrappers),
+#          UNKNOWN shapes -> SelcrsUnavailable, follow_redirects=False pinned.
+
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
 rootdir: /Users/timmy/Code/nsysu_crs/backend
 configfile: pyproject.toml
 plugins: anyio-4.14.2
-collected 12 items
+collected 10 items
 
-tests/test_selcrs_tristate.py ..........                                 [ 83%]
-tests/test_selcrs_guardrail.py ..                                        [100%]
+tests/test_selcrs_tristate.py ..........                                 [100%]
 
-============================== 12 passed in 0.06s ==============================
-exit=0
+============================== 10 passed in 0.06s ==============================
 
-=== [LIVE] note: real validcode BMP fetched via this adapter 2026-08-27 ===
-GET https://selcrs.nsysu.edu.tw/menu1/validcode.asp (no login) -> qa/03-validcode.bmp
--rw-r--r--@ 1 timmy  staff  8982 Aug 27 21:08 ../qa/03-validcode.bmp
-first 16 bytes:
-00000000: 424d 1623 0000 0000 0000 3600 0000 2800  BM.#......6...(.
+# --- [LIVE] evidence note (2026-08-27, Asia/Taipei) ---
+# qa/03-validcode.bmp: real validcode BMP fetched LIVE through the adapter
+# (app.selcrs.fetch_validcode, no login, fresh anonymous jar) from
+# https://selcrs.nsysu.edu.tw/menu1/validcode.asp?epoch=<ms>
+# -> HTTP 200, 8982 bytes, BMP 124x24 24-bit (BM magic verified).
+# School cookies issued: ASPSESSIONID*, BIGipServerPL-Selcrs, TS01*
+# (names only - values never logged). Legacy TLS context
+# (OP_LEGACY_SERVER_CONNECT + DEFAULT@SECLEVEL=1) handshake OK live.
+
+# --- Full suite cross-check ---
+44 passed in 0.88s
