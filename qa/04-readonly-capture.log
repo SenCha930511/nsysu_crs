@@ -1,0 +1,66 @@
+[22:44:17] === read-only live verification round (115-1) ===
+[22:44:17] credentials memory-only for M153****24; outbound calls are SSO2 login POSTs and pure GET reads only (see ledger at end).
+[22:44:17] -> CALL 1: POST https://selcrs.nsysu.edu.tw/menu4/Studcheck_sso2.asp (login #1, real credentials)
+[22:44:17]   SSO2 #1 wire: HTTP 302; Location=main_frame.asp; Set-Cookie names=['ASPSESSIONIDSQCBTRCT', 'BIGipServerPL-Selcrs', 'TS01b534ab']
+[22:44:17]   SSO2 #1 outcome=success
+[22:44:17] -> CALL 2: GET https://selcrs.nsysu.edu.tw/menu4/Studfun.asp
+[22:44:17] saved studfun_closed_live_1151.html (+.txt), 1734 bytes
+[22:44:17]   Studfun write link: NONE (selection closed); marker fragments: none
+[22:44:17] -> CALL 3: GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp
+[22:44:18] saved slt_result_live_1151.html (+.txt), 16523 bytes (student id masked in-place)
+[22:44:18]   slt_result live header cells (14): ['��訾�� ����炏', '蝟餅���ê̌', '隤脰��', '撟渡��', '隤脩�衤誨蝣�', '隤脩�见�滨迂', '暺墧彍 敹烾��', '��擧挾', '摮詨��', '摮詨僑 ���', '敹���� 靽�', '���隤� ��坔葦', '��坔恕', '隤芣��']
+[22:44:18]   provisional header cells (7): ['狀態', '課程名稱', '學分', '必選修', '教師', '上課時間', '備註']; match=False
+[22:44:18] -> CALL 4: POST https://selcrs.nsysu.edu.tw/menu4/Studcheck_sso2.asp (login #2, real credentials)
+[22:44:18]   SSO2 #2 wire: HTTP 302; Location=main_frame.asp; Set-Cookie names=['ASPSESSIONIDQQDASQCS', 'BIGipServerPL-Selcrs', 'TS01b534ab']
+[22:44:18]   SSO2 #2 outcome=success
+[22:44:18] -> CALL 5: GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp with login #1's cookie (after login #2)
+[22:44:19]   slt_result probe (jar1 after login #2): HTTP 200 -> alive
+[22:44:19]   continuing TTL probes on jar1
+[22:45:17] -> CALL 6: GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp at ~+60s after active login
+[22:45:18]   slt_result probe (~+60s): HTTP 200 -> alive
+[22:47:17] -> CALL 7: GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp at ~+180s after active login
+[22:47:18]   slt_result probe (~+180s): HTTP 200 -> alive
+[22:47:18] -> CALL 8: POST https://selcrs.nsysu.edu.tw/menu4/Studcheck_sso2.asp (deliberately-wrong password, exactly 1 attempt)
+[22:47:18]   SSO2 wrong-pw wire: HTTP 200; Location=-; Set-Cookie names=['ASPSESSIONIDQAACQBQQ', 'BIGipServerPL-Selcrs', 'TS01b534ab']
+[22:47:18] saved sso2_fail_live_1151.html (+.txt), 295 bytes
+[22:47:18]   wrong-password marker 「學號碼密碼不符」 MISSING; fragments: none
+[22:47:18] verified-facts updated (7 probes) under '## live-verified (115-1)'
+[22:47:18] --- OUTBOUND CALL ENUMERATION (all calls this round) ---
+[22:47:18]   1. POST https://selcrs.nsysu.edu.tw/menu4/Studcheck_sso2.asp (login #1, real credentials)
+     read-only because: SSO2 login is the permitted authentication POST; it creates a session and cannot add/drop anything
+[22:47:18]   2. GET https://selcrs.nsysu.edu.tw/menu4/Studfun.asp
+     read-only because: pure read of the write-entry page; no form fields sent
+[22:47:18]   3. GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp
+     read-only because: pure read of the student's selections page
+[22:47:18]   4. POST https://selcrs.nsysu.edu.tw/menu4/Studcheck_sso2.asp (login #2, real credentials)
+     read-only because: permitted SSO2 login POST; probes whether login #1's session is superseded
+[22:47:18]   5. GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp with login #1's cookie (after login #2)
+     read-only because: pure GET read reusing an already-issued session cookie
+[22:47:18]   6. GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp at ~+60s after active login
+     read-only because: pure GET read measuring session liveness over time
+[22:47:18]   7. GET https://selcrs.nsysu.edu.tw/menu4/query/slt_result.asp at ~+180s after active login
+     read-only because: pure GET read measuring session liveness over time
+[22:47:18]   8. POST https://selcrs.nsysu.edu.tw/menu4/Studcheck_sso2.asp (deliberately-wrong password, exactly 1 attempt)
+     read-only because: permitted SSO2 login POST with a known-bad sentinel, run ONCE to record the failure page; it can only be rejected, never select courses
+[22:47:18] total outbound calls: 8 (<=3 SSO2 login POSTs incl. 1 deliberately-wrong; rest pure GET reads)
+
+--- QA EVIDENCE APPENDIX (post-run curation, 2026-08-27 Asia/Taipei) ---
+[note] docs/verified-facts.md '## live-verified (115-1)' was first appended by
+the capture run, then hand-corrected against the saved RAW fixtures because the
+live pages are UTF-8 (not big5hkscs): runtime fragment extraction went through
+the big5hkscs lens and saw mojibake. Statuses (a)-(e) unchanged; (f) refined to
+CONFIRMED with the exact observed failure text (see facts doc). Raw .html bytes
+are ground truth; .txt files are the big5hkscs decodes (mojibake = the evidence
+of the encoding mismatch).
+[leak-check] grep -rnoE '\b[A-Z][0-9]{7}\b' over this log + *_live_1151 fixtures:
+only course codes matched (M3046243 M3046255 M3046327 M3046353 in
+slt_result_live_1151); ZERO unmasked student-id occurrences anywhere in this log.
+[fixtures]
+  backend/tests/fixtures/studfun_closed_live_1151.html (+.txt)  1734 bytes  (b)
+  backend/tests/fixtures/slt_result_live_1151.html (+.txt)     16523 bytes  (c, id masked in-place)
+  backend/tests/fixtures/sso2_fail_live_1151.html (+.txt)        295 bytes  (f)
+
+--- pytest full-suite tail (cd backend && uv run pytest) ---
+........................................................................ [ 70%]
+..............................                                           [100%]
+102 passed in 0.96s

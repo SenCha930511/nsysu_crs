@@ -25,10 +25,16 @@ class ProbeResult:
     finding: str
 
 
-def append_live_section(path: Path, window_name: str, results: Sequence[ProbeResult]) -> None:
+def append_live_section(
+    path: Path,
+    window_name: str,
+    results: Sequence[ProbeResult],
+    *,
+    header: str = LIVE_SECTION_HEADER,
+) -> None:
     text = path.read_text(encoding="utf-8") if path.exists() else "# Verified facts\n"
-    if LIVE_SECTION_HEADER not in text:
-        text = text.rstrip() + f"\n\n{LIVE_SECTION_HEADER}\n"
+    if header not in text:
+        text = text.rstrip() + f"\n\n{header}\n"
     stamp = datetime.now(TAIPEI).strftime("%Y-%m-%d %H:%M")
     block = [f"### capture run {stamp} (Asia/Taipei) - window {window_name}", ""]
     block.extend(f"- **{result.probe}**: {result.status} - {result.finding}" for result in results)

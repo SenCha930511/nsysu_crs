@@ -22,6 +22,7 @@ from pathlib import Path
 from app.selcrs.decode import decode_body
 from app.selcrs.errors import SelcrsError
 from app.selcrs.sso2 import FAILURE_MARKER, Sso2Outcome
+from scripts.capture.creds import Credentials
 from scripts.capture.facts import ProbeResult, append_live_section
 from scripts.capture.formparse import looks_like_login_page
 from scripts.capture.protocol import (
@@ -70,10 +71,15 @@ async def _sso2_fail_capture(ctx: LiveCtx, student_no: str, results: list[ProbeR
         f"標記「{FAILURE_MARKER}」{'命中' if marker_hit else '未命中（請人工檢視）'}"))
 
 
-async def _login_phase(ctx: LiveCtx, results: list[ProbeResult]) -> str | None:
+async def _login_phase(
+    ctx: LiveCtx, results: list[ProbeResult], creds: Credentials | None = None
+) -> str | None:
     """Two SSO2 logins (single-session probe). Returns the student_no, or None to abort."""
-    student_no = getpass.getpass("學號（僅記憶體）: ").strip()
-    password = getpass.getpass("選課密碼（僅記憶體）: ")
+    if creds is not None:
+        student_no, password = creds.student_id, creds.password
+    else:
+        student_no = getpass.getpass("學號（僅記憶體）: ").strip()
+        password = getpass.getpass("選課密碼（僅記憶體）: ")
     ctx.t0 = time.monotonic()
     outcome1, _raw1, jar1 = await sso2_attempt(student_no, password)
     ctx.journal.log(f"SSO2 #1 outcome={outcome1}")
@@ -107,6 +113,7 @@ async def run_capture(
     fixtures_dir: Path = FIXTURES_DIR,
     qa_dir: Path = QA_DIR,
     facts_path: Path = FACTS_PATH,
+    creds: Credentials | None = None,
 ) -> int:
     """Full interactive capture. Returns a process exit code."""
     journal = Journal()
@@ -116,7 +123,7 @@ async def run_capture(
     try:
         journal.log(f"=== todo-4 live capture | window {window.name} ===")
         journal.log("學號與密碼僅存在於記憶體；任何檔案/log 都不會出現它們或 cookie 值。")
-        student_no = await _login_phase(ctx, results)
+        student_no = await _login_phase(ctx, results, creds)
         if student_no is None:
             return 1
         await read_only_captures(ctx, results)
