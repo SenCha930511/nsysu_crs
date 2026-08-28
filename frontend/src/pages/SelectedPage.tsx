@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import { ArrowRepeat, BookmarkCheck } from "react-bootstrap-icons";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowRepeat, BookmarkCheck, CalendarWeek } from "react-bootstrap-icons";
 
 import { ApiError, fetchSelections, syncSelections } from "../lib/api";
 import type { SelectionItem } from "../lib/api";
+import ScheduleTable from "../components/ScheduleTable";
+import { buildSelectionGridCourses } from "../lib/selectionGrid";
 
 const STATE_ORDER = ["選上", "登記加選", "失敗"];
 const STATE_BADGE: Record<string, string> = {
@@ -116,6 +118,11 @@ function SelectedPage() {
       .finally(() => setSyncing(false));
   }, [syncing]);
 
+  const { courses: gridCourses, unplaced: unplacedCourses } = useMemo(
+    () => buildSelectionGridCourses(items),
+    [items],
+  );
+
   const groups = STATE_ORDER.map((state) => ({
     state,
     rows: items.filter((item) => item.state === state),
@@ -166,6 +173,35 @@ function SelectedPage() {
               <div className="alert alert-warning py-2 px-3 small rounded-3 mb-3" role="alert">
                 {errorText}
               </div>
+            )}
+
+            {!loading && syncedAt !== null && gridCourses.length > 0 && (
+              <section className="mb-3.5" aria-label="本學期週課表">
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <CalendarWeek className="text-teal-600" size={18} />
+                  <span className="fw-bold text-dark small" style={{ fontSize: "0.88rem" }}>
+                    本學期週課表
+                  </span>
+                  <span className="badge text-bg-light border rounded-pill font-monospace">
+                    {gridCourses.length} 門
+                  </span>
+                </div>
+                <ScheduleTable
+                  selectedCourses={gridCourses}
+                  hoveredCourseId={null}
+                  onCourseHover={() => undefined}
+                  onCourseRemove={() => undefined}
+                  readOnly
+                />
+                {unplacedCourses.length > 0 && (
+                  <div className="alert alert-warning py-1.5 px-3 small rounded-3 mt-2 mb-0" role="alert">
+                    {unplacedCourses.length} 門「選上」課程的時間資料無法解析，僅列於下方清單。
+                  </div>
+                )}
+                <p className="text-muted small mb-0 mt-1">
+                  僅呈現「選上」課程；唯讀預覽，加退選請至送單中心。
+                </p>
+              </section>
             )}
 
             {loading ? (
