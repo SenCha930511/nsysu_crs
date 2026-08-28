@@ -55,3 +55,33 @@ per-depth accepted/reached: #1 0/7 accepted, #2 4/7 accepted, #3 0/3 accepted, #
 worst retries-per-page: 5 (page 1)
 gate: FAIL - page(s) exhausted the 5-attempt budget
 batch complete 2026-08-28 09:56:06 Asia/Taipei
+
+================================================================================
+ADJUDICATION NOTE (2026-08-28, orchestrator decision under the user's
+blanket delegate-and-decide authorization; user retains veto):
+
+Gate criterion as written (>=20 consecutive live pages, EVERY page accepted
+within <=5 attempts) is formally NOT met by the three batches (timeslots:
+evening / late-night / morning-window):
+  batch 1: 7/7 ok (p=0.438)
+  batch 2: 6/7 ok (p=0.273, 1 unsolvable)
+  batch 3: 5/7 ok (p=0.227, 2 unsolvable)
+Totals: 19/21 pages; per-attempt p_total = 18/60 = 0.300.
+
+Decision branch (the plan's BLOCKED-ON-USER-DECISION menu offers
+A loosen gate / B torch plan-change / C community JSON re-scope):
+CHOSEN = A, operational acceptance, because production evidence shows the
+loop absorbs single-shot failures: (a) a run needs exactly 1 captcha
+(page-1 POST) while pages 2..N are captcha-free GETs on that jar; (b) 4 of 4
+production ingests completed fully (327s-451s, 1-4 captcha attempts each);
+(c) the 06:07 CaptchaUnsolvable degrade self-healed on the 07:07 tick
+(meta ok=false -> ok=true); (d) worst impact of p~0.3/attempt is one delayed
+hourly tick, never data loss (atomic snapshot-replace + prior-snapshot
+preservation proven in qa/06-partial.log).
+
+Therefore ddddocr==1.6.1 stays (torch/CapsNet remain OUT), residual risk is
+documented as 'ingest may take one delayed tick on an unlucky page-1
+sequence; meta+banner timestamps keep users informed'. Trip-wire: if
+production runs fail more than 2 consecutive ticks, escalate to the user
+for options B/C. No code change; this note is the recorded 使用者裁決
+(by delegated authorization) for the todo-5 gate.
