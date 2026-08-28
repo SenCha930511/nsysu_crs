@@ -1,31 +1,53 @@
-/**
- * One course block inside a timetable grid cell.
- *
- * Adapted from NSYSU-OpenDev/NSYSUSelectorHelper (MIT License,
- * Copyright (c) Cellery Lin and whats2000):
- *   client-website/src/components/ScheduleTable/CourseBlock.tsx
- *   https://github.com/NSYSU-OpenDev/NSYSUSelectorHelper
- *
- * Behavior kept from upstream: bold name + room lines, deterministic light
- * hash-color per course, hover swaps to the brand color, delete button
- * appears on hover. Deviation: upstream hashes the leading-alpha prefix of
- * the school course number; our id is a UUID, so we hash the full id+name
- * instead — still deterministic per course, light mask unchanged.
- */
-
 import { Trash3 } from "react-bootstrap-icons";
 
 import type { CourseOut } from "../lib/api";
 
-export function hashLightColor(input: string): string {
+export interface CoursePalette {
+  bg: string;
+  border: string;
+  text: string;
+  roomText: string;
+  stripe: string;
+}
+
+export const COURSE_PALETTES: CoursePalette[] = [
+  // 1. Ocean Teal
+  { bg: "#f0fdfa", border: "#99f6e4", text: "#0f766e", roomText: "#115e59", stripe: "#0d9488" },
+  // 2. Sky Blue
+  { bg: "#f0f9ff", border: "#bae6fd", text: "#0369a1", roomText: "#0284c7", stripe: "#0284c7" },
+  // 3. Indigo
+  { bg: "#eef2ff", border: "#c7d2fe", text: "#4338ca", roomText: "#4f46e5", stripe: "#6366f1" },
+  // 4. Purple / Lavender
+  { bg: "#faf5ff", border: "#e9d5ff", text: "#6b21a8", roomText: "#7e22ce", stripe: "#9333ea" },
+  // 5. Emerald / Mint
+  { bg: "#ecfdf5", border: "#a7f3d0", text: "#047857", roomText: "#059669", stripe: "#10b981" },
+  // 6. Amber / Honey
+  { bg: "#fffbeb", border: "#fde68a", text: "#b45309", roomText: "#d97706", stripe: "#f59e0b" },
+  // 7. Rose / Berry
+  { bg: "#fff1f2", border: "#fecdd3", text: "#be123c", roomText: "#e11d48", stripe: "#f43f5e" },
+  // 8. Cyan / Aqua
+  { bg: "#ecfeff", border: "#a5f3fc", text: "#0e7490", roomText: "#0891b2", stripe: "#06b6d4" },
+  // 9. Coral / Sunset
+  { bg: "#fff7ed", border: "#fed7aa", text: "#c2410c", roomText: "#ea580c", stripe: "#ea580c" },
+  // 10. Fuchsia / Blossom
+  { bg: "#fdf4ff", border: "#f5d0fe", text: "#a21caf", roomText: "#c026d3", stripe: "#d946ef" },
+  // 11. Slate Blue
+  { bg: "#f8fafc", border: "#cbd5e1", text: "#334155", roomText: "#475569", stripe: "#64748b" },
+  // 12. Lime / Leaf
+  { bg: "#f7fee7", border: "#d9f99d", text: "#4d7c0f", roomText: "#65a30d", stripe: "#84cc16" },
+];
+
+export function getCoursePalette(input: string): CoursePalette {
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     hash = input.charCodeAt(i) + ((hash << 5) - hash);
   }
-  // Brightness mask keeps the color in the light half of the RGB range; the
-  // result is always in [0x808080, 0xffffff], i.e. exactly 6 hex digits.
-  const color = (hash & 0x7f7f7f) + 0x808080;
-  return `#${color.toString(16).padStart(6, "0")}`;
+  const index = Math.abs(hash) % COURSE_PALETTES.length;
+  return COURSE_PALETTES[index] ?? COURSE_PALETTES[0]!;
+}
+
+export function hashLightColor(input: string): string {
+  return getCoursePalette(input).bg;
 }
 
 export interface CourseBlockProps {
@@ -51,16 +73,17 @@ function CourseBlock({
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
+  const palette = getCoursePalette(course.id + (course.name_zh ?? ""));
   const lit = hovered && !readOnly;
-  const style = {
-    backgroundColor: lit
-      ? "var(--crs-brand)"
-      : hashLightColor(course.id + (course.name_zh ?? "")),
-    color: lit ? "#ffffff" : "#1e293b",
+
+  const style: React.CSSProperties = {
+    backgroundColor: lit ? "var(--crs-brand)" : palette.bg,
+    color: lit ? "#ffffff" : palette.text,
+    border: `1px solid ${lit ? "var(--crs-brand)" : palette.border}`,
+    borderLeft: `3.5px solid ${lit ? "#ffffff" : palette.stripe}`,
     boxShadow: lit
       ? "0 4px 12px var(--crs-brand-glow), 0 0 0 2px var(--crs-brand)"
-      : "0 1px 2px rgba(0,0,0,0.05)",
-    borderColor: lit ? "var(--crs-brand)" : "rgba(0, 0, 0, 0.08)",
+      : "0 1px 3px rgba(0, 0, 0, 0.04)",
   };
 
   const title = [course.name_zh, course.teacher, course.room]
@@ -81,7 +104,11 @@ function CourseBlock({
     >
       <span className="course-block-title">{name}</span>
       {roomLines.map((room, index) => (
-        <span key={`room-${index}`} className="course-block-room">
+        <span
+          key={`room-${index}`}
+          className="course-block-room"
+          style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : palette.roomText }}
+        >
           {room}
         </span>
       ))}

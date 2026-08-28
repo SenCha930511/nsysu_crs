@@ -35,8 +35,8 @@ function AppShell() {
     <div className="min-vh-100 d-flex flex-column">
       <DegradeBanner />
       
-      {/* Floating Island App Bar */}
-      <div className="floating-navbar-container">
+      {/* Top App Bar */}
+      <div className="studio-header-wrapper">
         <header className="floating-navbar">
           {/* Brand & Semester */}
           <div className="d-flex align-items-center gap-2">
@@ -122,7 +122,7 @@ function AppShell() {
       </div>
 
       {/* Main Studio Canvas */}
-      <main className="container-fluid px-3 px-md-4 flex-grow-1 mx-auto" style={{ maxWidth: "1440px", width: "100%" }}>
+      <main className="studio-main-canvas flex-grow-1">
         <Outlet />
       </main>
 

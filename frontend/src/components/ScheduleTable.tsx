@@ -102,27 +102,25 @@ function ScheduleTable({
         </div>
       )}
 
-      {/* Weekday toggle bar (only in interactive mode) */}
-      {!readOnly && (
-        <div className="d-flex justify-content-end mb-1 px-1">
-          <div className="schedule-view-toggler">
-            <button
-              type="button"
-              className={`view-toggle-btn ${!showWeekends ? "active" : ""}`}
-              onClick={() => setShowWeekends(false)}
-            >
-              週一至五
-            </button>
-            <button
-              type="button"
-              className={`view-toggle-btn ${showWeekends ? "active" : ""}`}
-              onClick={() => setShowWeekends(true)}
-            >
-              完整一週 (含週末)
-            </button>
-          </div>
+      {/* Weekday toggle bar */}
+      <div className="d-flex justify-content-end mb-1 px-1">
+        <div className="schedule-view-toggler">
+          <button
+            type="button"
+            className={`view-toggle-btn ${!showWeekends ? "active" : ""}`}
+            onClick={() => setShowWeekends(false)}
+          >
+            週一至五
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-btn ${showWeekends ? "active" : ""}`}
+            onClick={() => setShowWeekends(true)}
+          >
+            完整一週 (含週末)
+          </button>
         </div>
-      )}
+      </div>
 
       <div className="table-responsive">
         <table className="studio-schedule-table table text-center align-middle mb-0">

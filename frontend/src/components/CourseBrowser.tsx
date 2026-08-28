@@ -300,84 +300,81 @@ export default function CourseBrowser({
             }
           }}
         >
-          <div className="card-top-row">
-            <div className="flex-grow-1 min-w-0">
-              <div className="d-flex align-items-center gap-1.5 flex-wrap mb-1">
-                <span className="card-course-name">{courseName(course)}</span>
-                {course.dept && (
-                  <span className="card-course-dept">{course.dept}</span>
-                )}
-                {course.credit !== null && (
-                  <span className="badge bg-teal-50 text-teal-800 border border-teal-200" style={{ fontSize: "0.68rem" }}>
-                    {course.credit} 學分
-                  </span>
-                )}
-                <span
-                  className={`badge ${
-                    course.compulsory ? "badge-compulsory" : "badge-elective"
-                  }`}
-                  style={{ fontSize: "0.68rem" }}
-                >
-                  {course.compulsory ? "必修" : "選修"}
-                </span>
-                {course.english && (
-                  <span className="badge badge-emi" style={{ fontSize: "0.65rem" }}>EMI</span>
-                )}
-              </div>
-
-              {course.name_en && (
-                <div className="text-muted small text-truncate mb-1" style={{ fontSize: "0.75rem" }}>
-                  {course.name_en}
-                </div>
+          {/* Row 1: Title, Badges & Quota Pill */}
+          <div className="d-flex align-items-center justify-content-between gap-2 min-w-0">
+            <div className="d-flex align-items-center gap-2 min-w-0 flex-grow-1 overflow-hidden">
+              <span className="card-course-name text-truncate me-1">{courseName(course)}</span>
+              {course.dept && (
+                <span className="card-course-dept flex-shrink-0">{course.dept}</span>
               )}
-
-              {metaParts.length > 0 && (
-                <div className="card-meta-line">{metaParts.join(" · ")}</div>
+              {course.credit !== null && (
+                <span className="badge bg-teal-50 text-teal-800 border border-teal-200 flex-shrink-0" style={{ fontSize: "0.68rem" }}>
+                  {course.credit}學分
+                </span>
               )}
-
-              <div className="card-time-badges">
-                {tags.map((tag) => (
-                  <span key={tag} className="card-time-tag">
-                    {tag}
-                  </span>
-                ))}
-                {tags.length === 0 && !invalid && (
-                  <span className="text-muted small" style={{ fontSize: "0.72rem" }}>無固定上課時間</span>
-                )}
-                {invalid && (
-                  <span className="badge text-bg-danger" style={{ fontSize: "0.68rem" }}>時間資料異常</span>
-                )}
-              </div>
-            </div>
-
-            {/* Right Side: Quota & Action Button */}
-            <div className="d-flex flex-column align-items-end justify-content-between flex-shrink-0 gap-2">
-              <div className="card-quota-bar-wrapper">
-                <span className={`quota-status-pill ${full ? "quota-status-full" : "quota-status-available"}`}>
-                  {full ? "額滿" : `餘 ${num(remaining)}`}
-                </span>
-                <span className="text-muted font-monospace" style={{ fontSize: "0.68rem" }}>
-                  (登 {num(course.select_n)} / 限 {num(course.restrict)})
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className={`btn btn-card-toggle ${
-                  picked
-                    ? "btn-danger shadow-sm"
-                    : "btn-brand shadow-sm"
+              <span
+                className={`badge flex-shrink-0 ${
+                  course.compulsory ? "badge-compulsory" : "badge-elective"
                 }`}
-                data-action={picked ? "remove" : "add"}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggle(course);
-                }}
+                style={{ fontSize: "0.68rem" }}
               >
-                {picked ? <Check2 size={14} /> : <PlusLg size={12} />}
-                <span>{picked ? "已在課表" : "加入課表"}</span>
-              </button>
+                {course.compulsory ? "必修" : "選修"}
+              </span>
+              {course.english && (
+                <span className="badge badge-emi flex-shrink-0" style={{ fontSize: "0.65rem" }}>EMI</span>
+              )}
             </div>
+
+            <div className="card-quota-bar-wrapper flex-shrink-0">
+              <span className={`quota-status-pill ${full ? "quota-status-full" : "quota-status-available"}`}>
+                {full ? "額滿" : `餘 ${num(remaining)}`}
+              </span>
+              <span className="text-muted font-monospace d-none d-sm-inline" style={{ fontSize: "0.68rem" }}>
+                ({num(course.select_n)}/{num(course.restrict)})
+              </span>
+            </div>
+          </div>
+
+          {/* Row 2: Teacher, Class, Room & English Title */}
+          <div className="card-meta-line text-truncate">
+            {metaParts.length > 0 ? metaParts.join(" · ") : "無詳細開課資訊"}
+            {course.name_en && (
+              <span className="text-muted ms-1 text-truncate opacity-75">· {course.name_en}</span>
+            )}
+          </div>
+
+          {/* Row 3: Time Badges & Add Button */}
+          <div className="d-flex align-items-center justify-content-between gap-2 min-w-0 pt-0.5">
+            <div className="card-time-badges min-w-0 overflow-hidden text-nowrap flex-grow-1">
+              {tags.map((tag) => (
+                <span key={tag} className="card-time-tag">
+                  {tag}
+                </span>
+              ))}
+              {tags.length === 0 && !invalid && (
+                <span className="text-muted small" style={{ fontSize: "0.72rem" }}>無固定時段</span>
+              )}
+              {invalid && (
+                <span className="badge text-bg-danger" style={{ fontSize: "0.68rem" }}>時間異常</span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              className={`btn btn-card-toggle flex-shrink-0 ${
+                picked
+                  ? "btn-danger shadow-sm"
+                  : "btn-brand shadow-sm"
+              }`}
+              data-action={picked ? "remove" : "add"}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle(course);
+              }}
+            >
+              {picked ? <Check2 size={13} /> : <PlusLg size={11} />}
+              <span>{picked ? "已在課表" : "加入課表"}</span>
+            </button>
           </div>
         </div>
       );

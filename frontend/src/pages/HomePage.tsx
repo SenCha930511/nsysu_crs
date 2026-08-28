@@ -40,16 +40,7 @@ function HomePage() {
 
   return (
     <div className="row g-3">
-      {/* Left Pane: Course Discovery Studio */}
-      <div className="col-12 col-xl-5">
-        <CourseBrowser
-          hoveredCourseId={hoveredCourseId}
-          onCourseHover={setHoveredCourseId}
-          onCoursePreview={setPreviewCourse}
-        />
-      </div>
-
-      {/* Right Pane: Smart Schedule Canvas & Timetable */}
+      {/* Left Pane: Smart Schedule Canvas & Timetable */}
       <div className="col-12 col-xl-7">
         <div className="schedule-canvas-pane">
           {/* Canvas Header */}
@@ -84,6 +75,15 @@ function HomePage() {
             isDownloadingPng={pngState === "busy"}
           />
         </div>
+      </div>
+
+      {/* Right Pane: Course Discovery Studio */}
+      <div className="col-12 col-xl-5">
+        <CourseBrowser
+          hoveredCourseId={hoveredCourseId}
+          onCourseHover={setHoveredCourseId}
+          onCoursePreview={setPreviewCourse}
+        />
       </div>
     </div>
   );

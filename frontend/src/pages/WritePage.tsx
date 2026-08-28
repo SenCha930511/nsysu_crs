@@ -1079,9 +1079,8 @@ function WritePage() {
   }, [loadStage]);
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-12 col-lg-10">
-        <div className="card shadow-sm border-0 rounded-4 mb-3">
+    <div className="w-100 pb-4">
+      <div className="card shadow-sm border-0 rounded-4 mb-3">
           <div className="card-body p-4">
             <h2 className="h5 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
               <Send className="text-teal-600" size={18} />
@@ -1180,7 +1179,6 @@ function WritePage() {
             onConfirm={submitBatch}
           />
         )}
-      </div>
     </div>
   );
 }

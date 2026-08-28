@@ -44,6 +44,9 @@
   --studio-transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   --studio-transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Unified Expansive Layout Metric */
+  --studio-max-width: 1720px;
+
   /* Status Colors */
   --crs-conflict-bg: #fffbeb;
   --crs-conflict-border: #fef08a;
@@ -91,7 +94,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ==========================================================================
    1. Brand & Utility Classes
-   ========================================================================== */
+   ========================================================================= */
 
 .btn-brand {
   background: var(--crs-brand-gradient);
@@ -145,28 +148,36 @@ h1, h2, h3, h4, h5, h6 {
    2. Floating Island Header Navigation
    ========================================================================== */
 
-.floating-navbar-container {
+.studio-header-wrapper,
+.studio-main-canvas {
+  width: 100%;
+  max-width: var(--studio-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.studio-header-wrapper {
   position: sticky;
   top: 0.6rem;
   z-index: 1030;
-  padding: 0 0.8rem;
   margin-bottom: 0.8rem;
 }
 
 .floating-navbar {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
-  padding: 0.5rem 0.9rem;
+  padding: 0.5rem 1.1rem;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: var(--radius-xl);
   box-shadow: var(--studio-shadow-md);
-  max-width: 1440px;
-  margin: 0 auto;
 }
 
 .brand-badge-logo {
@@ -410,8 +421,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .studio-course-card {
-  margin: 0.4rem 0.65rem;
-  padding: 0.7rem 0.85rem;
+  margin: 0.35rem 0.65rem;
+  padding: 0.65rem 0.85rem;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: var(--radius-md);
@@ -419,6 +430,11 @@ h1, h2, h3, h4, h5, h6 {
   transition: var(--studio-transition);
   position: relative;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 98px;
+  height: 98px;
 }
 
 .studio-course-card:hover {
@@ -451,6 +467,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   color: #0f172a;
   line-height: 1.3;
+  margin-right: 0.4rem;
 }
 
 .card-course-dept {
@@ -700,14 +717,15 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   border-radius: var(--radius-sm);
   margin-bottom: 2px;
-  padding: 3px 5px;
-  font-size: 0.7rem;
-  line-height: 1.2;
-  text-align: center;
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-align: left;
   cursor: default;
   transition: var(--studio-transition);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .course-block:last-child {
@@ -722,7 +740,7 @@ h1, h2, h3, h4, h5, h6 {
 .course-block-title {
   display: block;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
@@ -731,9 +749,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .course-block-room {
   display: block;
-  font-size: 0.62rem;
-  opacity: 0.85;
-  margin-top: 1px;
+  font-size: 0.64rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.9;
 }
 
 .course-block-delete {
@@ -848,11 +869,16 @@ h1, h2, h3, h4, h5, h6 {
   background: #ffffff;
   border: 1.5px solid var(--studio-border);
   border-radius: var(--radius-lg);
-  padding: 0.9rem;
+  padding: 0.85rem 1rem;
   box-shadow: var(--studio-shadow-xs);
   transition: var(--studio-transition);
   position: relative;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 108px;
+  height: 108px;
 }
 
 .plan-deck-card:hover {
@@ -938,10 +964,30 @@ h1, h2, h3, h4, h5, h6 {
    7. Selection Status Page (/selected)
    ========================================================================== */
 
+.selected-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-full);
+  padding: 0.32rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--studio-text-main);
+  transition: var(--studio-transition);
+}
+
+.selected-stat-chip:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: var(--studio-shadow-xs);
+}
+
 .selection-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .selection-card {
