@@ -641,10 +641,10 @@ function JobPanel({
   const banner = jobTerminalBanner(job);
 
   return (
-    <section className="card" data-testid="job-panel">
-      <div className="card-body">
+    <section className="card shadow-sm border-0 rounded-4 mb-4" data-testid="job-panel">
+      <div className="card-body p-4">
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          <h2 className="h6 fw-bold mb-0">送單進度</h2>
+          <h2 className="h5 fw-bold mb-0 text-dark">送單進度</h2>
           <span className={`badge text-bg-${statusCopy.tone}`} data-testid="job-status">
             {statusCopy.label}
           </span>

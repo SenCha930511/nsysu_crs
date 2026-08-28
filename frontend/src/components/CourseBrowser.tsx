@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import {
   Check2,
-  Filter,
   PlusLg,
   Search,
+  Sliders,
   XLg,
 } from "react-bootstrap-icons";
 
@@ -19,12 +19,13 @@ import {
 } from "../config/timeslots";
 import { useSelection } from "../state/selection";
 
-const PAGE_SIZE = 50; // server-fixed (plan todo 7)
+const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
 
 export interface CourseBrowserProps {
   hoveredCourseId: string | null;
   onCourseHover: (courseId: string | null) => void;
+  onCoursePreview?: (course: CourseOut | null) => void;
 }
 
 interface Filters {
@@ -48,6 +49,14 @@ const EMPTY_FILTERS: Filters = {
   weekday: "",
   period: "",
 };
+
+const CATEGORIES = [
+  { key: "all", label: "全部課程" },
+  { key: "compulsory", label: "必修" },
+  { key: "elective", label: "選修" },
+  { key: "english", label: "EMI 英語授課" },
+  { key: "available", label: "尚有名額" },
+];
 
 function filtersToQuery(filters: Filters, page: number): CourseQuery {
   const query: CourseQuery = { page };
@@ -110,11 +119,14 @@ function num(value: number | null): string {
 export default function CourseBrowser({
   hoveredCourseId,
   onCourseHover,
+  onCoursePreview,
 }: CourseBrowserProps) {
   const { selected, isSelected, toggle } = useSelection();
 
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [items, setItems] = useState<CourseOut[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -169,7 +181,7 @@ export default function CourseBrowser({
     [],
   );
 
-  // Debounce the free-text search box into the filter state.
+  // Debounce free-text search
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setFilters((prev) =>
@@ -181,7 +193,7 @@ export default function CourseBrowser({
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
-  // Reload from page 1 whenever the committed filters change.
+  // Reload on filters change
   useEffect(() => {
     loadPage(filters, 1, false);
   }, [filters, loadPage]);
@@ -197,8 +209,6 @@ export default function CourseBrowser({
     (patch: Partial<Filters>) => {
       setFilters((prev) => {
         const next = { ...prev, ...patch };
-        // The API rejects period without weekday: clearing the day also
-        // clears the period so the two selects never drift apart.
         if (next.weekday === "") next.period = "";
         return next;
       });
@@ -206,14 +216,27 @@ export default function CourseBrowser({
     [],
   );
 
+  const handleCategorySelect = (key: string) => {
+    setSelectedCategory(key);
+    if (key === "all") {
+      updateFilter({ compulsory: "", english: "" });
+    } else if (key === "compulsory") {
+      updateFilter({ compulsory: "true", english: "" });
+    } else if (key === "elective") {
+      updateFilter({ compulsory: "false", english: "" });
+    } else if (key === "english") {
+      updateFilter({ english: "true", compulsory: "" });
+    }
+  };
+
   const resetFilters = useCallback(() => {
     setSearchInput("");
+    setSelectedCategory("all");
     setFilters(EMPTY_FILTERS);
   }, []);
 
   const deptOptions = useMemo(
     () => [...knownDepts.current].sort(),
-    // optionVersion bumps whenever a fetched page contributes a new option.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [optionVersion],
   );
@@ -257,114 +280,118 @@ export default function CourseBrowser({
         course.teacher,
       ].filter((part) => part !== null && part !== "");
 
-      const rowClass = [
-        "course-row",
-        picked ? "course-row-selected" : "",
-        clashTip !== undefined && !picked ? "course-row-conflict" : "",
-        hovered ? "course-row-hovered" : "",
-      ]
-        .filter((cls) => cls !== "")
-        .join(" ");
-
       return (
         <div
-          className={rowClass}
+          className={`studio-course-card ${picked ? "is-selected" : ""} ${
+            clashTip !== undefined && !picked ? "is-conflict" : ""
+          } ${hovered ? "is-hovered" : ""}`}
           data-course-id={course.id}
           title={picked ? undefined : clashTip}
-          onMouseEnter={() => onCourseHover(course.id)}
-          onMouseLeave={() => onCourseHover(null)}
+          onMouseEnter={() => {
+            onCourseHover(course.id);
+            if (onCoursePreview && !picked) {
+              onCoursePreview(course);
+            }
+          }}
+          onMouseLeave={() => {
+            onCourseHover(null);
+            if (onCoursePreview) {
+              onCoursePreview(null);
+            }
+          }}
         >
-          <div className="d-flex justify-content-between align-items-start gap-3">
-            <div className="course-row-main flex-grow-1">
-              <div className="course-title">
-                <span>{courseName(course)}</span>
+          <div className="card-top-row">
+            <div className="flex-grow-1 min-w-0">
+              <div className="d-flex align-items-center gap-1.5 flex-wrap mb-1">
+                <span className="card-course-name">{courseName(course)}</span>
                 {course.dept && (
-                  <span className="course-dept-tag">{course.dept}</span>
+                  <span className="card-course-dept">{course.dept}</span>
                 )}
-                {course.name_en !== null && course.name_en !== "" && (
-                  <span className="text-muted fw-normal small">({course.name_en})</span>
-                )}
-              </div>
-              {metaParts.length > 0 && (
-                <div className="course-meta">{metaParts.join(" · ")}</div>
-              )}
-              {invalid && (
-                <span className="badge text-bg-danger me-1">時間資料異常</span>
-              )}
-              <div className="course-row-tags d-flex align-items-center flex-wrap gap-1 mt-1">
-                {tags.map((tag) => (
-                  <span key={tag} className="time-tag">
-                    {tag}
+                {course.credit !== null && (
+                  <span className="badge bg-teal-50 text-teal-800 border border-teal-200" style={{ fontSize: "0.68rem" }}>
+                    {course.credit} 學分
                   </span>
-                ))}
-                {tags.length === 0 && !invalid && (
-                  <span className="text-muted small">無固定上課時間</span>
                 )}
-              </div>
-            </div>
-            <div className="course-row-side text-end flex-shrink-0">
-              <div className="mb-1.5 d-flex justify-content-end align-items-center gap-1 flex-wrap">
                 <span
                   className={`badge ${
                     course.compulsory ? "badge-compulsory" : "badge-elective"
                   }`}
+                  style={{ fontSize: "0.68rem" }}
                 >
                   {course.compulsory ? "必修" : "選修"}
                 </span>
-                <span className="badge text-bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
-                  {course.credit === null ? "學分–" : `${course.credit} 學分`}
-                </span>
                 {course.english && (
-                  <span className="badge badge-emi">EMI</span>
+                  <span className="badge badge-emi" style={{ fontSize: "0.65rem" }}>EMI</span>
                 )}
               </div>
-              <div className="quota-badge-group justify-content-end mb-2" aria-label="名額">
-                <span className="quota-pill quota-pill-restrict" title="人數上限">
-                  限 {num(course.restrict)}
-                </span>
-                <span className="quota-pill quota-pill-reg" title="登記人數">
-                  登 {num(course.select_n)}
-                </span>
-                <span className="quota-pill quota-pill-sel" title="已選上人數">
-                  上 {num(course.selected_n)}
-                </span>
-                <span
-                  className={`quota-pill ${full ? "quota-pill-full" : "quota-pill-remaining"}`}
-                  title="剩餘名額"
-                >
+
+              {course.name_en && (
+                <div className="text-muted small text-truncate mb-1" style={{ fontSize: "0.75rem" }}>
+                  {course.name_en}
+                </div>
+              )}
+
+              {metaParts.length > 0 && (
+                <div className="card-meta-line">{metaParts.join(" · ")}</div>
+              )}
+
+              <div className="card-time-badges">
+                {tags.map((tag) => (
+                  <span key={tag} className="card-time-tag">
+                    {tag}
+                  </span>
+                ))}
+                {tags.length === 0 && !invalid && (
+                  <span className="text-muted small" style={{ fontSize: "0.72rem" }}>無固定上課時間</span>
+                )}
+                {invalid && (
+                  <span className="badge text-bg-danger" style={{ fontSize: "0.68rem" }}>時間資料異常</span>
+                )}
+              </div>
+            </div>
+
+            {/* Right Side: Quota & Action Button */}
+            <div className="d-flex flex-column align-items-end justify-content-between flex-shrink-0 gap-2">
+              <div className="card-quota-bar-wrapper">
+                <span className={`quota-status-pill ${full ? "quota-status-full" : "quota-status-available"}`}>
                   {full ? "額滿" : `餘 ${num(remaining)}`}
                 </span>
+                <span className="text-muted font-monospace" style={{ fontSize: "0.68rem" }}>
+                  (登 {num(course.select_n)} / 限 {num(course.restrict)})
+                </span>
               </div>
-              <div>
-                <button
-                  type="button"
-                  className={`btn btn-sm btn-add-course ${
-                    picked
-                      ? "btn-danger shadow-sm"
-                      : "btn-brand"
-                  }`}
-                  data-action={picked ? "remove" : "add"}
-                  onClick={() => toggle(course)}
-                >
-                  {picked ? <Check2 size={15} /> : <PlusLg size={13} />}
-                  <span>{picked ? "已選入" : "加選"}</span>
-                </button>
-              </div>
+
+              <button
+                type="button"
+                className={`btn btn-card-toggle ${
+                  picked
+                    ? "btn-danger shadow-sm"
+                    : "btn-brand shadow-sm"
+                }`}
+                data-action={picked ? "remove" : "add"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggle(course);
+                }}
+              >
+                {picked ? <Check2 size={14} /> : <PlusLg size={12} />}
+                <span>{picked ? "已在課表" : "加入課表"}</span>
+              </button>
             </div>
           </div>
         </div>
       );
     },
-    [isSelected, hoveredCourseId, clashByCourse, onCourseHover, toggle],
+    [isSelected, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview, toggle],
   );
 
   const ListFooter = useCallback(
     () => (
       <div className="py-3 text-center text-muted small">
         {loading
-          ? "載入中…"
+          ? "正在探索課程中…"
           : total === 0
-            ? "查無符合的課程"
+            ? "查無符合的課程條件"
             : items.length < total
               ? `已載入 ${items.length} / ${total} 門課程`
               : `已載入全部 ${total} 門課程`}
@@ -374,35 +401,63 @@ export default function CourseBrowser({
   );
 
   return (
-    <section className="course-browser" aria-label="課程搜尋">
-      <div className="filter-card">
-        <div className="row g-2 align-items-center mb-2">
-          <div className="col-12 col-xl-6">
-            <div className="search-input-wrapper">
-              <Search className="search-icon" />
-              <input
-                type="search"
-                className="form-control search-input"
-                placeholder="搜尋課名、教師姓名或關鍵字…"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                aria-label="搜尋課程"
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  className="search-clear-btn"
-                  onClick={() => setSearchInput("")}
-                  aria-label="清除搜尋"
-                >
-                  <XLg size={12} />
-                </button>
-              )}
-            </div>
+    <section className="course-discovery-pane" aria-label="課程探索中心">
+      {/* Header & Search */}
+      <div className="discovery-search-header">
+        <div className="studio-search-bar">
+          <Search className="studio-search-icon" />
+          <input
+            type="search"
+            className="studio-search-input"
+            placeholder="搜尋課名、教師姓名或關鍵字…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            aria-label="搜尋課程"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              className="studio-search-clear"
+              onClick={() => setSearchInput("")}
+              aria-label="清除搜尋"
+            >
+              <XLg size={12} />
+            </button>
+          )}
+        </div>
+
+        {/* Category Pill Rail */}
+        <div className="d-flex align-items-center justify-content-between gap-2">
+          <div className="category-pill-rail flex-grow-1">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                type="button"
+                className={`category-chip ${selectedCategory === cat.key ? "active" : ""}`}
+                onClick={() => handleCategorySelect(cat.key)}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
-          <div className="col-6 col-sm-3 col-xl-3">
+          
+          <button
+            type="button"
+            className={`btn btn-sm ${showAdvancedFilters ? "btn-teal-700 bg-teal-50" : "btn-light border"} p-1 px-2 d-inline-flex align-items-center gap-1 rounded-pill`}
+            style={{ fontSize: "0.74rem" }}
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            title="更多進階篩選"
+          >
+            <Sliders size={12} />
+            <span>進階篩選</span>
+          </button>
+        </div>
+
+        {/* Advanced Filters Expandable Drawer */}
+        {showAdvancedFilters && (
+          <div className="secondary-filter-row mt-2 pt-2 border-top">
             <select
-              className="form-select filter-select"
+              className="compact-filter-select"
               value={filters.weekday}
               onChange={(e) => updateFilter({ weekday: e.target.value })}
               aria-label="星期"
@@ -410,14 +465,13 @@ export default function CourseBrowser({
               <option value="">星期（全部）</option>
               {WEEKDAYS.map((day) => (
                 <option key={day.apiWeekday} value={String(day.apiWeekday)}>
-                  星期{day.label}
+                  週{day.label}
                 </option>
               ))}
             </select>
-          </div>
-          <div className="col-6 col-sm-3 col-xl-3">
+
             <select
-              className="form-select filter-select"
+              className="compact-filter-select"
               value={filters.period}
               onChange={(e) => updateFilter({ period: e.target.value })}
               disabled={filters.weekday === ""}
@@ -430,29 +484,9 @@ export default function CourseBrowser({
                 </option>
               ))}
             </select>
-          </div>
-        </div>
 
-        <div className="row g-2 align-items-center">
-          <div className="col-6 col-sm-4 col-xl-2">
-            <input
-              type="text"
-              className="form-control filter-select"
-              placeholder="系所（如 資工系）"
-              list="dept-options"
-              value={filters.dept}
-              onChange={(e) => updateFilter({ dept: e.target.value.trim() })}
-              aria-label="系所"
-            />
-            <datalist id="dept-options">
-              {deptOptions.map((dept) => (
-                <option key={dept} value={dept} />
-              ))}
-            </datalist>
-          </div>
-          <div className="col-6 col-sm-4 col-xl-2">
             <select
-              className="form-select filter-select"
+              className="compact-filter-select"
               value={filters.grade}
               onChange={(e) => updateFilter({ grade: e.target.value })}
               aria-label="年級"
@@ -464,10 +498,9 @@ export default function CourseBrowser({
               <option value="3">大三</option>
               <option value="4">大四</option>
             </select>
-          </div>
-          <div className="col-6 col-sm-4 col-xl-2">
+
             <select
-              className="form-select filter-select"
+              className="compact-filter-select"
               value={filters.credit}
               onChange={(e) => updateFilter({ credit: e.target.value })}
               aria-label="學分"
@@ -479,50 +512,38 @@ export default function CourseBrowser({
                 </option>
               ))}
             </select>
-          </div>
-          <div className="col-6 col-sm-4 col-xl-2">
-            <select
-              className="form-select filter-select"
-              value={filters.compulsory}
-              onChange={(e) => updateFilter({ compulsory: e.target.value })}
-              aria-label="必選修"
-            >
-              <option value="">必選修（全部）</option>
-              <option value="true">必修</option>
-              <option value="false">選修</option>
-            </select>
-          </div>
-          <div className="col-6 col-sm-4 col-xl-2">
-            <select
-              className="form-select filter-select"
-              value={filters.english}
-              onChange={(e) => updateFilter({ english: e.target.value })}
-              aria-label="英語授課"
-            >
-              <option value="">語言</option>
-              <option value="true">EMI</option>
-              <option value="false">中文</option>
-            </select>
-          </div>
-          <div className="col-12 col-sm-4 col-xl-2 d-flex justify-content-between justify-content-sm-end align-items-center gap-2">
-            <span className="badge text-bg-light border text-secondary fw-semibold flex-shrink-0" aria-live="polite">
-              共 {total} 門
-            </span>
+
+            <input
+              type="text"
+              className="compact-filter-select"
+              style={{ width: "110px" }}
+              placeholder="系所搜尋…"
+              list="dept-options"
+              value={filters.dept}
+              onChange={(e) => updateFilter({ dept: e.target.value.trim() })}
+              aria-label="系所"
+            />
+            <datalist id="dept-options">
+              {deptOptions.map((dept) => (
+                <option key={dept} value={dept} />
+              ))}
+            </datalist>
+
             <button
               type="button"
-              className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 flex-shrink-0 text-nowrap"
+              className="btn btn-sm btn-link text-secondary p-0 ms-auto text-decoration-none"
+              style={{ fontSize: "0.75rem" }}
               onClick={resetFilters}
             >
-              <Filter size={13} />
-              <span>重設</span>
+              重設條件
             </button>
           </div>
-        </div>
+        )}
       </div>
 
       {error !== null && (
-        <div className="alert alert-danger d-flex justify-content-between align-items-center py-2 rounded-3 mb-2" role="alert">
-          <span>課程查詢失敗：{error}</span>
+        <div className="alert alert-danger d-flex justify-content-between align-items-center py-2 mx-3 my-2 rounded-3" role="alert">
+          <span className="small">課程查詢失敗：{error}</span>
           <button
             type="button"
             className="btn btn-sm btn-outline-danger"
@@ -533,8 +554,9 @@ export default function CourseBrowser({
         </div>
       )}
 
+      {/* Virtuoso Virtualized Course List */}
       <Virtuoso
-        className="course-list-virtuoso"
+        className="discovery-virtuoso-list"
         data={items}
         endReached={endReached}
         increaseViewportBy={300}
@@ -544,4 +566,3 @@ export default function CourseBrowser({
     </section>
   );
 }
-

@@ -2,6 +2,7 @@ import {
   BookmarkCheck,
   BoxArrowRight,
   CalendarWeek,
+  Compass,
   Layers,
   PersonCircle,
   Send,
@@ -10,16 +11,19 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import DegradeBanner from "./DegradeBanner";
 import { useAuth } from "../state/auth";
+import { usePlansSync } from "../state/plansSync";
 
 const NAV_LINKS = [
-  { to: "/", label: "查課·課表", icon: CalendarWeek, end: true },
-  { to: "/plans", label: "課表組合", icon: Layers, end: false },
-  { to: "/selected", label: "我的已選", icon: BookmarkCheck, end: false },
+  { to: "/", label: "查課・課表", icon: CalendarWeek, end: true },
+  { to: "/plans", label: "方案實驗室", icon: Layers, end: false },
+  { to: "/selected", label: "已選狀態", icon: BookmarkCheck, end: false },
   { to: "/write", label: "送單中心", icon: Send, end: false },
 ];
 
 function AppShell() {
   const { status, studentNo, logout } = useAuth();
+  const { plans, activePlanId } = usePlansSync();
+  const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
   const navigate = useNavigate();
 
   const onLogout = () => {
@@ -27,89 +31,110 @@ function AppShell() {
   };
 
   return (
-    <>
+    <div className="min-vh-100 d-flex flex-column">
       <DegradeBanner />
-      <header className="app-header">
-        <div className="d-flex align-items-center gap-2">
-          <NavLink to="/" className="app-header-brand">
-            <h1 className="app-header-title">
-              <span>中山選課小幫手</span>
-              <span className="app-header-badge d-none d-sm-inline">115-1</span>
-            </h1>
-          </NavLink>
-        </div>
-
-        <nav className="app-nav" aria-label="主選單">
-          {NAV_LINKS.map((link) => {
-            const Icon = link.icon;
-            return (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.end}
-                className={({ isActive }) =>
-                  `app-nav-link${isActive ? " app-nav-link-active" : ""}`
-                }
-              >
-                <Icon size={14} />
-                <span>{link.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className="ms-auto d-flex align-items-center gap-2">
-          {status === "authed" && studentNo !== null ? (
-            <>
-              <div className="user-chip" data-testid="student-no">
-                <PersonCircle size={15} />
-                <span>{studentNo}</span>
+      
+      {/* Floating Island App Bar */}
+      <div className="floating-navbar-container">
+        <header className="floating-navbar">
+          {/* Brand & Semester */}
+          <div className="d-flex align-items-center gap-2">
+            <NavLink to="/" className="brand-badge-logo">
+              <div className="brand-icon-box">
+                <Compass size={16} />
               </div>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-light d-inline-flex align-items-center gap-1 rounded-pill px-2.5"
-                onClick={onLogout}
-                title="登出系統"
-              >
-                <BoxArrowRight size={14} />
-                <span className="d-none d-sm-inline">登出</span>
-              </button>
-            </>
-          ) : status === "anon" ? (
-            <NavLink
-              to="/login"
-              className="btn btn-sm btn-light text-teal-800 fw-bold rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1"
-            >
-              <PersonCircle size={14} />
-              <span>登入</span>
+              <span className="d-none d-sm-inline">中山選課 Studio</span>
+              <span className="d-sm-none">選課 Studio</span>
             </NavLink>
-          ) : null}
-        </div>
-      </header>
-      <main className="container-fluid px-3 py-3">
+            <span className="semester-pill">115-1</span>
+            
+            {activePlan !== null && (
+              <span className="badge text-bg-light border text-muted d-none d-lg-inline-flex align-items-center gap-1 font-monospace" style={{ fontSize: "0.72rem" }}>
+                <span>課表：</span>
+                <strong className="text-teal-700">{activePlan.name}</strong>
+              </span>
+            )}
+          </div>
+
+          {/* Navigation Pills */}
+          <nav className="studio-nav-pills" aria-label="主要選單">
+            {NAV_LINKS.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) =>
+                    `studio-nav-link${isActive ? " studio-nav-link-active" : ""}`
+                  }
+                >
+                  <Icon size={14} />
+                  <span>{link.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          {/* User Auth Chip */}
+          <div className="user-status-card">
+            {status === "authed" && studentNo !== null ? (
+              <>
+                <div className="user-avatar-chip" data-testid="student-no">
+                  <PersonCircle size={14} className="text-teal-600" />
+                  <span>{studentNo}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary rounded-pill p-1 px-2 d-inline-flex align-items-center gap-1"
+                  onClick={onLogout}
+                  title="登出系統"
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  <BoxArrowRight size={13} />
+                  <span className="d-none d-md-inline">登出</span>
+                </button>
+              </>
+            ) : status === "anon" ? (
+              <NavLink
+                to="/login"
+                className="btn btn-sm btn-brand rounded-pill px-3 py-1 shadow-sm d-inline-flex align-items-center gap-1"
+                style={{ fontSize: "0.82rem" }}
+              >
+                <PersonCircle size={14} />
+                <span>登入</span>
+              </NavLink>
+            ) : null}
+          </div>
+        </header>
+      </div>
+
+      {/* Main Studio Canvas */}
+      <main className="container-fluid px-3 flex-grow-1" style={{ maxWidth: "1600px" }}>
         <Outlet />
       </main>
-      <footer className="small text-secondary text-center py-4 mt-4 border-top">
-        <div className="mb-2">
-          <NavLink to="/privacy" className="link-secondary text-decoration-none mx-2">
+
+      {/* Footer */}
+      <footer className="small text-muted text-center py-3 mt-4 border-top">
+        <div className="mb-1">
+          <NavLink to="/privacy" className="text-muted text-decoration-none mx-2 hover-underline">
             隱私權政策
           </NavLink>
-          <span className="text-muted">·</span>
-          <NavLink to="/tos" className="link-secondary text-decoration-none mx-2">
+          <span>·</span>
+          <NavLink to="/tos" className="text-muted text-decoration-none mx-2 hover-underline">
             服務條款
           </NavLink>
-          <span className="text-muted">·</span>
-          <NavLink to="/faq" className="link-secondary text-decoration-none mx-2">
+          <span>·</span>
+          <NavLink to="/faq" className="text-muted text-decoration-none mx-2 hover-underline">
             常見問題
           </NavLink>
         </div>
-        <div className="text-muted" style={{ fontSize: "0.78rem" }}>
-          本站為學生自建之開源選課輔助工具，非國立中山大學官方服務。
+        <div className="text-secondary" style={{ fontSize: "0.74rem" }}>
+          國立中山大學學生自建選課工作台 · 非官方官方服務
         </div>
       </footer>
-    </>
+    </div>
   );
 }
 
 export default AppShell;
-
