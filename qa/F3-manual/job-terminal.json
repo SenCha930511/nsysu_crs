@@ -1,0 +1,22 @@
+{
+  "url": "http://localhost/api/write/jobs/36a94198-0f47-4449-887f-23b9bcfac406",
+  "status": 200,
+  "body": {
+    "job_id": "36a94198-0f47-4449-887f-23b9bcfac406",
+    "status": "done",
+    "created_at": "2026-08-28T03:45:58.536147+00:00",
+    "started_at": "2026-08-28T03:45:58.547943+00:00",
+    "finished_at": "2026-08-28T03:45:59.399179+00:00",
+    "ops": [
+      {
+        "code": "ZZ999999",
+        "action": "+",
+        "priority": 1,
+        "outcome": "failed",
+        "school_msg": "【加退選失敗課程清單】"
+      }
+    ],
+    "message": null,
+    "reconcile": null
+  }
+}

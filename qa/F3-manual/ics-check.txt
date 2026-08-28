@@ -1,0 +1,24 @@
+[OK] file: /tmp/F3/f3-jia.ics bytes=1341 sha-first-lines below
+[OK] VEVENT count == 3 (expected 3: A1 Thu567 + A2 Mon234 + A3 Tue89C)
+[OK] VTIMEZONE present (1)
+[OK] DTSTART TZID=Asia/Taipei :: 人工智慧導論（AI聯盟教師）
+[OK] DTSTART TZID=Asia/Taipei :: 基礎程式設計（C++）（AI聯盟教師,莊豐任）
+[OK] DTSTART TZID=Asia/Taipei :: 生成式AI：文字與圖像生成的原理與實務（AI聯盟
+[OK] every VEVENT has RRULE UNTIL (3/3)
+[OK] UNTIL is UTC DATE-TIME :: ['2027-01-16 15:59:59+00:00']
+[OK] UIDs unique per event
+[OK] UID deterministic host suffix :: 7ca96b7338480a90a48ec1033b925322d5bd7589@nsysu-course-wrapper
+[OK] VCALENDAR envelope
+
+first 8 lines of the file:
+  BEGIN:VCALENDAR
+  VERSION:2.0
+  PRODID:-//nsysu-course-wrapper//NSYSU Course Wrapper//ZH-TW
+  CALSCALE:GREGORIAN
+  METHOD:PUBLISH
+  X-WR-CALNAME:NSYSU 課表 - 甲
+  BEGIN:VTIMEZONE
+  TZID:Asia/Taipei
+
+summaries: 人工智慧導論（AI聯盟教師） | 基礎程式設計（C++）（AI聯盟教師,莊豐任） | 生成式AI：文字與圖像生成的原理與實務（AI聯盟教師,楊政融）
+ICS_CHECK_EXIT=PASS

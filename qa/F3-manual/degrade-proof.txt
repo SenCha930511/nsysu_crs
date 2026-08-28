@@ -1,0 +1,53 @@
+qa/F3-manual/degrade-proof.txt — F3 step 6 degrade drill
+variant: qa/15-redisdown pattern (compose stop redis; non-destructive; restores cleanly)
+date: 2026-08-28 11:48 CST
+
+-- baseline (redis up) --
+GET /api/health -> 200
+
+-- docker compose stop redis --
+ Container nsysu-crs-redis-1 Stopping 
+ Container nsysu-crs-redis-1 Stopped 
+
+-- matrix with redis DOWN --
+POST /api/auth/login      -> 422 {"detail":[{"type":"missing","loc":["body","student_no"],"msg":"Field required","input":{}},{"type":"missing","loc":["body","password"],"msg":"Field required","input":{}}]}
+POST /api/write/preview   -> 403 {"detail":"csrf_failed"}
+POST /api/write/submit    -> 403 {"detail":"csrf_failed"}
+GET  /api/write/jobs/x    -> 403 {"detail":"csrf_failed"}
+GET  /api/courses?page=1  -> 200
+GET  /api/catalog/meta    -> 200 {"ok":true,"updated_at":"2026-08-28T03:13:34.563703Z","row_count":2596,"source":"self-scrape"}
+GET  / (frontend)         -> 200
+GET  /api/health          -> 503 {"status":"unavailable","postgres":{"status":"ok","error":null},"redis":{"status":"down","error":"ConnectionError"}}
+
+-- browser phase (redis DOWN) --
+[OK] down: GET / -> HTTP 200 (frontend serves)
+[OK] down: catalog search live — 6 rows for 人工智慧 (Postgres read path)
+down: degrade-banner present=false (banner maps catalog-stale/breaker-open only; redis-down surfaces as edge 503 + inline errors by design)
+[OK] down: POST /api/auth/login -> 503 {"detail":"redis_unavailable"}
+[OK] down: login page inline degraded alert :: 學校系統異常，稍後再試學校主機暫時連不上。你仍可瀏覽課程目錄…
+[OK] down: screenshot 06-degrade.png
+DEGRADE_DOWN_EXIT failures=0
+
+-- docker compose start redis (restore) --
+ Container nsysu-crs-redis-1 Starting 
+ Container nsysu-crs-redis-1 Started 
+GET /api/health after restore -> 200
+GET /api/catalog/meta         -> {"ok":true,"updated_at":"2026-08-28T03:13:34.563703Z","row_count":2596,"source":"self-scrape"}
+
+-- browser phase (redis RESTORED) --
+[OK] up: fresh real login after redis restore -> /plans (full recovery)
+[OK] up: /api/auth/me 200
+[OK] up: plan 送單QA deleted via UI
+[OK] up: plan 甲 deleted via UI
+[OK] up: plan 乙 deleted via UI
+[OK] up: account plan-clean (remaining plans: 0 = none)
+[OK] up: selections after entire run :: {} (identical to pre-write baseline; ZZ999999 absent)
+[OK] up: ZZ999999 confirmed absent from real selections
+DEGRADE_UP_EXIT failures=0
+
+-- compose state after drill --
+nsysu-crs-app-1 Up About an hour (healthy)
+nsysu-crs-caddy-1 Up 2 hours (healthy)
+nsysu-crs-postgres-1 Up 3 hours (healthy)
+nsysu-crs-redis-1 Up 4 seconds (health: starting)
+nsysu-crs-worker-1 Up 4 seconds
