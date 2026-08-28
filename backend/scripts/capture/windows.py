@@ -80,8 +80,10 @@ def refusal_text(now: datetime) -> str:
     lines = [
         "[WINDOW-GUARD] Refusing: not inside a course-selection window.",
         f"Now (Asia/Taipei): {now_tpe:%Y-%m-%d %H:%M:%S} ({now_tpe:%a})",
-        "Live capture is only possible during an active selection window "
-        "(the school only serves the real write forms then).",
+        (
+            "Live capture is only possible during an active selection window "
+            "(the school only serves the real write forms then)."
+        ),
     ]
     upcoming = next_window(now)
     if upcoming is None:

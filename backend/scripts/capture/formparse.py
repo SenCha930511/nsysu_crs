@@ -32,9 +32,12 @@ class FormScrape(HTMLParser):
             self.links.append(values["href"])
         elif tag == "form" and values.get("action"):
             self.form_actions.append(values["action"])
-        elif tag == "input" and values.get("type", "").lower() == "hidden":
-            if values.get("name"):
-                self.hidden.append((values["name"], values.get("value", "")))
+        elif (
+            tag == "input"
+            and values.get("type", "").lower() == "hidden"
+            and values.get("name")
+        ):
+            self.hidden.append((values["name"], values.get("value", "")))
 
 
 def scrape_form(html: str) -> FormScrape:

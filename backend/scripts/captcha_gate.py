@@ -125,11 +125,15 @@ def render_report(
     lines = [
         "=" * 80,
         f"captcha gate | {label} | started {started:%Y-%m-%d %H:%M:%S} Asia/Taipei",
-        f"cmd: uv run python -m scripts.captcha_gate --pages {pages_requested} | "
-        f"provider ddddocr=={provider} (pin evidence: qa/05-pin.log)",
-        "pages are independent loop runs against the PUBLIC catalog (no login): "
-        f"dplycourse D0={year_sem}, WKDAY rotating 1..7; captcha accuracy only - "
-        "row parsing is todo 6 and is deliberately NOT done here",
+        (
+            f"cmd: uv run python -m scripts.captcha_gate --pages {pages_requested} | "
+            f"provider ddddocr=={provider} (pin evidence: qa/05-pin.log)"
+        ),
+        (
+            "pages are independent loop runs against the PUBLIC catalog (no login): "
+            f"dplycourse D0={year_sem}, WKDAY rotating 1..7; captcha accuracy only - "
+            "row parsing is todo 6 and is deliberately NOT done here"
+        ),
         "-" * 80,
     ]
     for outcome in outcomes:

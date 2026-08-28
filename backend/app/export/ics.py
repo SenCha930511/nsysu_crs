@@ -34,7 +34,7 @@ into a partial timetable (same rule as the frontend grid).
 
 import hashlib
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Final
 from zoneinfo import ZoneInfo
 
@@ -159,7 +159,9 @@ def _vtimezone() -> Timezone:
     tzc = Timezone()
     tzc.add("tzid", TAIPEI_TZID)
     std = TimezoneStandard()
-    std.add("dtstart", datetime(1970, 1, 1, 0, 0, 0))
+    # RFC 5545 §3.6.5: VTIMEZONE DTSTART is a LOCAL naive datetime by spec;
+    # attaching tzinfo here would serialize an invalid property.
+    std.add("dtstart", datetime(1970, 1, 1, 0, 0, 0))  # noqa: DTZ001
     std.add("tzoffsetfrom", timedelta(hours=8))
     std.add("tzoffsetto", timedelta(hours=8))
     std.add("tzname", "CST")
@@ -186,11 +188,11 @@ def build_plan_ics(
     # UTC DATE-TIME form of "semester end inclusive" (23:59:59+08:00).
     until_utc = datetime.combine(
         settings.semester_end_date, time(23, 59, 59), tzinfo=_TAIPEI
-    ).astimezone(timezone.utc)
+    ).astimezone(UTC)
     # Stable across regeneration: never "now".
     dtstamp = datetime.combine(
         settings.semester_start_date, time(0, 0), tzinfo=_TAIPEI
-    ).astimezone(timezone.utc)
+    ).astimezone(UTC)
 
     count = 0
     for course in courses:

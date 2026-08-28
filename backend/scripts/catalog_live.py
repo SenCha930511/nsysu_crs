@@ -292,8 +292,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     out_lines: list[str] = [
-        f"catalog live {'PROBE' if args.probe else 'FULL INGEST'} | "
-        f"started {datetime.now(TAIPEI):%Y-%m-%d %H:%M:%S} Asia/Taipei",
+        (
+            f"catalog live {'PROBE' if args.probe else 'FULL INGEST'} | "
+            f"started {datetime.now(TAIPEI):%Y-%m-%d %H:%M:%S} Asia/Taipei"
+        ),
     ]
     if args.probe:
         code = anyio.run(probe, out_lines)

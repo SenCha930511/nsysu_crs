@@ -23,7 +23,6 @@ from app.selcrs.endpoints import Sso2Result
 from app.selcrs.errors import SelcrsUnavailable
 from app.selcrs.jar import deserialize_cookies
 from app.selcrs.sso2 import FAILURE_MARKER, Sso2Outcome
-
 from tests.fake_redis import FakeRedis
 
 PASSWORD = "QA08-mock-password"

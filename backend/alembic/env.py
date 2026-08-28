@@ -11,11 +11,10 @@ import anyio
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+# Importing the package registers every table on Base.metadata.
+import app.models  # noqa: F401  (side effect: model registration for autogenerate)
 from alembic import context
 from app.config import Settings
-
-# Importing the package registers every table on Base.metadata.
-import app.models
 from app.models.base import Base
 
 _ASYNCPG_PREFIX: Final = "postgresql+asyncpg://"

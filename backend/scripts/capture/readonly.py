@@ -43,7 +43,11 @@ from app.selcrs.sso2 import FAILURE_MARKER, Sso2Outcome, classify_sso2_response
 from app.selcrs.transform import base64md5
 from scripts.capture.creds import Credentials, mask_student_id
 from scripts.capture.facts import ProbeResult, append_live_section
-from scripts.capture.formparse import find_write_link, looks_like_login_page, scrape_form
+from scripts.capture.formparse import (
+    find_write_link,
+    looks_like_login_page,
+    scrape_form,
+)
 from scripts.capture.runtime import (
     FACTS_PATH,
     FIXTURES_DIR,
