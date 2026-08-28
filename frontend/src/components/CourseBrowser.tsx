@@ -372,10 +372,8 @@ export default function CourseBrowser({
               {onViewCourse !== undefined ? (
                 <button
                   type="button"
-                  className="card-course-name btn btn-link p-0 border-0 text-truncate me-1 text-start text-decoration-none"
-                  style={{ fontSize: "inherit", color: "inherit" }}
-                  title={tx("查看課程詳細資訊與大綱", "View course detail & syllabus")}
-                  aria-label={tx(`查看 ${courseName(course)} 詳細資訊`, `View detail of ${courseName(course)}`)}
+                  className="card-course-name text-truncate me-1 btn-link text-decoration-none border-0 bg-transparent p-0 text-start"
+                  title={tx("檢視課程詳細資訊與大綱", "View course details and syllabus")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onViewCourse(course);
@@ -383,6 +381,18 @@ export default function CourseBrowser({
                 >
                   {courseName(course)}
                 </button>
+              ) : course.url !== null ? (
+                <a
+                  href={course.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="card-course-name text-truncate me-1 text-decoration-none"
+                  title={tx("在學校原始頁開啟課程大綱", "Open the syllabus on the school's original page")}
+                  aria-label={tx(`開啟 ${courseName(course)} 的學校大綱頁`, `Open the school outline page for ${courseName(course)}`)}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {courseName(course)}
+                </a>
               ) : (
                 <span className="card-course-name text-truncate me-1">{courseName(course)}</span>
               )}
@@ -445,12 +455,12 @@ export default function CourseBrowser({
               type="button"
               className={`btn btn-card-toggle flex-shrink-0 ${
                 st === "selected"
-                  ? "btn-danger shadow-sm"
+                  ? "btn-outline-success shadow-xs fw-semibold"
                   : st === "staged"
-                    ? "btn-warning shadow-sm"
+                    ? "btn-warning shadow-sm fw-semibold"
                     : st === "failed"
-                      ? "btn-outline-danger"
-                      : "btn-brand shadow-sm"
+                      ? "btn-outline-danger shadow-xs fw-semibold"
+                      : "btn-brand shadow-sm fw-semibold"
               }`}
               data-action={picked || st === "failed" ? "remove" : "add"}
               onClick={(e) => {
@@ -471,7 +481,7 @@ export default function CourseBrowser({
                   : st === "staged"
                     ? tx("準備加選", "Staged")
                     : st === "failed"
-                      ? tx("送出失敗", "Submit failed")
+                      ? tx("加選失敗", "Submit failed")
                       : tx("加入課表", "Add")}
               </span>
             </button>
@@ -479,7 +489,7 @@ export default function CourseBrowser({
         </div>
       );
     },
-    [stateOf, effToggle, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview, onViewCourse, lang, tx],
+    [stateOf, effToggle, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview, lang, tx],
   );
 
   const ListFooter = useCallback(

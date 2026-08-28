@@ -25,7 +25,6 @@ import {
 import { Navigate } from "react-router-dom";
 
 import CourseBrowser from "../components/CourseBrowser";
-import CourseDetailModal from "../components/CourseDetailModal";
 import ScheduleTable from "../components/ScheduleTable";
 import {
   ApiError,
@@ -103,7 +102,6 @@ function HomePage() {
   const [tab, setTab] = useState<Tab>("browse");
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
   const [previewCourse, setPreviewCourse] = useState<CourseOut | null>(null);
-  const [detailCourse, setDetailCourse] = useState<CourseOut | null>(null);
 
   // ---- png (parity with the previous home) ----
   const gridRef = useRef<HTMLDivElement>(null);
@@ -193,6 +191,10 @@ function HomePage() {
   }, [authed, loading, syncing, syncedAt, onSync]);
 
   // ---- grid derivation ----
+  const heldItems = useMemo(
+    () => items.filter((item) => item.state === "選上"),
+    [items],
+  );
   const { courses: selectedCourses, unplaced } = useMemo(
     () => buildSelectionGridCourses(items),
     [items],
@@ -200,11 +202,11 @@ function HomePage() {
   const selectedShorts = useMemo(
     () =>
       new Set(
-        items
+        heldItems
           .map(selectionShortCode)
           .filter((v): v is string => v !== null),
       ),
-    [items],
+    [heldItems],
   );
   const dropKeys = useMemo(
     () => new Set(stagedDrops.map(selectionGridKey)),
@@ -469,7 +471,7 @@ function HomePage() {
       >
         <BookmarkCheck size={13} className="me-1.5" />
         <span>{tx("已選課程", "My Selections")}</span>
-        {items.length > 0 && <span className="tab-count-pill ms-1.5">{items.length}</span>}
+        {heldItems.length > 0 && <span className="tab-count-pill ms-1.5">{heldItems.length}</span>}
       </button>
     </div>
   );
@@ -772,8 +774,6 @@ function HomePage() {
             baseCourses={gridCourses}
             pickState={pickStateOf}
             onToggleCourse={onToggleCourse}
-            onViewCourse={setDetailCourse}
-            headerTopSlot={segmentedTabs}
           />
         ) : (
           <section className="selections-pane-container" aria-label={tx("我的已選課程", "My selections")}>
@@ -798,11 +798,11 @@ function HomePage() {
                 <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("讀取中…", "Loading…")}</p>
               ) : syncedAt === null ? (
                 <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("尚未同步。按下「同步我的已選」從學校系統讀取。", "Not synced yet. Hit “Sync my selections” to pull from the school.")}</p>
-              ) : items.length === 0 ? (
-                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("學校系統目前無任何已選紀錄。", "No selections on the school system right now.")}</p>
+              ) : heldItems.length === 0 ? (
+                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("學校系統目前無任何已選上紀錄。", "No enrolled selections on the school system right now.")}</p>
               ) : (
                 <ul className="list-unstyled mb-0">
-                  {items.map((item) => {
+                  {heldItems.map((item) => {
                     const dropped = stagedDrops.some(
                       (d) => selectionGridKey(d) === selectionGridKey(item),
                     );
@@ -854,11 +854,6 @@ function HomePage() {
           </section>
         )}
       </div>
-
-      {/* course detail + syllabus modal */}
-      {detailCourse !== null && (
-        <CourseDetailModal course={detailCourse} onClose={() => setDetailCourse(null)} />
-      )}
 
       {/* confirm modal */}
       {phase === "confirm" && preview !== null && preview.confirm_token !== null && (

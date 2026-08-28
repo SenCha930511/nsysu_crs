@@ -13,7 +13,7 @@
  * ({code, message}); this module maps them to UI-facing Chinese text.
  */
 
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas";
 
 import { ApiError } from "./api";
 
@@ -62,8 +62,12 @@ export function buildPngFilename(
   return `${base}-${stamp}.png`;
 }
 
-/** Render the grid node to a 2x-scale PNG data URL (transparent-safe white
- * background so the weekend shading keeps visible contrast on any viewer). */
+/** Render the grid node to a 2x-scale PNG data URL. Uses html2canvas (a
+ * DOM-walking canvas painter) instead of SVG-foreignObject serialization —
+ * the latter silently returns all-white under this environment family, and
+ * the white grid makes the failure indistinguishable without a detector. The
+ * 25-point all-white check below converts any future recurrence into an
+ * audible error instead of a silent blank PNG. */
 export async function captureGridPng(
   node: HTMLElement,
   pixelRatio = 2,
@@ -73,58 +77,53 @@ export async function captureGridPng(
     (node.classList.contains("schedule-table-wrapper") ? node : null) ??
     node;
 
-  const clone = tableWrapper.cloneNode(true) as HTMLElement;
-
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.left = "-9999px";
-  container.style.top = "0";
-  container.style.width = "1180px";
-  container.style.backgroundColor = "#ffffff";
-  container.style.padding = "24px";
-  container.style.borderRadius = "16px";
-  container.style.boxSizing = "border-box";
-  container.style.zIndex = "-1000";
-  container.appendChild(clone);
-  document.body.appendChild(container);
-
-  // Computed-style sweep AFTER mount: sticky / scroll containers / max-height
-  // are class-driven in this design system, so inline-at-clone checks miss
-  // them; they must be neutralised through computed styles or the capture
-  // slips out of place (cropped thead, clipped rows).
-  container.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    const cs = getComputedStyle(el);
-    if (cs.position === "sticky" || cs.position === "fixed") {
-      el.style.position = "static";
-    }
-    if (cs.maxHeight !== "none") {
-      el.style.maxHeight = "none";
-    }
-    if (cs.overflowX !== "visible" || cs.overflowY !== "visible") {
-      el.style.overflow = "visible";
-    }
+  const canvas = await html2canvas(tableWrapper, {
+    scale: pixelRatio,
+    backgroundColor: "#ffffff",
+    useCORS: true,
+    logging: false,
+    onclone: (clonedDocument, element) => {
+      // Sticky / scroll containers / max-height are class-driven here, so the
+      // cloned document must be neutralized via ITS OWN window's computed
+      // styles or the capture slips out of place (cropped thead, clipped rows).
+      const view = clonedDocument.defaultView ?? window;
+      element.querySelectorAll<HTMLElement>("*").forEach((el) => {
+        const computed = view.getComputedStyle(el);
+        if (computed.position === "sticky" || computed.position === "fixed") {
+          el.style.position = "static";
+        }
+        if (computed.maxHeight !== "none") {
+          el.style.maxHeight = "none";
+        }
+        if (computed.overflowX !== "visible" || computed.overflowY !== "visible") {
+          el.style.overflow = "visible";
+        }
+      });
+    },
   });
 
-  try {
-    const fullWidth = container.offsetWidth || 1180;
-    const fullHeight = container.offsetHeight || 800;
-
-    const dataUrl = await toPng(container, {
-      pixelRatio,
-      backgroundColor: "#ffffff",
-      cacheBust: true,
-      width: fullWidth,
-      height: fullHeight,
-      // The Google Fonts stylesheet is cross-origin: reading its cssRules
-      // throws SecurityError and silently kills the capture on strict
-      // browsers. Fonts from the page still apply at render time; skipping
-      // the font-embed pass only drops the (optional) inlined font data.
-      skipFonts: true,
-    });
-    return dataUrl;
-  } finally {
-    document.body.removeChild(container);
+  const ctx = canvas.getContext("2d");
+  if (ctx === null || canvas.width === 0 || canvas.height === 0) {
+    throw new Error("PNG 匯出失敗：瀏覽器無法建立畫布，請重新整理後再試");
   }
+  let contentPoints = 0;
+  for (let yi = 1; yi < 6; yi += 1) {
+    for (let xi = 1; xi < 6; xi += 1) {
+      const px = ctx.getImageData(
+        Math.floor((canvas.width * xi) / 6),
+        Math.floor((canvas.height * yi) / 6),
+        1,
+        1,
+      ).data;
+      if (px[0] !== 255 || px[1] !== 255 || px[2] !== 255) {
+        contentPoints += 1;
+      }
+    }
+  }
+  if (contentPoints === 0) {
+    throw new Error("PNG 匯出結果為空白，請重新整理後再試；若持續發生請回報");
+  }
+  return canvas.toDataURL("image/png");
 }
 
 /** Guard + capture: the friendly-throwing entry the buttons call. */
