@@ -82,8 +82,10 @@ _FAIL_BODIES = (
     "學號碼密碼不符",  # bare marker (canonical phrase)
     "密碼輸入錯誤：學號碼密碼不符，請重新輸入！!",  # half/full-width punctuation mixed
     "<script>alert('學號碼密碼不符');location.href='../login.asp';</script>",  # alert wrapper
-    "<html><head><meta http-equiv='refresh' content='3;url=../login.asp'></head>"
-    "<body>學號碼　密碼　不符</body></html>",  # meta-refresh wrapper + interior whitespace
+    (
+        "<html><head><meta http-equiv='refresh' content='3;url=../login.asp'></head>"
+        "<body>學號碼　密碼　不符</body></html>"
+    ),  # meta-refresh wrapper + interior whitespace
 )
 
 

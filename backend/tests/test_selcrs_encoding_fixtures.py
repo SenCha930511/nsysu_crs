@@ -81,7 +81,7 @@ async def test_synthetic_big5_sso2_fail_fixture_classifies_credential_fail() -> 
 @pytest.mark.anyio
 async def test_utf8_302_shape_classifies_success_and_is_not_followed() -> None:
     # Given a canonical success redirect whose body is UTF-8 page bytes
-    utf8_page = "<html><body>正在切換至主畫面…</body></html>".encode("utf-8")
+    utf8_page = "<html><body>正在切換至主畫面…</body></html>".encode()
 
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(

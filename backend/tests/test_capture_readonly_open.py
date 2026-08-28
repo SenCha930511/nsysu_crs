@@ -14,7 +14,6 @@ module's ``_sso2_raw``/``_get`` seams; the +60s/+180s TTL sleeps stubbed):
 """
 
 import re
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -65,7 +64,7 @@ class FakeSchool:
     async def sso2_raw(self, student_id: str, password: str):
         self.sso2_passwords.append(password)
         if password == _WRONG_PASSWORD_SENTINEL:
-            fail = "資料錯誤﹕學號碼密碼不符，請重新登錄！".encode("utf-8")
+            fail = "資料錯誤﹕學號碼密碼不符，請重新登錄！".encode()
             return _response(200, fail), httpx.Cookies()
         jar = httpx.Cookies()
         jar.set("ASPSESSIONIDQATEST", "session")

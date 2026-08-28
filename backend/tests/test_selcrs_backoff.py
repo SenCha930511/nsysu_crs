@@ -7,7 +7,7 @@ import pytest
 import app.selcrs.http as adapter_http
 from app.selcrs.endpoints import get_studfun
 from app.selcrs.errors import SelcrsUnavailable
-from app.selcrs.http import request_school, build_client
+from app.selcrs.http import build_client, request_school
 from tests.conftest import StubTransport
 
 

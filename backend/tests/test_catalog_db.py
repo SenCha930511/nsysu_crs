@@ -136,7 +136,7 @@ async def _reset_tables(session_factory) -> None:
 def _db_available() -> bool:
     async def probe() -> bool:
         try:
-            engine, session_factory = _taiwan_session_factory()
+            engine, _session_factory = _taiwan_session_factory()
             async with engine.connect():
                 pass
             await engine.dispose()

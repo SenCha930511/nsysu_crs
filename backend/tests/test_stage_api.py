@@ -20,7 +20,6 @@ from app.auth.sessions import create_site_session, store_selcrs
 from app.config import Settings
 from app.main import create_app
 from app.selcrs.errors import SelcrsUnavailable
-
 from tests.fake_redis import FakeRedis
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -189,8 +188,10 @@ async def test_open_ssform_reports_add_drop_and_follows_form_link(harness_factor
     }
     # The form follow-up is the same-session GET of the RESOLVED link.
     assert harness.school.form_urls == [
-        "https://selcrs.nsysu.edu.tw/menu4/addcourse/ssform.asp"
-        "?X1=09&X2=0&DEG_COD=B&college=1&dept=36&grade=1&SCH_COD=2&USE_YR=115&EDU=B"
+        (
+            "https://selcrs.nsysu.edu.tw/menu4/addcourse/ssform.asp"
+            "?X1=09&X2=0&DEG_COD=B&college=1&dept=36&grade=1&SCH_COD=2&USE_YR=115&EDU=B"
+        )
     ]
 
 

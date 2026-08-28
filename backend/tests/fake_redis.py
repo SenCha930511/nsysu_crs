@@ -128,9 +128,7 @@ class FakeRedis:
             self._values[name] = (value, self._now() + seconds)
             return True
         if name in self._zsets:
-            if nx:
-                return False
-            return True
+            return not nx
         return False
 
     async def zadd(self, name: str, mapping: dict[str, float]) -> int:

@@ -9,7 +9,6 @@ everything; another UNKNOWN re-stamps the open instant.
 import pytest
 
 from app.auth.breaker import SchoolBreaker
-
 from tests.fake_redis import FakeRedis
 
 

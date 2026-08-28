@@ -3,9 +3,8 @@ no-arg call used to TypeError live at 10:01 while mocks never noticed)."""
 
 import httpx
 import pytest
-from fastapi import HTTPException
 
-import app.api.write_probe as write_probe
+from app.api import write_probe
 
 
 @pytest.mark.anyio

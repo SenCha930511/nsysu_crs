@@ -60,7 +60,7 @@ def test_run_inside_dispatches_to_runner(tmp_path) -> None:
 
     assert code == 0
     assert len(called) == 1
-    assert getattr(called[0], "name") == "115-1 加退選一"
+    assert called[0].name == "115-1 加退選一"
 
 
 def test_default_args_use_real_now(tmp_path) -> None:

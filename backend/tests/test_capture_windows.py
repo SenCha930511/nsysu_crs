@@ -65,7 +65,8 @@ def test_utc_moment_is_converted_to_taipei() -> None:
 
 def test_naive_datetime_is_rejected() -> None:
     with pytest.raises(TypeError):
-        active_window(datetime(2026, 8, 29, 12, 0))
+        # naive on purpose: the hook must reject datetimes lacking tzinfo
+        active_window(datetime(2026, 8, 29, 12, 0))  # noqa: DTZ001
 
 
 def test_next_window_names_first_upcoming_start() -> None:

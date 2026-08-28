@@ -17,7 +17,6 @@ from app.auth.sessions import (
     store_selcrs,
 )
 from app.selcrs.jar import deserialize_cookies, serialize_cookies
-
 from tests.fake_redis import FakeRedis
 
 DAY = 24 * 3600

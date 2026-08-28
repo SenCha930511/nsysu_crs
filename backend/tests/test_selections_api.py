@@ -19,10 +19,9 @@ from fastapi.testclient import TestClient
 from app.auth.sessions import create_site_session, store_selcrs
 from app.config import Settings
 from app.main import create_app
-from app.selections.parse import SelectionItem, parse_slt_result
-from app.selections.store import SelectionsSnapshot, store_snapshot
 from app.selcrs.errors import SelcrsUnavailable
-
+from app.selections.parse import SelectionItem
+from app.selections.store import SelectionsSnapshot, store_snapshot
 from tests.fake_redis import FakeRedis
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -165,7 +164,7 @@ async def test_sync_unknown_join_never_drops_unmatched_rows(harness_factory):
     harness = harness_factory(_live_page)
 
     # When sync runs
-    sid, response = await _seed_and_sync(harness)
+    _sid, response = await _seed_and_sync(harness)
 
     # Then the join WAS attempted with the 5 real codes, did not error, and
     # all rows survive with unknown=true
@@ -204,17 +203,21 @@ async def test_frozen_sync_diff_against_seeded_snapshot(harness_factory):
         items=[
             item
             for raw in (
-                '{"code": "M3046243", "course_no": "CSE515", "state": "選上", '
-                '"dept": "資工碩", "name": "高等電腦網路", "credit": 3, '
-                '"compulsory_elective": "必", "teacher": "林俊宏", '
-                '"room_text": "三2,3,4(工EC 5012)", "points_priority": 0, '
-                '"stage": "0", "year_semest_note": "期", "times": "三2,3,4", '
-                '"room": "工EC 5012", "unknown": true, "course_id": null}',
-                '{"code": null, "course_no": "CSE999", "state": "選上", '
-                '"dept": "資工碩", "name": "已退舊課", "credit": 2, '
-                '"compulsory_elective": "選", "teacher": "某人", "room_text": "", '
-                '"points_priority": null, "stage": "0", "year_semest_note": "期", '
-                '"times": null, "room": null, "unknown": true, "course_id": null}',
+                (
+                    '{"code": "M3046243", "course_no": "CSE515", "state": "選上", '
+                    '"dept": "資工碩", "name": "高等電腦網路", "credit": 3, '
+                    '"compulsory_elective": "必", "teacher": "林俊宏", '
+                    '"room_text": "三2,3,4(工EC 5012)", "points_priority": 0, '
+                    '"stage": "0", "year_semest_note": "期", "times": "三2,3,4", '
+                    '"room": "工EC 5012", "unknown": true, "course_id": null}'
+                ),
+                (
+                    '{"code": null, "course_no": "CSE999", "state": "選上", '
+                    '"dept": "資工碩", "name": "已退舊課", "credit": 2, '
+                    '"compulsory_elective": "選", "teacher": "某人", "room_text": "", '
+                    '"points_priority": null, "stage": "0", "year_semest_note": "期", '
+                    '"times": null, "room": null, "unknown": true, "course_id": null}'
+                ),
             )
             for item in (SelectionItem.model_validate_json(raw),)
         ],

@@ -75,7 +75,7 @@ async def _seed(factory) -> None:
 def _db_available() -> bool:
     async def probe() -> bool:
         try:
-            engine, factory = _engine_factory()
+            engine, _factory = _engine_factory()
             async with engine.connect():
                 pass
             await engine.dispose()

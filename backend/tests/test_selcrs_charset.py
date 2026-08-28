@@ -92,7 +92,7 @@ def test_meta_beyond_scan_window_is_ignored() -> None:
 
 def test_heuristic_selects_utf8_for_undeclared_utf8_bytes() -> None:
     # Given undeclared CJK UTF-8 bytes (tonight's live login/read pages shape)
-    raw = "<html><body>學號碼密碼不符，請重新登錄！</body></html>".encode("utf-8")
+    raw = "<html><body>學號碼密碼不符，請重新登錄！</body></html>".encode()
 
     # When resolved with no header and no meta
     # Then strict UTF-8 succeeds and wins

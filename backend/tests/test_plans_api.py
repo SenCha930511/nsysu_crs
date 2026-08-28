@@ -21,7 +21,6 @@ from app.db import build_engine, build_session_factory
 from app.main import create_app
 from app.models.courses import Course
 from app.models.students import Student
-
 from tests.fake_redis import FakeRedis
 
 ME = "QA11TEST01"

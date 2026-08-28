@@ -15,7 +15,7 @@ No password ever exists here (sessions seeded straight into FakeRedis).
 import re
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Final
 
 import anyio
@@ -31,7 +31,6 @@ from app.export.ics import IcsBuildError, build_plan_ics, event_uid
 from app.main import create_app
 from app.models.courses import Course
 from app.models.students import Student
-
 from tests.fake_redis import FakeRedis
 
 SETTINGS: Final = Settings(
@@ -71,7 +70,7 @@ COURSE_B = {
     "room": "理 201",
     "class_time": ["", "", "56", "", "9", "", ""],  # Wed 56 + Fri 9
 }
-EXPECTED_UNTIL_UTC: Final = datetime(2027, 1, 16, 15, 59, 59, tzinfo=timezone.utc)
+EXPECTED_UNTIL_UTC: Final = datetime(2027, 1, 16, 15, 59, 59, tzinfo=UTC)
 
 
 def _course(**overrides) -> Course:
@@ -141,7 +140,7 @@ def test_rfc5545_structure_parse_assertions() -> None:
     uid = str(event["UID"])
     assert re.fullmatch(r"[0-9a-f]{40}@nsysu-course-wrapper", uid)
     dtstamp = event.decoded("DTSTAMP")
-    assert dtstamp == datetime(2026, 8, 31, 16, 0, 0, tzinfo=timezone.utc)
+    assert dtstamp == datetime(2026, 8, 31, 16, 0, 0, tzinfo=UTC)
 
     # SUMMARY = name（teacher）; LOCATION from room with escaping.
     assert str(event["SUMMARY"]) == "演算法（測試教師A）"

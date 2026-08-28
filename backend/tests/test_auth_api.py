@@ -22,7 +22,6 @@ from app.selcrs.endpoints import Sso2Result
 from app.selcrs.errors import SelcrsUnavailable
 from app.selcrs.sso2 import FAILURE_MARKER, Sso2Outcome
 from app.selcrs.transform import base64md5
-
 from tests.fake_redis import FakeRedis
 
 TEST_PASSWORD = "Xq9-TestPw-77z!"
@@ -161,7 +160,7 @@ def test_me_roundtrip_and_logout_clears_everything(harness_factory):
     # Then the session is dead and every Redis row for it is gone
     assert gone.status_code == 401 and gone.json() == {"detail": "not_authenticated"}
     assert harness.redis.keys_with_prefix(f"site_session:{sid}") == []
-    assert harness.redis.keys_with_prefix(f"selcrs") == []
+    assert harness.redis.keys_with_prefix("selcrs") == []
     assert "session_id=" in out.headers["set-cookie"]  # cookie re-issued expired
 
 

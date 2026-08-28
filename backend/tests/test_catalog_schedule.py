@@ -4,11 +4,10 @@ The lock tests run against an in-memory FakeRedis that mirrors the
 SET-NX-EX + Lua compare-and-del semantics the real client provides; no TCP.
 """
 
-import anyio
-
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+import anyio
 import pytest
 
 from app.catalog.schedule import (

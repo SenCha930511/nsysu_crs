@@ -16,9 +16,9 @@ from pathlib import Path
 
 import pytest
 
-from app.selections.parse import parse_slt_result
 from app.selcrs.decode import decode_body
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
+from app.selections.parse import parse_slt_result
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -197,8 +197,10 @@ def test_login_page_bounce_is_classified_expired_not_empty():
     for loginish in (
         "<html><body><p>請先登錄</p></body></html>",
         # The school login page itself (SSO2 form markup)
-        '<html><body><form action="Studcheck_sso2.asp"><input name="SPassword">'
-        "</form></body></html>",
+        (
+            '<html><body><form action="Studcheck_sso2.asp"><input name="SPassword">'
+            "</form></body></html>"
+        ),
     ):
         with pytest.raises(SelcrsSessionExpired):
             parse_slt_result(loginish)
