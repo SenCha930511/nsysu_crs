@@ -109,7 +109,7 @@ def harness(monkeypatch):
         box.sync_calls += 1
         raise AssertionError("selections stub must never be reached in these tests")
 
-    async def stub_probe_stage():
+    async def stub_probe_stage(cookies):
         box.preview_probe_calls += 1
         raise AssertionError("preview probe stub must never be reached in these tests")
 
@@ -194,7 +194,7 @@ def test_preview_probe_outcomes_feed_and_close_the_breaker(harness, monkeypatch)
     harness.redis._values[STREAK_KEY] = ("4", None)
 
     # When the preview's fresh school probe dies (write-probe 503 contract)
-    async def failing_probe():
+    async def failing_probe(cookies):
         harness.preview_probe_calls += 1
         raise HTTPException(status_code=503, detail="school_unavailable")
 

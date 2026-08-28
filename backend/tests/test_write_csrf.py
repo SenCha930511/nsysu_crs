@@ -80,7 +80,7 @@ def _make_rig(monkeypatch) -> Rig:
     async def stub_record(factory, student_no: str) -> LoginDbResult:
         return LoginDbResult(student_id=uuid.uuid4(), superseded_jobs=0)
 
-    async def stub_studfun() -> str:
+    async def stub_studfun(cookies) -> str:
         rig.studfun_calls += 1
         return (FIXTURES / "studfun_closed_live_1151.html").read_bytes().decode("utf-8")
 

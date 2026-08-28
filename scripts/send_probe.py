@@ -78,6 +78,14 @@ def _drop_probe_course() -> None:
           check=False)
 
 
+def _flush(report: list[str], creds: object, masked: str) -> None:
+    raw_student_id = getattr(creds, "student_id", "")
+    text = "\n".join(report)
+    if raw_student_id:
+        text = text.replace(raw_student_id, masked)
+    print(text)
+
+
 def _cookie(response: httpx.Response, name: str) -> str | None:
     for header in response.headers.get_list("set-cookie"):
         name_value, _, _rest = header.partition(";")
@@ -203,14 +211,19 @@ def main() -> int:
                 report.append("UNEXPECTED SHAPE: job terminal but outcome is not a plain "
                               "business failure - read the audit above (exit 2).")
                 exit_code = 2
+    except SystemExit:
+        # Report must survive non-zero exits too: flow bail-outs raise
+        # SystemExit inside the try, which used to skip the print entirely.
+        _flush(report, creds, masked)
+        raise
+    except Exception as exc:  # noqa: BLE001 - probe script: show everything
+        report.append(f"probe crashed: {type(exc).__name__}: {exc}")
+        exit_code = 1
     finally:
         if seeded:
             _drop_probe_course()
             report.append(f"deleted QA catalog row {PROBE_CODE}")
-    raw_student_id = creds.student_id
-    del creds
-    # Belt+braces: no raw student id leaks through any of the lines above.
-    print("\n".join(report).replace(raw_student_id, masked))
+    _flush(report, creds, masked)
     return exit_code
 
 

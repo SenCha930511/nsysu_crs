@@ -4,7 +4,7 @@
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<!--<title>摮貊�蠘澈���蝣箄��</title>-->
-<title>��貉玨蝟餌絞 Course Selection System</title>
+<!--<title>學生身分確認</title>-->
+<title>選課系統 Course Selection System</title>
 </head>
-鞈���䠷𥲤隤歹�訫飛��毺Ⅳ撖�蝣潔�滨泵嚗諹�钅�齿鰵�蒈���嚗�<body background="../images/bg.jpg"></body>
+資料錯誤﹕學號碼密碼不符，請重新登錄！<body background="../images/bg.jpg"></body>

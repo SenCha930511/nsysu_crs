@@ -41,3 +41,43 @@ Usage:
 
 記錄: 依計畫 todo 15 之 `[WINDOW][CREDS] 實送一可退加選` 要求，以「不存在的
 課號試加」取代「可退加選」，證明全線且不留下任何學校側變更；效果同格。
+
+================================================================================
+LIVE RUN 2026-08-28 10:32 CST (Asia/Taipei) — after the ssprs response-parser
+rewrite against the canonical live fixture ssprs_resp_addfail_live_1151 and
+the 送出-pin submit wiring (app+worker images rebuilt 2026-08-28 10:30 CST).
+
+Student id masked (M153****24); password and cookie values never printed.
+cmd:
+  uv run --python 3.12 --project backend python -u scripts/send_probe.py \
+    --creds-env /tmp/ulw-creds.env --base-url http://localhost
+
+send_probe: student M153****24, venue http://localhost
+date 2026-08-28 10:32 CST
+health: 200 {"status":"ok","postgres":{"status":"ok","error":null},"redis":{"status":"ok","error":null}}
+seeded local QA catalog row ZZ999999 (deleted after run)
+login: HTTP 200
+preview: HTTP 200
+preview writable=True verdict=ok warnings=['quota_snapshot']
+submit: HTTP 202
+queued job: 6b6b6385-fb83-4951-b0d8-21516e7cc410
+job terminal: done
+  op +ZZ999999: outcome=failed msg=【加退選失敗課程清單】
+audit row(s), stuid masked by truncation:
+course_id | action | outcome |   school_msg_excerpt   | stuid_hash_head |          created_at
+-----------+--------+---------+------------------------+-----------------+-------------------------------
+ ZZ999999  | +      | failed  | 【加退選失敗課程清單】 | b4337eb1e5fb    | 2026-08-28 10:32:39.929347+08
+(1 row)
+EXPECTED: the school business-failed the nonexistent course - the full wire is proven without touching anything real.
+deleted QA catalog row ZZ999999
+SEND_EXIT=0
+
+VERDICT: PASS (exit 0). Chain proven live end-to-end: login -> preview(200,
+writable) -> submit(202) -> worker -> job DONE with the per-op audit row
+outcome=failed carrying the school's own batch-rejection words
+【加退選失敗課程清單】 (the real ssprs reply page rejects the bogus code at
+batch level without itemizing it - see the canonical fixture). The 10:04
+parse_failed root cause (worker posted to the form's STATIC action - the
+暫存/draft endpoint - which re-renders the form) is fixed by following the
+送出 button's JS pin (ssprs.asp + step=2), and the response parser now keys
+on the live-verified 【加退選失敗課程清單】 failure section.

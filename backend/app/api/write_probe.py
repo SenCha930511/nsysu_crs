@@ -15,6 +15,7 @@ from fastapi.exceptions import HTTPException
 
 from app.selcrs.endpoints import SELCRS_BASE_URL, get_studfun, get_write_form
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
+from app.selcrs.jar import SelcrsJar
 from app.stage.detect import StudfunDetection, detect_need_confirmation, parse_studfun
 
 ERR_EXPIRED: Final = "SELCRS_EXPIRED"
@@ -33,17 +34,17 @@ class StageProbe:
     need_confirmation: bool
 
 
-async def probe_stage() -> StageProbe:
+async def probe_stage(cookies: SelcrsJar) -> StageProbe:
     """Fresh Studfun + form fetch (seams follow the repo's monkeypatch style:
     adapters imported INTO this module's namespace)."""
     try:
-        detection = parse_studfun(await get_studfun())
+        detection = parse_studfun(await get_studfun(cookies))
         form_html: str | None = None
         form_url: str | None = None
         need_confirmation = False
         if detection.form_href is not None:
             form_url = urljoin(_STUDFUN_URL, detection.form_href)
-            form_html = await get_write_form(form_url)
+            form_html = await get_write_form(cookies, form_url)
             need_confirmation = detect_need_confirmation(form_html)
         return StageProbe(detection, form_html, form_url, need_confirmation)
     except SelcrsSessionExpired:

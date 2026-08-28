@@ -142,10 +142,10 @@ async def test_sync_real_fixture_caches_session_scoped_snapshot(harness_factory)
     assert response.status_code == 200
     body = response.json()
     assert body["synced_at"] and body["items"]
-    assert len(body["items"]) == 7
-    assert {item["state"] for item in body["items"]} == {"選上", "失敗"}
+    assert len(body["items"]) == 5
+    assert {item["state"] for item in body["items"]} == {"選上"}
     # first sync: everything added, nothing removed/unchanged
-    assert len(body["added"]) == 7
+    assert len(body["added"]) == 5
     assert body["removed"] == [] and body["unchanged"] == []
 
     # And the snapshot landed under the SITE SESSION key only (7d TTL)
@@ -174,7 +174,7 @@ async def test_sync_unknown_join_never_drops_unmatched_rows(harness_factory):
     assert harness.join_codes_seen == [
         ["M30400B1", "M3046243", "M3046255", "M3046327", "M3046353"]
     ]
-    assert len(items) == 7 and all(item["unknown"] for item in items)
+    assert len(items) == 5 and all(item["unknown"] for item in items)
     assert all(item["course_id"] is None for item in items)
 
 
@@ -188,7 +188,7 @@ async def test_sync_marks_matched_courses_when_catalog_knows_the_code(harness_fa
     items = {(i["state"], i["course_no"]): i for i in response.json()["items"]}
     assert items[("選上", "CSE515")]["unknown"] is False
     assert items[("選上", "CSE515")]["course_id"] == known
-    assert items[("失敗", "CSE530")]["unknown"] is True  # code-less row
+    assert items[("選上", "CSE530")]["unknown"] is True  # catalog does not know it
 
 
 # ---------- frozen diff (seeded previous snapshot) ----------
@@ -225,12 +225,12 @@ async def test_frozen_sync_diff_against_seeded_snapshot(harness_factory):
     response = harness.client.post("/api/me/selections/sync", cookies={"session_id": sid})
     body = response.json()
 
-    # Then the diff is exact: M3046243 unchanged, the 6 newcomers added,
+    # Then the diff is exact: M3046243 unchanged, the 4 newcomers added,
     # CSE999 removed (old version reported), synced_at moved forward
     assert [i["code"] for i in body["unchanged"]] == ["M3046243"]
     assert [i["course_no"] for i in body["removed"]] == ["CSE999"]
-    assert len(body["added"]) == 6
-    assert len(body["items"]) == 7
+    assert len(body["added"]) == 4
+    assert len(body["items"]) == 5
     assert body["synced_at"] != "2026-08-20T09:00:00+08:00"
 
 

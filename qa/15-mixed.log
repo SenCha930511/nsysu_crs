@@ -40,3 +40,34 @@ tests/test_write_response_parser.py::test_login_bounce_raises_session_expired_an
 tests/test_write_engine.py::test_mixed_verdicts_map_back_to_the_right_codes PASSED [ 90%]
 tests/test_write_engine.py::test_unparseable_response_is_parse_failed_with_excerpt_never_guessed PASSED [100%]
 ============================== 11 passed in 0.30s ==============================
+
+================================================================================
+NEW SECTION 2026-08-28 10:35 CST — canonical-live-fixture regression round.
+Fixture ssprs_resp_addfail_live_1151 (real ssprs reply to the bogus
+ZZ999999 add, recorded 2026-08-28 in the 115-1 加退選一 window, student id
+masked) is now CANONICAL; the synthetic *_provisional fixtures keep their
+provisional marker. Parser asserts: ZZ999999 -> outcome=failed with
+non-empty school_msg (the school's 【加退選失敗課程清單】 header), the
+【目前選課紀錄】 snapshot table is never consulted, the 回加退選課程
+back-link is not a school message, and itemized codes inside the failure
+section classify their own fragments. Engine regression drives the live
+ssform fixture end-to-end and pins the 送出 wiring (submit URL ssprs.asp,
+step=2, hidden replay verbatim).
+
+cmd (tests copied into the freshly rebuilt app container so the DB-backed
+engine tests execute against compose Postgres; image ships the new parser):
+
+  docker cp backend/tests nsysu-crs-app-1:/app/tests
+  docker compose -f deploy/docker-compose.yml exec -T app \
+    uv run pytest tests/test_write_response_parser.py tests/test_write_engine.py -v
+
+platform linux -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /app
+collected 31 items
+tests/test_write_response_parser.py .............                        [ 41%]
+tests/test_write_engine.py ..................                            [100%]
+============================== 31 passed in 1.10s ==============================
+
+Host full-suite cross-check (uv run pytest from backend/; DB-backed suites
+skip on host because prod compose publishes no Postgres port):
+  327 passed, 99 skipped in 2.36s  (0 failed)

@@ -138,8 +138,15 @@ def _write_variant(href: str) -> str | None:
 
 
 def _params_from(href: str) -> StageParams:
+    # The school's live Studfun link mixes case (`x1=..&X2=..`); look up names
+    # case-insensitively (live capture ssform-live-1151, 2026-08-28).
     query = parse_qs(urlsplit(href).query, keep_blank_values=True)
-    values = {name: query[name][0] for name in StageParams.model_fields if name in query}
+    lowered = {key.lower(): value for key, value in query.items()}
+    values = {
+        name: lowered[name.lower()][0]
+        for name in StageParams.model_fields
+        if name.lower() in lowered
+    }
     return StageParams(**values)
 
 

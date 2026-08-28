@@ -27,6 +27,7 @@ from app.auth.breaker import build_breaker
 from app.auth.redis_iface import AuthRedis
 from app.auth.sessions import SESSION_COOKIE_NAME, load_selcrs
 from app.config import Settings
+from app.selcrs.jar import deserialize_cookies
 from app.selections.store import item_identity, load_snapshot
 from app.stage.detect import VARIANT_SSFORM, VARIANT_STAGE5, is_writable
 from app.write.canonical import (
@@ -172,7 +173,7 @@ async def post_write_preview(
     # Fresh stage probe (plan: preview never rides a cached stage). probe_stage
     # already mapped SelcrsUnavailable/Expired onto its 503/401 contract.
     try:
-        probe = await probe_stage()
+        probe = await probe_stage(deserialize_cookies(jar_payload))
     except HTTPException as exc:
         if exc.status_code == status.HTTP_503_SERVICE_UNAVAILABLE and exc.detail == ERR_SCHOOL:
             await breaker.record_unknown()

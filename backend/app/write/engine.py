@@ -11,12 +11,16 @@ ledger, Redis the wake-up channel):
 3. Session liveness: dead selcrs jar -> every op 階段逾時, job failed, no
    retry (plan: 過期→全課 階段逾時 終態不重試).
 4. Same-session GET of the recorded form_url -> hidden-input replay ->
-   D/C/T overwrite (todo-14 builders) -> POST ssprs/saddstage5prs with
+   D/C/T overwrite (todo-14 builders) -> POST the 送出-pinned submit endpoint
+   (ssprs/saddstage5prs; the LIVE ssform's static action is the 暫存/draft
+   endpoint, not the submit one - live-verified, sees app.write.payload) with
    Referer:<form_url> (adapter-pinned). Transport discipline: <=2 retries
    with the adapter backoff; business failures are terminal immediately.
-5. Response is parsed per course code (app.write.response); a transport-
-   retried op answering duplicate-like becomes ``unknown-reconciled`` —
-   never ``failed``, because the first POST may have landed.
+5. Response is parsed per course code (app.write.response): the live
+   canonical shape is a status snapshot + 【加退選失敗課程清單】 failure
+   section; a transport-retried op answering duplicate-like becomes
+   ``unknown-reconciled`` — never ``failed``, because the first POST may
+   have landed.
 6. Reconcile: when the POST was transport-retried and unknown-reconciled
    ops exist, one slt_result fetch (NEVER retried itself) upgrades those
    outcomes to their real state; a dead/superseded session leaves them
@@ -67,6 +71,8 @@ from app.write.payload import (
     parse_form_action,
     parse_form_hidden_inputs,
     parse_send_value,
+    parse_submit_action,
+    parse_submit_step,
 )
 from app.write.queue import QueueTicket
 from app.write.response import is_session_bounce, parse_submit_response
@@ -193,7 +199,11 @@ async def execute_ticket(ticket: QueueTicket, ctx: EngineContext) -> None:
         await _finalize(ctx, job_id, _terminal_updates(audit_ids, OUTCOME_STAGE_EXPIRED), "failed")
         return
     hidden = parse_form_hidden_inputs(form_html)
-    action = parse_form_action(form_html)
+    # The 送出 button's JS pin wins over the form's static action: on the LIVE
+    # ssform the static action is the 暫存/draft endpoint (ssform.asp) and the
+    # real submit is ssprs.asp; posting to the static action re-renders the
+    # form (the 10:04 probe's parse_failed root cause, ssform_live_1151.html).
+    action = parse_submit_action(form_html) or parse_form_action(form_html)
     send_value = parse_send_value(form_html)
     if send_value is not None:
         hidden.setdefault(SEND_NAME, send_value)
@@ -201,6 +211,13 @@ async def execute_ticket(ticket: QueueTicket, ctx: EngineContext) -> None:
         payload = None if action is None else _BUILDERS[ticket.variant](ops, hidden)
     except (ValueError, KeyError):
         payload = None
+    if payload is not None:
+        # The live form's hidden step is blank; the 送出 click injects the real
+        # step (2 at ssform, live-verified). Provisional forms carry their own
+        # hidden step and yield no pin, so the replayed value survives there.
+        submit_step = parse_submit_step(form_html)
+        if submit_step is not None:
+            payload["step"] = submit_step
     if payload is None:
         await _finalize(ctx, job_id, _terminal_updates(audit_ids, OUTCOME_PARSE_FAILED), "failed")
         return

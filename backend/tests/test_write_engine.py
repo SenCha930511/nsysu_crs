@@ -294,6 +294,42 @@ async def test_mixed_verdicts_map_back_to_the_right_codes(rig):
     assert "必修" in msgs["M3046243"]
 
 
+# ---------- canonical live fixtures (115-1 window, 2026-08-28) ----------
+
+
+@pytest.mark.anyio
+async def test_live_ssform_wires_send_pin_and_maps_bogus_add_failed(rig):
+    # Live-verified: the real ssform's static action is the 暫存/draft
+    # endpoint; the 送出 click pins ssprs.asp + step=2 via onclick JS. The
+    # engine must follow the PIN (never the static action), and the bogus
+    # ZZ999999 add must land business-failed with the school's own words.
+    from app.selcrs.decode import decode_body
+
+    rig.school.form_html = decode_body((FIXTURES / "ssform_live_1151.html").read_bytes())
+    rig.school.responses = [
+        decode_body((FIXTURES / "ssprs_resp_addfail_live_1151.html").read_bytes())
+    ]
+    ops = [CanonicalOp(action="+", code="ZZ999999", priority=1)]
+    job_id = await _seed_job(rig.factory, ops)
+
+    await execute_ticket(_ticket(job_id, canonical_segments(ops)), rig.ctx)
+
+    (status, started, finished), audits = await _read_ledger(rig.factory, job_id)
+    assert (status, started, finished) == ("done", True, True)
+    assert rig.school.form_calls == 1 and rig.school.post_calls == 1
+    # SchoolScript.post_write already asserts submit_url == SUBMIT_URL, which
+    # only holds when the 送出 pin - not the draft static action - is followed.
+    payload = rig.school.payloads[0]
+    assert (payload["D1"], payload["C1"], payload["T1"]) == ("+", "ZZ999999", "01")
+    assert payload["step"] == "2"  # injected by the 送出 click on the live form
+    assert payload["X1"] == "20260828090000"  # hidden replayed verbatim
+    assert payload["MAX_ADD"] == "15"
+    assert (payload["D2"], payload["C2"], payload["T2"]) == ("N", "", "")  # rest row
+    assert rig.school.referers == [FORM_URL]
+    assert audits[0][2] == OUTCOME_FAILED  # business failure, terminal
+    assert "加退選失敗課程清單" in audits[0][3]
+
+
 # ---------- session expiry (階段逾時) ----------
 
 

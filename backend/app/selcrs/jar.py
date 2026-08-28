@@ -9,6 +9,11 @@ import json
 
 import httpx
 
+#: The selcrs cookie-jar type, re-exported so business modules can annotate
+#: without importing httpx themselves (the todo-3 guardrail allows httpx only
+#: inside this package).
+SelcrsJar = httpx.Cookies
+
 
 def serialize_cookies(cookies: httpx.Cookies) -> str:
     """Jar -> JSON list of name/value pairs (deterministic order for diffing)."""

@@ -36,3 +36,22 @@ per-depth accepted/reached: #1 2/7 accepted, #2 0/5 accepted, #3 1/5 accepted, #
 worst retries-per-page: 5 (page 5)
 gate: FAIL - page(s) exhausted the 5-attempt budget
 batch complete 2026-08-28 02:22:32 Asia/Taipei
+================================================================================
+captcha gate | batch 3/3 (morning 2026-08-28 window-open) | started 2026-08-28 09:55:49 Asia/Taipei
+cmd: uv run python -m scripts.captcha_gate --pages 7 | provider ddddocr==1.6.1 (pin evidence: qa/05-pin.log)
+pages are independent loop runs against the PUBLIC catalog (no login): dplycourse D0=1151, WKDAY rotating 1..7; captcha accuracy only - row parsing is todo 6 and is deliberately NOT done here
+--------------------------------------------------------------------------------
+page 1 (WKDAY=1): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), attempt 3 rejected (wrong-code marker), attempt 4 rejected (wrong-code marker), attempt 5 rejected (wrong-code marker), gave up -> 5 attempts, 2.0s [CAPTCHA-UNSOLVABLE]
+page 2 (WKDAY=2): attempt 1 rejected (wrong-code marker), ACCEPTED -> 2 attempts, 2.2s [ok]
+page 3 (WKDAY=3): attempt 1 rejected (wrong-code marker), ACCEPTED -> 2 attempts, 2.4s [ok]
+page 4 (WKDAY=4): attempt 1 rejected (wrong-code marker), ACCEPTED -> 2 attempts, 2.4s [ok]
+page 5 (WKDAY=5): attempt 1 rejected (wrong-code marker), ACCEPTED -> 2 attempts, 3.1s [ok]
+page 6 (WKDAY=6): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), attempt 3 rejected (wrong-code marker), attempt 4 rejected (wrong-code marker), attempt 5 rejected (wrong-code marker), gave up -> 5 attempts, 2.0s [CAPTCHA-UNSOLVABLE]
+page 7 (WKDAY=7): attempt 1 rejected (wrong-code marker), attempt 2 rejected (wrong-code marker), attempt 3 rejected (wrong-code marker), ACCEPTED -> 4 attempts, 2.9s [ok]
+--------------------------------------------------------------------------------
+pages ok: 5/7 | CaptchaUnsolvable: 2
+attempts: total 22, accepted 5 -> per-attempt success rate p = 0.227 (22.7%)
+per-depth accepted/reached: #1 0/7 accepted, #2 4/7 accepted, #3 0/3 accepted, #4 1/3 accepted, #5 0/2 accepted
+worst retries-per-page: 5 (page 1)
+gate: FAIL - page(s) exhausted the 5-attempt budget
+batch complete 2026-08-28 09:56:06 Asia/Taipei

@@ -32,6 +32,7 @@ at submit time, so the previewed payload is byte-identical to the one being
 confirmed.
 """
 
+import re
 from collections.abc import Sequence
 from typing import Final
 
@@ -103,6 +104,42 @@ def parse_send_value(html: str) -> str | None:
         value = tag.get("value")
         return value if isinstance(value, str) else None
     return None
+
+
+#: The real 送出 submit endpoint is pinned by the 送出 button's onclick JS
+#: (``f1.action='ssprs.asp'``), NOT by the form's static ``action`` attribute:
+#: LIVE-VERIFIED on ssform_live_1151.html, whose static action is the
+#: 暫存/draft endpoint (ssform.asp) - posting there re-renders the form and
+#: broke the 2026-08-28 10:04 probe. Only the *prs endpoints match here, so
+#: the draft pin (ssform.asp/saddstage5.asp) can never be picked up.
+_SUBMIT_ACTION_RE: Final = re.compile(r"\.action='(?P<action>(?:ssprs|saddstage5prs)\.asp)'")
+
+#: The 送出 click also injects ``<input type=hidden name=step value=N>`` into
+#: span#step_id before submitting (N=2 for the 加退選 送出, live-verified); the
+#: scraped form's own hidden step is empty, so the wire step comes from this
+#: JS, looked up in a bounded window right after the 送出 button's anchor.
+_SEND_BUTTON_ANCHOR: Final = 'value="送出"'
+_SEND_STEP_WINDOW: Final = 800
+_SEND_STEP_RE: Final = re.compile(r"name=step\s+value=(\d+)")
+
+
+def parse_submit_action(html: str) -> str | None:
+    """The 送出-pinned submit endpoint (ssprs.asp/saddstage5prs.asp), or None
+    when the form has no 送出 JS pin - callers then fall back to the form's
+    static action (the provisional fixtures carry it directly)."""
+    match = _SUBMIT_ACTION_RE.search(html)
+    return match.group("action") if match is not None else None
+
+
+def parse_submit_step(html: str) -> str | None:
+    """The step value the 送出 click injects (live-verified "2" at ssform), or
+    None when no 送出 button is present - callers then replay the form's own
+    hidden step verbatim (provisional fixtures carry theirs)."""
+    idx = html.find(_SEND_BUTTON_ANCHOR)
+    if idx < 0:
+        return None
+    match = _SEND_STEP_RE.search(html[idx : idx + _SEND_STEP_WINDOW])
+    return match.group(1) if match is not None else None
 
 
 def _rows_total(hidden: dict[str, str], default_rows: int) -> int:

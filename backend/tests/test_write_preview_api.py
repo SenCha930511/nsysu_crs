@@ -105,11 +105,11 @@ class StubSchool:
     studfun_calls: int = 0
     form_calls: int = 0
 
-    async def get_studfun(self) -> str:
+    async def get_studfun(self, cookies) -> str:
         self.studfun_calls += 1
         return self.studfun_script()
 
-    async def get_write_form(self, form_url: str) -> str:
+    async def get_write_form(self, cookies, form_url: str) -> str:
         self.form_calls += 1
         assert self.form_script is not None, "a form GET was not expected here"
         return self.form_script(form_url)

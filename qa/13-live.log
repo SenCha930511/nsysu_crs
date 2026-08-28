@@ -19,3 +19,39 @@ only POST /api/auth/login + GET /api/stage and never prints the password or
 the session cookie value.
 
 (Probe executed but results not yet recorded above.)
+
+================================================================================
+LIVE RUN 2026-08-28 10:33 CST (Asia/Taipei) — compose app freshly rebuilt
+with the write-path code (this same run also re-validate the in-flight
+Studfun-link params case-insensitivity: the live link mixes `x1`/`X2` case
+and params must still parse).
+
+cmd:
+  uv run --python 3.12 --project backend python -u scripts/stage_probe.py \
+    --creds-env /tmp/ulw-creds.env --base-url http://localhost
+
+login: HTTP 200 (student M153****24)
+GET /api/stage: HTTP 200
+{
+  "stage": "加退選",
+  "variant": "ssform",
+  "params": {
+    "X1": "20260828090000",
+    "X2": "20260831170000",
+    "EDU": "",
+    "DEG_COD": "",
+    "college": "",
+    "dept": "",
+    "grade": "",
+    "SCH_COD": "",
+    "USE_YR": ""
+  },
+  "need_confirmation": false,
+  "writable": true,
+  "reason": "ssform_link",
+  "checked_at": "2026-08-28T10:33:14+08:00"
+}
+STAGE_EXIT=0
+
+VERDICT: PASS - stage=加退選, variant=ssform, writable=true with the live
+X1/X2 window bounds carried (read-only: login + GET /api/stage only).

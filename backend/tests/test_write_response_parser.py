@@ -1,17 +1,21 @@
 """ssprs/saddstage5prs response parser tests (plan todo 15).
 
-ALL fixtures here are synthetic and marked ``provisional`` — the school's
-real ssprs reply has NOT been captured yet (todo-4 capture window
-2026-08-28 09:00+ is pending as of writing). The contract under test is the
-never-guess posture: verdicts come out keyed by course code, ambiguity and
-absence degrade to parse_failed with the raw excerpt, and a login bounce is
-a session error, never an outcome.
+The ``*_provisional`` fixtures stay synthetic and marked provisional (the
+archaeological row-table expectation, not live-verified). The CANONICAL
+fixture is ``ssprs_resp_addfail_live_1151``: the real ssprs reply recorded
+2026-08-28 in the 115-1 加退選一 window - a status snapshot whose
+【加退選失敗課程清單】 section rejects the batch-level op without itemizing
+codes. The contract under test is the never-guess posture: verdicts come
+out keyed by course code, ambiguity and absence degrade to parse_failed
+with the raw excerpt, and a login bounce is a session error, never an
+outcome.
 """
 
 from pathlib import Path
 
 import pytest
 
+from app.selcrs.decode import decode_body
 from app.selcrs.errors import SelcrsSessionExpired
 from app.write.outcomes import OUTCOME_FAILED, OUTCOME_PARSE_FAILED, OUTCOME_SUCCESS
 from app.write.response import (
@@ -26,6 +30,11 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 def _load(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
+
+
+def _load_live(name: str) -> str:
+    """Raw bytes through the adapter's per-response charset policy."""
+    return decode_body((FIXTURES / name).read_bytes())
 
 
 BATCH = ["M3046243", "GEAE2526", "MEME101B"]
@@ -106,3 +115,55 @@ def test_login_bounce_raises_session_expired_and_is_detected():
     assert is_session_bounce(bounce)
     with pytest.raises(SelcrsSessionExpired):
         parse_submit_response(bounce, BATCH)
+
+
+# ---------- canonical live fixture (recorded 2026-08-28, 115-1 加退選一) ----------
+
+
+def test_live_addfail_fixture_maps_business_failure_with_school_message():
+    parsed = parse_submit_response(_load_live("ssprs_resp_addfail_live_1151.html"), ["ZZ999999"])
+    verdict = parsed["ZZ999999"]
+    assert verdict.outcome == OUTCOME_FAILED
+    assert not verdict.duplicate_like  # no per-op duplicate wording on the page
+    assert "加退選失敗課程清單" in (verdict.school_msg or "")
+    # The 回加退選課程 back-link is navigation, not a school message.
+    assert "回加退選課程" not in (verdict.school_msg or "")
+
+
+def test_live_fixture_selections_snapshot_is_never_consulted():
+    # CSE515 sits in the page's 【目前選課紀錄】 table (the user's real,
+    # pre-existing selection). A batch mentioning it must still key on the
+    # failure section, never on the snapshot rows.
+    parsed = parse_submit_response(
+        _load_live("ssprs_resp_addfail_live_1151.html"), ["ZZ999999", "CSE515"]
+    )
+    for code in ("ZZ999999", "CSE515"):
+        assert parsed[code].outcome == OUTCOME_FAILED
+        assert "加退選失敗課程清單" in (parsed[code].school_msg or "")
+        assert "選上" not in (parsed[code].school_msg or "")  # no snapshot-row bleed
+
+
+def test_itemized_code_inside_failure_section_classifies_its_own_fragment():
+    # Synthetic section content under the LIVE header: when the school does
+    # itemize an op, the fragment rules (never the wholesale fallback).
+    html = (
+        "<html><body>"
+        "<p>【加退選失敗課程清單】</p>"
+        "<p>MEME101B 加選失敗：名額已滿（額滿）</p>"
+        '<a href="ssform.asp">回加退選課程</a>'
+        "</body></html>"
+    )
+    parsed = parse_submit_response(html, ["MEME101B", "ZZ999999"])
+    assert parsed["MEME101B"].outcome == OUTCOME_FAILED
+    assert "額滿" in (parsed["MEME101B"].school_msg or "")
+    assert parsed["ZZ999999"].outcome == OUTCOME_FAILED  # wholesale fallback
+    assert "MEME101B" not in (parsed["ZZ999999"].school_msg or "")
+
+
+def test_duplicate_wording_without_failure_marker_still_fails_duplicate_like():
+    # A bare 重複/已選 rejection (no 「失敗」 beside it) is a rejection: failed
+    # + duplicate_like so a transport-retried op lands unknown-reconciled.
+    html = "<html><body>處理結果：<p>GEAE2526 重複加選</p></body></html>"
+    parsed = parse_submit_response(html, ["GEAE2526"])
+    assert parsed["GEAE2526"].outcome == OUTCOME_FAILED
+    assert parsed["GEAE2526"].duplicate_like is True

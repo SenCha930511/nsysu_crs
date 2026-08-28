@@ -1,0 +1,405 @@
+
+<html>
+<head>
+<meta http-equiv="Content-Language" content="zh-tw">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>國立中山大學網路選課</title>
+
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<!--<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>-->
+
+<link rel="stylesheet" type="text/css" href="/inc/fancybox3/jquery.fancybox.min.css" />
+<script src="/inc/fancybox3/jquery.fancybox.min.js"></script>
+
+<script type="text/javascript">
+	function openWin(page)
+	{
+		//alert(page);
+		$.fancybox.open({
+			src: page,
+			type: 'iframe',
+			opts: {"buttons" : ["fullScreen","close"]}
+		});
+	}
+</script>
+
+
+</head>
+<SCRIPT LANGUAGE=javascript>
+<!--
+function call_submit(theform)
+    {
+      
+         fg=confirm("你確定執行該動作嗎?");
+         
+        if (fg) 
+        { 
+          document.all["send"].click();
+        }
+    }
+
+function check_data_submit(theform)     
+    {  
+       //alert("test!!"+document.getElementById('step').value);
+       if (document.getElementById('step').value=='1'){
+            //alert("here!!");      
+       }else{
+           
+              fg=confirm("你確定執行該刪除動作嗎?，確認刪除後就不能復原資料。");
+            
+           
+           if (fg) 
+           {    
+           	    
+                   fg=confirm("你確定執行該刪除動作嗎?，確認刪除後就不能復原資料，你確定嗎?。");
+                 
+                
+                if (fg) 
+                   {    	
+                    return (true);
+                   } 
+                else
+                   {
+                     return (false);    
+                   }    
+            } 
+           else
+           {
+             return (false);    
+           }  
+             
+      } 
+    } 
+	
+
+	
+	
+//-->         
+</SCRIPT>    
+
+<body background="images/bg.jpg">
+
+<p><b>姓名：徐劭霆&nbsp;&nbsp;學號：&nbsp;M153****24<br>&nbsp;&nbsp;【目前選課資料】</b></p><b>→ →【加選或退選作業區】位於功課時間表下方，請下拉捲軸。</b><br><font color="red"><B></B></font><table width="120%" border="1"><tr><td align="center" width="9%"><p align="center"><small>選上<BR>與否</small></p></td><td align="center" width="7%"><p align="center"><small>系所別</small></p></td><td align="center" width="7%"><p align="center"><small>課別代號</small></p></td><td align="center" width="2%"><p align="center"><small>年級</small></p></td><td align="center" width="15%"><p align="center"><small>科目名稱</small></p></td><td align="center" width="3%"><p align="center"><small>加選志願別</small></p></td><td align="center" width="3%"><p align="center"><small>學分</small></p></td><td align="center" width="4%"><p align="center"><small>年期</small></p></td><td align="center" width="3%"><p align="center"><small>必選</small></p></td><td align="center" width="7%"><p align="center"><small>授課<br>教師</small></p></td><td align="center" width="7%"><p align="center"><small>教室</small></p></td><td align="middle" width="24%"><p align="center"><small>備註</small></p></td></tr><td align="center" width="9%"><p align="center"> <small><FONT COLOR="RED">選上</FONT></small></p></td><td align="middle" width="7%"><small>資工碩&nbsp;</small></td><td align="middle" width="5%"><small>CSE515</small></td><td align="middle" width="2%"><snall>1</small></td><td align="middle" width="15%"><small><a href=https://selcrs.nsysu.edu.tw/menu5/saveoutline.asp?syear=115&sem=1&CrsDat=CSE515&Crsname=高等電腦網路>高等電腦網路</a></small></td><td align="middle" width="3%"><small>&nbsp</small></td><td align="middle" width="3%"><small>3</small></td><td align="middle" width="4%"><small>期</small></td><td align="middle" width="3%"><small>必</small></td><td align="middle" width="7%"><small>林俊宏</small></td><td align="middle" width="7%"><small>三2,3,4(工EC 5012) </small></td><td align="middle" width="24%"><small>&nbsp</small></td></TR><td align="center" width="9%"><p align="center"> <small><FONT COLOR="RED">選上</FONT></small></p></td><td align="middle" width="7%"><small>資工碩&nbsp;</small></td><td align="middle" width="5%"><small>CSE520</small></td><td align="middle" width="2%"><snall>1</small></td><td align="middle" width="15%"><small><a href=https://selcrs.nsysu.edu.tw/menu5/saveoutline.asp?syear=115&sem=1&CrsDat=CSE520&Crsname=高等作業系統>高等作業系統</a></small></td><td align="middle" width="3%"><small>&nbsp</small></td><td align="middle" width="3%"><small>3</small></td><td align="middle" width="4%"><small>期</small></td><td align="middle" width="3%"><small>必</small></td><td align="middle" width="7%"><small>王友群</small></td><td align="middle" width="7%"><small>四8,6,7(工EC 9032) </small></td><td align="middle" width="24%"><small>&nbsp</small></td></TR><td align="center" width="9%"><p align="center"> <small><FONT COLOR="RED">選上</FONT></small></p></td><td align="middle" width="7%"><small>資工碩&nbsp;</small></td><td align="middle" width="5%"><small>CSE530</small></td><td align="middle" width="2%"><snall>0</small></td><td align="middle" width="15%"><small><a href=https://selcrs.nsysu.edu.tw/menu5/saveoutline.asp?syear=115&sem=1&CrsDat=CSE530&Crsname=專題研究（一）>專題研究（一）</a></small></td><td align="middle" width="3%"><small>&nbsp</small></td><td align="middle" width="3%"><small>3</small></td><td align="middle" width="4%"><small>期</small></td><td align="middle" width="3%"><small>選</small></td><td align="middle" width="7%"><small>邱勝敏</small></td><td align="middle" width="7%"><small>一2,3,4(工EC 5000) </small></td><td align="middle" width="24%"><small>限本系碩/博士生修習</small></td></TR><td align="center" width="9%"><p align="center"> <small><FONT COLOR="RED">選上</FONT></small></p></td><td align="middle" width="7%"><small>資工碩&nbsp;</small></td><td align="middle" width="5%"><small>CSE531</small></td><td align="middle" width="2%"><snall>1</small></td><td align="middle" width="15%"><small><a href=https://selcrs.nsysu.edu.tw/menu5/saveoutline.asp?syear=115&sem=1&CrsDat=CSE531&Crsname=書報討論（一）>書報討論（一）</a></small></td><td align="middle" width="3%"><small>&nbsp</small></td><td align="middle" width="3%"><small>1</small></td><td align="middle" width="4%"><small>期</small></td><td align="middle" width="3%"><small>必</small></td><td align="middle" width="7%"><small>陳嘉平</small></td><td align="middle" width="7%"><small>五6(工EC 2011) </small></td><td align="middle" width="24%"><small>限本系大四生及碩/博士生修習</small></td></TR><td align="center" width="9%"><p align="center"> <small><FONT COLOR="RED">選上</FONT></small></p></td><td align="middle" width="7%"><small>資工碩&nbsp;</small></td><td align="middle" width="5%"><small>CSE729</small></td><td align="middle" width="2%"><snall>0</small></td><td align="middle" width="15%"><small><a href=https://selcrs.nsysu.edu.tw/menu5/saveoutline.asp?syear=115&sem=1&CrsDat=CSE729&Crsname=資料處理與建模>資料處理與建模</a></small></td><td align="middle" width="3%"><small>&nbsp</small></td><td align="middle" width="3%"><small>3</small></td><td align="middle" width="4%"><small>期</small></td><td align="middle" width="3%"><small>選</small></td><td align="middle" width="7%"><small>邱勝敏</small></td><td align="middle" width="7%"><small>四2,3,4(工EC 1006) </small></td><td align="middle" width="24%"><small>&nbsp</small></td></TR></table><br><div align="center"><font color=#000080 size=5>功課表</font></div><iframe style="display:block;width:100%;height:95%;border:0;" src="Z2.asp?syear=115&sem=1&stage=31"></iframe><br><div align="center"><center><b>【加選或退選作業區】</b><font size=2><b>本階段為『填列志願』加選，加選的志願序正確填法：1、2、3，錯誤填法：1、1、1。</b></font><br><form method="POST" name="f1" action="ssform.asp" onSubmit="return Validator()"><table border="5" cellpadding="2" width="70%"><tr><td width="20%" align="center">欄位</td><td width="10%" align="center">加退選</td><td width="35%" align="center">課別代號<a href=../../menu1/CourseQuery.asp?HIS=1&eng=0&IDNO=M153****24&ITEM=C target=aa>&nbsp;<br>開啟課程查詢新視窗網頁，點擊課號加入下面課程清單</a></td><td width="35%" align="center">加選志願別</td></tr><tr><td width="20%" align="center">1</td><td width="10%" align="center"><p><select size="1" name="D1" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C1"  id="TC1" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,1) ><font color=#1664c9><span name="CDESC1" ID="CDESC1" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T1" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">2</td><td width="10%" align="center"><p><select size="1" name="D2" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C2"  id="TC2" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,2) ><font color=#1664c9><span name="CDESC2" ID="CDESC2" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T2" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">3</td><td width="10%" align="center"><p><select size="1" name="D3" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C3"  id="TC3" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,3) ><font color=#1664c9><span name="CDESC3" ID="CDESC3" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T3" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">4</td><td width="10%" align="center"><p><select size="1" name="D4" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C4"  id="TC4" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,4) ><font color=#1664c9><span name="CDESC4" ID="CDESC4" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T4" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">5</td><td width="10%" align="center"><p><select size="1" name="D5" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C5"  id="TC5" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,5) ><font color=#1664c9><span name="CDESC5" ID="CDESC5" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T5" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">6</td><td width="10%" align="center"><p><select size="1" name="D6" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C6"  id="TC6" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,6) ><font color=#1664c9><span name="CDESC6" ID="CDESC6" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T6" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">7</td><td width="10%" align="center"><p><select size="1" name="D7" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C7"  id="TC7" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,7) ><font color=#1664c9><span name="CDESC7" ID="CDESC7" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T7" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">8</td><td width="10%" align="center"><p><select size="1" name="D8" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C8"  id="TC8" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,8) ><font color=#1664c9><span name="CDESC8" ID="CDESC8" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T8" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">9</td><td width="10%" align="center"><p><select size="1" name="D9" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C9"  id="TC9" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,9) ><font color=#1664c9><span name="CDESC9" ID="CDESC9" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T9" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">10</td><td width="10%" align="center"><p><select size="1" name="D10" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C10"  id="TC10" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,10) ><font color=#1664c9><span name="CDESC10" ID="CDESC10" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T10" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">11</td><td width="10%" align="center"><p><select size="1" name="D11" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C11"  id="TC11" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,11) ><font color=#1664c9><span name="CDESC11" ID="CDESC11" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T11" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">12</td><td width="10%" align="center"><p><select size="1" name="D12" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C12"  id="TC12" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,12) ><font color=#1664c9><span name="CDESC12" ID="CDESC12" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T12" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">13</td><td width="10%" align="center"><p><select size="1" name="D13" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C13"  id="TC13" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,13) ><font color=#1664c9><span name="CDESC13" ID="CDESC13" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T13" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">14</td><td width="10%" align="center"><p><select size="1" name="D14" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C14"  id="TC14" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,14) ><font color=#1664c9><span name="CDESC14" ID="CDESC14" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T14" size="2" maxlength="2"> 志願</td></tr><tr><td width="20%" align="center">15</td><td width="10%" align="center"><p><select size="1" name="D15" ><option value="N" selected ></option><option value="+">加選</option><option value="-">退選</option></select></p></td><td width="35%" align="left"><input type="text" name="C15"  id="TC15" size="10" maxlength="20" onblur=chk_crsno_desc('115','1',this.value,15) ><font color=#1664c9><span name="CDESC15" ID="CDESC15" ></span></font></td><td width="35%" align="center">第 <input type="text" name="T15" size="2" maxlength="2"> 志願</td></tr></table><input type="hidden" name="X1" value="20260828090000" ><input type="hidden" name="X2" value="20260831170000" ><input type="hidden" name="MAX_ADD" value="15" ><input type="hidden" name="DEG_COD" value="" ><input type="hidden" name="college" value="" ><input type="hidden" name="dept" value="" ><input type="hidden" name="grade" value="" ><input type="hidden" name="S_class" value="" ><input type="hidden" name="M_DPT_COD" value="" ><input type="hidden" name="M_DPT_COD2" value="" ><input type="hidden" name="S_DPT_COD" value="" ><input type="hidden" name="EDU" value="" ><input type="hidden" name="SCH_COD" value="" ><input type="hidden" name="USE_YR" value="" ><span id=step_id><input type="hidden" name="step" id="step" value="" ></span><input type="button"  value="暫存" name="B2" onclick="document.getElementById('step_id').innerHTML='<input type=hidden name=step value=1 >';f1.action='ssform.asp';document.all['send'].click();"><input type="button"  value="送出" name="B1" onclick="document.getElementById('step_id').innerHTML='<input type=hidden name=step value=2 >';f1.action='ssprs.asp';document.all['send'].click();"><input type=submit name=send id=send style=display:none></form></center></div>
+<body background="images/bg.jpg">
+<div align="center">
+
+
+<script language="JavaScript">
+
+	
+function chk_crsno_desc(syr,sm,crsno,item_no) {
+	//alert(syr);
+	//if ((syr!='')){	
+	if ((syr!='')&&(sm!='')&&(crsno!='')&&(item_no!='')){	
+			//alert('1111');
+				$.ajax({
+						type: 	"get",
+						url: 	"chk_crsno_desc.asp",
+						data:	{	
+									ACTION:	"1",
+									SYEAR: syr,			     								
+									SEM: sm,			     								
+									CRSNO: crsno
+								},     			
+						contentType: "application/text; charset=utf-8",
+						dataType:	"json",
+						async: false,
+						success:function(json){
+							//alert("成功~");
+							
+							var data = json.data;
+							//alert("成功~data.length="+data.length);
+							if(data == null || data.length < 1){
+								//alert("parameters:SYEAR="+$('input[name=QM_SYEAR]').val()+"&SEM="+$('input[name=QM_SEM]').val()+"&CRS_DESC="+$('input[name=CRS_DESC]').val()+"&DPT_COD="+$('#DPT_COD_ID').val()+"&GRADE="+$('#GRADE_ID').val()+"&CLASS_COD="+$('#CLASS_COD_ID').val()+"&SECT_COD="+$('input[name=SECT_COD]').val())
+								//	NewWin=window.open("crs_open.asp?ACTION=922&SYEAR="+$('input[name=QM_SYEAR]').val()+"&SEM="+$('input[name=QM_SEM]').val()+"&CRS_DESC="+$('input[name=CRS_DESC]').val()+"&DPT_COD="+$('#DPT_COD_ID').val()+"&GRADE="+$('#GRADE_ID').val()+"&CLASS_COD="+$('#CLASS_COD_ID').val()+"&SECT_COD="+$('input[name=SECT_COD]').val()+'&tm='+new Date(),"DisplayWindow3","toolbar=no,directories=no,menubar=no,width=300pixels,height=200pixels,left=0,top=50");
+								$("#CDESC"+item_no).text('找不到課程(Cannot find courses)');	
+							}else if(data.length == 1){
+									
+									
+									//$("#pick_crs_cod_body tr").remove();
+									
+									$.each(data, function(i, n){
+										
+											$("#CDESC"+item_no).text(n.CRS_DESC+'['+n.T_NAME+']');
+										
+										
+									});	// end each
+									//	$( "#pick_crs_cod_dialog" ).dialog( "open" );	
+							
+							}	// end if
+							
+						},
+						error:function(xhr, ajaxOptions, thrownError){
+						alert(xhr.status+":"+xhr.statusText);
+					}
+				});
+		}
+}	
+
+
+function MakeArray(n){ //字串陣列
+  this.length = n;
+  for(var I=1;I<=n;I++){
+    this[I]=0
+  }
+  return this
+}
+var totalcourse
+totalcourse=0;
+Course= new MakeArray (50); //選課單上的課號
+Weight= new MakeArray (50); //選課單上的點數
+Stage=  new MakeArray (50); //選課單上的階段別
+
+D= new MakeArray (15);
+C= new MakeArray (15);
+T= new MakeArray (15);
+function  Validator()
+{
+  var i
+  var CC,DD,TT
+  getdata();
+  //alert('here2');
+  for (i=1;i<15;i++)
+  {
+      DD="";
+      CC="";
+      TT="";
+      DD=D[i];  //--動作
+      CC=C[i];  //--課號
+      TT=T[i];  //--點數
+      pass=true;
+      if (CC.length>0)
+      {
+         
+            if (DD=="N")
+            {
+               alert("欄位"+i+"：未選擇加退選動作！\n"+"Field "+i+" not checked !");
+               pass=false
+               break;
+            }
+            else
+            {
+               if(DD=="+")
+               { //做加選檢查
+               
+                  if ((TT > 20) || (TT < 0) || (TT.length<1) )
+                  {
+                      alert("欄位"+i+"：點數填寫錯誤應填入[0~20]\n"+"Field "+i+" wrong number,it should be [0~20]");
+                      pass=false;
+                      break;
+                  }
+                  else
+                  {
+                       //傳回false 表一般課程課號全為數字
+                          
+                             
+                                 if (checkpoint(TT,0))
+                                 { //檢查點數欄是否正確
+                                    if(dup_courseno(CC))
+                                    {//課號重複
+                                        pass=false;
+                                        alert("欄位"+i+"：一般課程加選課號重複，請重新輸入\n"+"Field "+i+" duplicated course code");
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        if (TT>20 || TT<0)
+                                        {
+                                            alert("欄位"+i+"：志願不合法，志願填寫錯誤應填入[1~20]\n"+"Field "+i+" wrong priority number, it should be [1~20]");
+                                            pass=false; //不合法的英文起始課號
+                                            break;                                                                          
+                                        } 
+                                        else
+                                        { 
+                                            pass=true;
+                                        }
+                                    }
+                                 }//end of if (checkpoint(TT,0)) 檢查點數欄是否正確
+                                 else
+                                 {
+                                    alert("欄位"+i+"：志願不合法，志願填寫錯誤應填入[1~20]\n"+"Field "+i+" wrong priority number, it should be [1~20]");
+                                    pass=false; //不合法的英文起始課號
+                                    break;
+                                 }                          
+                             
+                          
+                          
+                          
+                      
+                      
+                  }
+               }
+               else
+               {//做退選檢查
+                  pass1=true;
+                  for(var j=1;j<=totalcourse;j++)
+                  {
+                     if (CC.toUpperCase()==Course[j])
+                     {
+                        pass1=true
+                        pass=true
+                        break;
+                     }
+                     else
+                     {
+                        pass1=false
+                        pass=false;
+                     }
+                  }
+                  if(pass1)
+                  {
+                     pass=true;
+                  }
+                  else{
+                     alert("欄位"+i+"：退選課號不存在，請重新輸入\n"+"Field "+i+" wrong course code");
+                     pass=false;
+                     break;
+                  }
+               }//end of 做退選檢查
+            }   
+         
+      }
+  }
+  //alert('here');
+  //20161005 eddieliu, cancel the confirm
+  //if (pass){
+  //  if (document.f1.step.value=='2'){
+    	 
+  //         fg=confirm("Did you double check whether the information is correct?");
+       
+  //         fg=confirm("資料送出後就不可再更改了是否確定要送出?");
+       
+  //         if (fg)
+  //            return (true);
+  //         else
+  //           return (false);    
+  //   }         
+  //}else{
+     return pass
+  // }  
+}
+function dup_courseno(item)
+{
+  
+  for(var j=1;j<totalcourse+1;j++)
+  {
+      if (item.toUpperCase()==Course[j])
+      {
+          return true
+      }
+      else
+      {
+          if (j==totalcourse)
+          {
+            return false
+          }   
+      }
+  }
+  return false
+}
+
+function  Is_interest(crsno)
+{//檢查是否892初選第二階段可加選的英文字母開頭課號
+ var Ucrsno
+ var F2Ucrsno
+ Ucrsno=crsno.toUpperCase();
+ if (Ucrsno.length==8)
+ {
+       F2Ucrsno=Ucrsno.substring(0,2);
+       if ((F2Ucrsno=="AC")||(F2Ucrsno=="AD")||(F2Ucrsno=="AE")||(F2Ucrsno=="AS")||(F2Ucrsno=="AB")||(F2Ucrsno=="AG")||(F2Ucrsno=="AI")||(F2Ucrsno=="AH"))
+       {
+           if(checkpoint(Ucrsno,5))
+           {
+              return true
+           }
+           else
+           {    
+              return false
+           }
+       }
+ }
+ else
+ {  
+   return false
+ }
+}
+
+function checkpoint(str,k) //檢查str 自第k個位置之後是否全為數字
+{
+ checkStr = str;
+ checkOK = "0123456789"
+ allValid = true;
+ if( checkStr.substring(0,1)=="0" && checkStr.length>1)
+ {
+    allValid = false
+ }
+ else
+ {
+   for (i = k;  i < checkStr.length;  i++){
+      ch = checkStr.charAt(i);
+      for (j = 0;  j < checkOK.length;  j++)
+           if (ch == checkOK.charAt(j))
+               break;
+           if (j == checkOK.length){
+               allValid = false;
+               break;
+           }
+   }
+ }
+ return (allValid);
+}
+
+function getdata(){
+Course[1]="CSE530";Stage[1]=22;Weight[1]=2;Course[2]="CSE729";Stage[2]=22;Weight[2]=1;Course[3]="CSE515";Stage[3]=0;Weight[3]=0;Course[4]="CSE520";Stage[4]=0;Weight[4]=0;Course[5]="CSE531";Stage[5]=0;Weight[5]=0;totalcourse=5;
+  D[1]=document.f1.D1.options[document.f1.D1.selectedIndex].value;
+  D[2]=document.f1.D2.options[document.f1.D2.selectedIndex].value;
+  D[3]=document.f1.D3.options[document.f1.D3.selectedIndex].value;
+  D[4]=document.f1.D4.options[document.f1.D4.selectedIndex].value;
+  D[5]=document.f1.D5.options[document.f1.D5.selectedIndex].value;
+  D[6]=document.f1.D6.options[document.f1.D6.selectedIndex].value;
+  D[7]=document.f1.D7.options[document.f1.D7.selectedIndex].value;
+  D[8]=document.f1.D8.options[document.f1.D8.selectedIndex].value;
+  D[9]=document.f1.D9.options[document.f1.D9.selectedIndex].value;
+  D[10]=document.f1.D10.options[document.f1.D10.selectedIndex].value;
+  D[11]=document.f1.D11.options[document.f1.D11.selectedIndex].value;
+  D[12]=document.f1.D12.options[document.f1.D12.selectedIndex].value;
+  D[13]=document.f1.D13.options[document.f1.D13.selectedIndex].value;
+  D[14]=document.f1.D14.options[document.f1.D14.selectedIndex].value;
+  D[15]=document.f1.D15.options[document.f1.D15.selectedIndex].value;
+  
+  C[1]=document.f1.C1.value;
+  C[2]=document.f1.C2.value;
+  C[3]=document.f1.C3.value;
+  C[4]=document.f1.C4.value;
+  C[5]=document.f1.C5.value;
+  C[6]=document.f1.C6.value;
+  C[7]=document.f1.C7.value;
+  C[8]=document.f1.C8.value;
+  C[9]=document.f1.C9.value;
+  C[10]=document.f1.C10.value;
+  C[11]=document.f1.C11.value;
+  C[12]=document.f1.C12.value;
+  C[13]=document.f1.C13.value;
+  C[14]=document.f1.C14.value;
+  C[15]=document.f1.C15.value;
+  
+  T[1]=document.f1.T1.value;
+  T[2]=document.f1.T2.value;
+  T[3]=document.f1.T3.value;
+  T[4]=document.f1.T4.value;
+  T[5]=document.f1.T5.value;
+  T[6]=document.f1.T6.value;
+  T[7]=document.f1.T7.value;
+  T[8]=document.f1.T8.value;
+  T[9]=document.f1.T9.value;
+  T[10]=document.f1.T10.value;
+  T[11]=document.f1.T11.value;
+  T[12]=document.f1.T12.value;
+  T[13]=document.f1.T13.value;
+  T[14]=document.f1.T14.value;
+  T[15]=document.f1.T15.value;
+   
+}    
+</script>
+</body>
+</html>

@@ -322,3 +322,30 @@ accuracy tracking stays in `qa/05-accuracy.log`). Verdict vs the
 captcha solve + captcha-free GETs leaves ~45% headroom. If school-side peak
 latency later blows the budget, the plan's degrade path is changed-depts
 diff mode or a longer peak interval plus a meta announcement.
+
+### capture run 2026-08-28 08:58 (Asia/Taipei) - window read-only (anytime)
+
+- **SSO2 tri-state markers (success path)**: CONFIRMED - HTTP 302 + Location contains main_frame + >=1 Set-Cookie observed live (cookie names in qa/04-readonly-capture.log)
+- **Studfun closed-state marker**: CONFIRMED - HTTP 200; no ssform/saddstage5 link present (selection closed); observed fragments: 選課關閉 / [選課結果查詢] / 各階段選課結果公布時，請務必上網查看個人選課資料。自92學年度起： / (1) 各階段選課結果公布時，請務必上網查看個人選課資料。 / (2) 加退選結束後，實施「網路確認」正式選課紀錄，未上網確認者，即以教務處所存資料為準。; fixture backend/tests/fixtures/studfun_closed_live_1151.html
+- **slt_result column layout vs provisional**: CONFIRMED - live layout 14 cells ['選上 與否', '系所別', '課號', '年級', '課程代碼', '課程名稱', '點數 志願', '階段', '學分', '學年 期', '必選 修', '授課 教師', '教室', '說明'] DIFFERS from provisional assumption (7 cells ['狀態', '課程名稱', '學分', '必選修', '教師', '上課時間', '備註']); fixture backend/tests/fixtures/slt_result_live_1151.html
+- **single-session behaviour (does login #2 kill login #1?)**: CONFIRMED - after login #2, login #1's cookie is still ALIVE (school allows concurrent sessions)
+- **selcrs session TTL lower bound (>=3 min)**: CONFIRMED - observed marks: +60s=alive, +180s=alive; proves only TTL >= 3 min for this session
+- **selcrs session TTL upper/longer bounds**: UNVERIFIED - not probed beyond +180s by design (read-only round scope)
+- **SSO2 failure-marker text/variants**: CONFIRMED - marker 「學號碼密碼不符」 hit; observed fragments: 資料錯誤﹕學號碼密碼不符，請重新登錄！; fixture backend/tests/fixtures/sso2_fail_live_1151.html
+
+### capture run 2026-08-28 09:55 (Asia/Taipei) - window read-only (anytime)
+
+- **SSO2 tri-state markers (success path)**: CONFIRMED - HTTP 302 + Location contains main_frame + >=1 Set-Cookie observed live (cookie names in qa/04-readonly-capture.log)
+- **Studfun open-state capture (read-only form follow-up)**: CONFIRMED - write link present; fixtures backend/tests/fixtures/studfun_open_live_1151.html + ssform_live_1151.html (15 hidden inputs visible: ['X1', 'X2', 'MAX_ADD', 'DEG_COD', 'college', 'dept', 'grade', 'S_class', 'M_DPT_COD', 'M_DPT_COD2', 'S_DPT_COD', 'EDU', 'SCH_COD', 'USE_YR', 'step']); zero form submissions
+- **Studfun closed-state marker**: UNVERIFIED - a write-form link is present (window open) - the closed marker is not observable this round
+- **slt_result column layout vs provisional**: CONFIRMED - live layout 14 cells ['選上 與否', '系所別', '課號', '年級', '課程代碼', '課程名稱', '點數 志願', '階段', '學分', '學年 期', '必選 修', '授課 教師', '教室', '說明'] DIFFERS from provisional assumption (7 cells ['狀態', '課程名稱', '學分', '必選修', '教師', '上課時間', '備註']); fixture backend/tests/fixtures/slt_result_live_1151.html
+- **single-session behaviour (does login #2 kill login #1?)**: CONFIRMED - after login #2, login #1's cookie is still ALIVE (school allows concurrent sessions)
+- **selcrs session TTL lower bound (>=3 min)**: CONFIRMED - observed marks: +60s=alive, +180s=alive; proves only TTL >= 3 min for this session
+- **selcrs session TTL upper/longer bounds**: UNVERIFIED - not probed beyond +180s by design (read-only round scope)
+- **SSO2 failure-marker text/variants**: CONFIRMED - marker 「學號碼密碼不符」 hit; observed fragments: 資料錯誤﹕學號碼密碼不符，請重新登錄！; fixture backend/tests/fixtures/sso2_fail_live_1151.html
+
+### write-path run 2026-08-28 10:30 (Asia/Taipei) - 115-1 加退選一 window (bogus-code writes only)
+
+- **ssform submit endpoint**: CONFIRMED - the live ssform's STATIC form action is the 暫存/draft endpoint (`ssform.asp`); the real 送出 submit is pinned by the 送出 button's onclick JS (`f1.action='ssprs.asp'` + injected `step=2`). Posting to the static action re-renders the form (the 2026-08-28 10:04 probe's parse_failed root cause). Fixture backend/tests/fixtures/ssform_live_1151.html.
+- **REAL ssprs failure-response shape**: CONFIRMED - a status-SNAPSHOT page (姓名/學號 header, 【目前選課紀錄】 current-selections table) followed by an `<hr>`-separated failure section headed 【加退選失敗課程清單】. A bogus/unknown course code is rejected at BATCH level: the failure section header is present but the op's code is NOT itemized anywhere on the page. Fixture backend/tests/fixtures/ssprs_resp_addfail_live_1151.html (+ sent wire body ssprs_post_body_addfail_live_1151.txt). Whether real validation failures (額滿/衝堂/必修) are itemized per code: UNVERIFIED (only the nonexistent-code probe is legally writable).
+- **end-to-end write wire**: CONFIRMED - login -> preview(200) -> submit(202) -> worker -> job DONE with per-op audit outcome=failed, school_msg=【加退選失敗課程清單】 for the nonexistent ZZ999999 add (qa/15-live.log, SEND_EXIT=0). Zero modification to real selections by construction.
