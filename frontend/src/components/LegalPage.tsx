@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
+import { useI18n } from "../lib/i18n";
+
 export interface LegalSection {
   heading: string;
   paragraphs?: string[];
@@ -15,15 +17,16 @@ interface LegalPageProps {
 }
 
 export function LegalCrossLinks() {
+  const { tx } = useI18n();
   return (
-    <nav className="small text-center my-4 p-3 bg-white rounded-4 shadow-sm border" aria-label="法律資訊">
-      <Link to="/privacy" className="text-teal-700 text-decoration-none fw-semibold">隱私權政策</Link>
+    <nav className="small text-center my-4 p-3 bg-white rounded-4 shadow-sm border" aria-label={tx("法律資訊", "Legal information")}>
+      <Link to="/privacy" className="text-teal-700 text-decoration-none fw-semibold">{tx("隱私權政策", "Privacy Policy")}</Link>
       <span className="text-muted mx-2">·</span>
-      <Link to="/tos" className="text-teal-700 text-decoration-none fw-semibold">服務條款</Link>
+      <Link to="/tos" className="text-teal-700 text-decoration-none fw-semibold">{tx("服務條款", "Terms of Service")}</Link>
       <span className="text-muted mx-2">·</span>
-      <Link to="/faq" className="text-teal-700 text-decoration-none fw-semibold">常見問題</Link>
+      <Link to="/faq" className="text-teal-700 text-decoration-none fw-semibold">{tx("常見問題", "FAQ")}</Link>
       <span className="text-muted mx-2">·</span>
-      <Link to="/" className="text-teal-700 text-decoration-none fw-semibold">回到查課</Link>
+      <Link to="/" className="text-teal-700 text-decoration-none fw-semibold">{tx("回到查課", "Back to courses")}</Link>
     </nav>
   );
 }

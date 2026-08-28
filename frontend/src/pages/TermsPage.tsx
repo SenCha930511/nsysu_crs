@@ -1,8 +1,9 @@
 /** 服務條款 (todo 17): unofficial service, rate-limit scope, abuse monitoring. */
 
 import LegalPage, { type LegalSection } from "../components/LegalPage";
+import { useI18n } from "../lib/i18n";
 
-const SECTIONS: LegalSection[] = [
+const SECTIONS_ZH: LegalSection[] = [
   {
     heading: "非官方服務聲明",
     paragraphs: [
@@ -56,17 +57,80 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "聯絡管道",
     paragraphs: [
-      "（待補：正式聯絡與通報管道將於本站公開上線前公告於本頁。）",
+      "GitHub 倉庫提 issue：https://github.com/SenCha930511/nsysu_crs；或寄信至 sencha930511@gmail.com。",
+    ],
+  },
+];
+
+const SECTIONS_EN: LegalSection[] = [
+  {
+    heading: "Unofficial-service notice",
+    paragraphs: [
+      "This site is a student-built, third-party course-browsing and selection helper — it is NOT an official NSYSU service, and has no affiliation, mandate, partnership, or endorsement from the university. Usage is voluntary; do not read anything here as an official announcement. The school may change its interfaces, flows, or availability at any time, and this site does not promise permanent compatibility.",
+    ],
+  },
+  {
+    heading: "Scope of service",
+    paragraphs: [
+      "This site provides: catalog browsing and filtering, weekly timetable with realtime clash/credit checks, availability snapshots, multi-plan management with priority order, ICS/PNG export, “my selections” sync, and — only after your explicit second confirmation — add/drop or first-round priority submissions on your behalf.",
+    ],
+    list: [
+      "Results are whatever the school system says per course, shown verbatim — never beautified, never hidden.",
+      "No auto-sniping: business failures (full class, rule violations) are never retried; that course is final for the batch.",
+      "The first-round priority submission stays off until validated against a real 115-2 window (FEATURE_FIRST_ROUND_WRITE=false).",
+      "Final selection results and all enrollment rights/obligations follow the school's formal records only.",
+    ],
+  },
+  {
+    heading: "Please change the default password",
+    paragraphs: [
+      "The school system's initial password is the last six digits of your national ID. If you have never changed it, anyone who knows your student number and those six digits can sign in as you. Change it to a strong password on the school system immediately. This site cannot and will not change it for you, and we accept no password-custody requests of any kind.",
+    ],
+  },
+  {
+    heading: "What our rate limits protect (important)",
+    paragraphs: [
+      "This site implements a sign-in failure lock (5 wrong-password attempts for one student within 15 minutes locks out that student for 15 minutes) plus per-IP request throttles. These mechanisms protect THIS SITE ONLY from brute force and automation abuse — they neither represent nor substitute the school's own security mechanisms.",
+      "Note carefully: the school has its own connection-rate, anomaly-detection and lockout rules. Any lockout or blocking you (or anyone using your credentials) trigger on the school side is unrelated to this site, and we cannot lift it. If you are concerned about school-side risk, slow down and use this service at your own risk.",
+    ],
+  },
+  {
+    heading: "Statement on targeted lockout abuse",
+    paragraphs: [
+      "We recognize a specific abuse pattern: a malicious third party can repeatedly trigger failures against a chosen student number (about 5 bad attempts every 15 minutes), keeping that student almost permanently locked out of this service. This is an inherent trade-off of the lock mechanism — loosening it would weaken brute-force defence.",
+      "Our monitoring and response: every lock event is counted (without plaintext student numbers). If lock events spike abnormally, the operator reviews source patterns per the runbook SOP and responds — including posting status notices, adjusting responses while preserving normal users, and reserving the right to temporarily restrict suspicious sources. We do not report any account activity to the school because of this.",
+    ],
+  },
+  {
+    heading: "Availability, circuit breaker, and degraded mode",
+    paragraphs: [
+      "If consecutive connection failures or abnormal responses from the school system reach the threshold (default 5), the circuit breaker opens and the whole site enters read-only safe mode: browsing and timetable keep working, sign-in and submissions pause, with a notice at the top of the page. Once the school recovers and passes liveness checks, the site re-enables automatically without further notice. The same applies to catalog sync failures: the last successful snapshot stays in service with its timestamp announced.",
+    ],
+  },
+  {
+    heading: "Disclaimer",
+    paragraphs: [
+      "This service is provided free, as-is, with no responsibility for the timeliness or correctness of course data, nor for selection outcomes. Users must verify everything against the school's formal information and accept the risks of using a third-party tool.",
+    ],
+  },
+  {
+    heading: "Contact",
+    paragraphs: [
+      "Open an issue on the GitHub repo: https://github.com/SenCha930511/nsysu_crs — or email sencha930511@gmail.com.",
     ],
   },
 ];
 
 function TermsPage() {
+  const { lang, tx } = useI18n();
   return (
     <LegalPage
-      title="服務條款"
-      intro="使用本站前請詳閱：本服務為非官方第三方工具；本站限速僅保護本站；學校端風險請自行評估。"
-      sections={SECTIONS}
+      title={tx("服務條款", "Terms of Service")}
+      intro={tx(
+        "使用本站前請詳閱：本服務為非官方第三方工具；本站限速僅保護本站；學校端風險請自行評估。",
+        "Please read before using: this is an unofficial third-party tool; our rate limits protect only this site; school-side risk is yours to evaluate.",
+      )}
+      sections={lang === "en" ? SECTIONS_EN : SECTIONS_ZH}
     />
   );
 }

@@ -8,15 +8,16 @@ import {
   Key,
   Lock,
   Person,
-  ShieldCheck,
   ShieldLock,
 } from "react-bootstrap-icons";
 
 import { ApiError } from "../lib/api";
 import { loginErrorText, loginNoticeText } from "../lib/guards";
+import { useI18n } from "../lib/i18n";
 import { useAuth } from "../state/auth";
 
 function LoginPage() {
+  const { lang, tx } = useI18n();
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,8 +27,9 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [schoolDown, setSchoolDown] = useState(false);
 
-  const notice = loginNoticeText(searchParams.get("reason"));
+  const notice = loginNoticeText(searchParams.get("reason"), lang);
   const redirectTo =
     (location.state as { from?: string } | null)?.from ?? "/plans";
 
@@ -42,6 +44,7 @@ function LoginPage() {
     if (pending) return;
     setPending(true);
     setErrorText(null);
+    setSchoolDown(false);
     auth
       .login(studentNo, password)
       .then(() => {
@@ -53,9 +56,10 @@ function LoginPage() {
             typeof err.extras.retry_after_minutes === "number"
               ? err.extras.retry_after_minutes
               : null;
-          setErrorText(loginErrorText(err.status, err.detail, minutes));
+          setSchoolDown(err.status === 503);
+          setErrorText(loginErrorText(err.status, err.detail, minutes, lang));
         } else {
-          setErrorText("網路連線異常，請稍後再試");
+          setErrorText(tx("網路連線異常，請稍後再試", "Network error. Please try again shortly"));
         }
       })
       .finally(() => setPending(false));
@@ -66,13 +70,16 @@ function LoginPage() {
       <div className="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4" style={{ maxWidth: "440px" }}>
         <div className="login-card-pro">
           {/* Header & Logo Badge */}
-          <div className="text-center mb-4">
+          <div className="text-center mb-4 pb-1">
             <div className="login-brand-icon">
-              <ShieldLock size={26} />
+              <ShieldLock size={28} />
             </div>
-            <h2 className="h4 fw-bold mb-1 text-dark">學生登入</h2>
-            <p className="text-muted small mb-0">
-              使用國立中山大學選課系統帳號密碼登入
+            <h2 className="h4 fw-bold mb-2 text-dark">{tx("學生登入", "Student Sign-in")}</h2>
+            <p className="text-muted small mb-0" style={{ fontSize: "0.85rem" }}>
+              {tx(
+                "使用國立中山大學選課系統帳號密碼登入",
+                "Sign in with your NSYSU course-selection account",
+              )}
             </p>
           </div>
 
@@ -95,13 +102,16 @@ function LoginPage() {
           {errorText !== null && (
             <div className="alert alert-danger py-2 px-3 small rounded-3 mb-3" role="alert">
               <div className="fw-semibold mb-1">{errorText}</div>
-              {errorText === "學校系統異常，稍後再試" && (
+              {schoolDown && (
                 <span className="d-block text-secondary" style={{ fontSize: "0.78rem" }}>
-                  學校主機暫時連不上。你仍可
+                  {tx(
+                    "學校主機暫時連不上。你仍可",
+                    "The school server is temporarily unreachable. You can still",
+                  )}
                   <Link to="/" className="fw-bold text-danger text-decoration-underline ms-1">
-                    瀏覽課程目錄與本機課表
+                    {tx("瀏覽課程目錄與本機課表", "browse the catalog and your local timetable")}
                   </Link>
-                  ，登入相關功能暫停。
+                  {tx("，登入相關功能暫停。", ". Sign-in features are paused meanwhile.")}
                 </span>
               )}
             </div>
@@ -112,15 +122,15 @@ function LoginPage() {
             {/* Student Number Input */}
             <div className="mb-3">
               <label htmlFor="login-student-no" className="form-label small fw-bold text-dark mb-1.5 d-flex justify-content-between">
-                <span>學號 (Student ID)</span>
-                <span className="text-muted fw-normal" style={{ fontSize: "0.74rem" }}>如：B113040001</span>
+                <span>{tx("學號 (Student ID)", "Student ID")}</span>
+                <span className="text-muted fw-normal" style={{ fontSize: "0.74rem" }}>{tx("如：B113040001", "e.g. B113040001")}</span>
               </label>
               <div className="login-input-group">
                 <input
                   id="login-student-no"
                   type="text"
                   className="login-input-pro"
-                  placeholder="請輸入學號…"
+                  placeholder={tx("請輸入學號…", "Enter your student ID…")}
                   autoComplete="username"
                   value={studentNo}
                   onChange={(e) => setStudentNo(e.target.value)}
@@ -134,15 +144,15 @@ function LoginPage() {
             {/* Password Input */}
             <div className="mb-4">
               <label htmlFor="login-password" className="form-label small fw-bold text-dark mb-1.5 d-flex justify-content-between">
-                <span>選課密碼 (Password)</span>
-                <span className="text-muted fw-normal" style={{ fontSize: "0.74rem" }}>與學校選課系統相同</span>
+                <span>{tx("選課密碼 (Password)", "Course Password")}</span>
+                <span className="text-muted fw-normal" style={{ fontSize: "0.74rem" }}>{tx("與學校選課系統相同", "Same as the school's course-selection system")}</span>
               </label>
               <div className="login-input-group">
                 <input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
                   className="login-input-pro"
-                  placeholder="請輸入選課密碼…"
+                  placeholder={tx("請輸入選課密碼…", "Enter your course password…")}
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -153,7 +163,7 @@ function LoginPage() {
                   type="button"
                   className="password-toggle-btn"
                   onClick={() => setShowPassword(!showPassword)}
-                  title={showPassword ? "隱藏密碼" : "顯示密碼"}
+                  title={showPassword ? tx("隱藏密碼", "Hide password") : tx("顯示密碼", "Show password")}
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeSlash size={16} /> : <Eye size={16} />}
@@ -170,35 +180,22 @@ function LoginPage() {
               {pending ? (
                 <>
                   <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden />
-                  <span>身分驗證中…</span>
+                  <span>{tx("身分驗證中…", "Verifying…")}</span>
                 </>
               ) : (
                 <>
-                  <span>立即登入</span>
+                  <span>{tx("立即登入", "Sign in")}</span>
                   <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
 
-          {/* Security Features & Privacy Highlights */}
-          <div className="pt-4 mt-4 border-top">
-            <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap mb-3">
-              <span className="login-security-badge">
-                <ShieldCheck size={13} className="text-teal-600" />
-                <span>密碼絕不儲存</span>
-              </span>
-              <span className="login-security-badge">
-                <Key size={13} className="text-teal-600" />
-                <span>自動辨識驗證碼</span>
-              </span>
-            </div>
-
-            <div className="text-center">
-              <Link to="/" className="text-muted small text-decoration-none hover-underline" style={{ fontSize: "0.78rem" }}>
-                ← 先不登入，直接瀏覽課表與課程目錄
-              </Link>
-            </div>
+          {/* Navigation link */}
+          <div className="pt-4 mt-4 border-top text-center">
+            <Link to="/" className="text-muted small text-decoration-none hover-underline" style={{ fontSize: "0.78rem" }}>
+              {tx("← 先不登入，直接瀏覽課表與課程目錄", "← Skip sign-in: browse the catalog and timetable")}
+            </Link>
           </div>
         </div>
       </div>

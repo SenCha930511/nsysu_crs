@@ -10,10 +10,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { fetchCatalogMeta, fetchOpsState, type CatalogMeta } from "../lib/api";
 import { bannerNotices, type BannerNotice } from "../lib/degrade";
+import { useI18n } from "../lib/i18n";
 
 const POLL_INTERVAL_MS = 60_000;
 
 function DegradeBanner() {
+  const { lang } = useI18n();
   const [notices, setNotices] = useState<BannerNotice[]>([]);
   const lastMetaRef = useRef<CatalogMeta | null>(null);
 
@@ -37,7 +39,7 @@ function DegradeBanner() {
       }
       const ops = opsResult.status === "fulfilled" ? opsResult.value : null;
       setNotices(
-        bannerNotices(lastMetaRef.current, metaResult.status === "rejected", ops),
+        bannerNotices(lastMetaRef.current, metaResult.status === "rejected", ops, lang),
       );
     };
 
@@ -48,7 +50,7 @@ function DegradeBanner() {
       controller.abort();
       window.clearInterval(timer);
     };
-  }, []);
+  }, [lang]);
 
   if (notices.length === 0) {
     return null;

@@ -11,6 +11,7 @@ import {
 import { fetchCourses } from "../lib/api";
 import type { CourseOut, CourseQuery } from "../lib/api";
 import { findClashes } from "../lib/conflicts";
+import { useI18n } from "../lib/i18n";
 import {
   PERIOD_CODES,
   WEEKDAYS,
@@ -56,13 +57,15 @@ const EMPTY_FILTERS: Filters = {
   period: "",
 };
 
-const CATEGORIES = [
-  { key: "all", label: "全部課程" },
-  { key: "compulsory", label: "必修" },
-  { key: "elective", label: "選修" },
-  { key: "english", label: "EMI 英語授課" },
-  { key: "available", label: "尚有名額" },
+const CATEGORIES: { key: string }[] = [
+  { key: "all" },
+  { key: "compulsory" },
+  { key: "elective" },
+  { key: "english" },
+  { key: "available" },
 ];
+
+const DAY_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function filtersToQuery(filters: Filters, page: number): CourseQuery {
   const query: CourseQuery = { page };
@@ -81,7 +84,19 @@ function filtersToQuery(filters: Filters, page: number): CourseQuery {
   return query;
 }
 
-function gradeLabel(grade: string | null): string {
+function gradeLabel(grade: string | null, lang: "zh" | "en"): string {
+  if (lang === "en") {
+    switch (grade) {
+      case null:
+        return "";
+      case "0":
+        return "Any year";
+      case "1": case "2": case "3": case "4":
+        return `Year ${grade}`;
+      default:
+        return grade;
+    }
+  }
   switch (grade) {
     case null:
       return "";
@@ -130,11 +145,23 @@ export default function CourseBrowser({
   isCoursePicked,
   onToggleCourse,
 }: CourseBrowserProps) {
+  const { lang, tx } = useI18n();
   const { selected, isSelected, toggle } = useSelection();
   const effBase = baseCourses ?? selected;
   const effIsPicked =
     isCoursePicked ?? ((course: CourseOut) => isSelected(course.id));
   const effToggle = onToggleCourse ?? toggle;
+
+  const categoryLabel = (key: string): string => {
+    switch (key) {
+      case "all": return tx("全部課程", "All courses");
+      case "compulsory": return tx("必修", "Required");
+      case "elective": return tx("選修", "Elective");
+      case "english": return tx("EMI 英語授課", "EMI (English taught)");
+      case "available": return tx("尚有名額", "Seats left");
+      default: return key;
+    }
+  };
 
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -271,11 +298,11 @@ export default function CourseBrowser({
               `「${courseName(c.course)}」（${c.slotTags.join(" ")}）`,
           )
           .join("、");
-        map.set(course.id, `與已選 ${detail} 衝堂`);
+        map.set(course.id, tx(`與已選 ${detail} 衝堂`, `Clashes with ${detail} on your timetable`));
       }
     }
     return map;
-  }, [items, effBase, effIsPicked]);
+  }, [items, effBase, effIsPicked, tx]);
 
   const renderRow = useCallback(
     (_index: number, course: CourseOut) => {
@@ -288,7 +315,7 @@ export default function CourseBrowser({
 
       const metaParts = [
         course.dept,
-        gradeLabel(course.grade),
+        gradeLabel(course.grade, lang),
         course.class_,
         course.teacher,
       ].filter((part) => part !== null && part !== "");
@@ -322,7 +349,7 @@ export default function CourseBrowser({
               )}
               {course.credit !== null && (
                 <span className="badge bg-teal-50 text-teal-800 border border-teal-200 flex-shrink-0" style={{ fontSize: "0.68rem" }}>
-                  {course.credit}學分
+                  {lang === "en" ? `${course.credit} cr` : `${course.credit}學分`}
                 </span>
               )}
               <span
@@ -331,7 +358,7 @@ export default function CourseBrowser({
                 }`}
                 style={{ fontSize: "0.68rem" }}
               >
-                {course.compulsory ? "必修" : "選修"}
+                {course.compulsory ? tx("必修", "Required") : tx("選修", "Elective")}
               </span>
               {course.english && (
                 <span className="badge badge-emi flex-shrink-0" style={{ fontSize: "0.65rem" }}>EMI</span>
@@ -340,7 +367,7 @@ export default function CourseBrowser({
 
             <div className="card-quota-bar-wrapper flex-shrink-0">
               <span className={`quota-status-pill ${full ? "quota-status-full" : "quota-status-available"}`}>
-                {full ? "額滿" : `餘 ${num(remaining)}`}
+                {full ? tx("額滿", "Full") : tx(`餘 ${num(remaining)}`, `${num(remaining)} left`)}
               </span>
               <span className="text-muted font-monospace d-none d-sm-inline" style={{ fontSize: "0.68rem" }}>
                 ({num(course.select_n)}/{num(course.restrict)})
@@ -350,7 +377,7 @@ export default function CourseBrowser({
 
           {/* Row 2: Teacher, Class, Room & English Title */}
           <div className="card-meta-line text-truncate">
-            {metaParts.length > 0 ? metaParts.join(" · ") : "無詳細開課資訊"}
+            {metaParts.length > 0 ? metaParts.join(" · ") : tx("無詳細開課資訊", "No details available")}
             {course.name_en && (
               <span className="text-muted ms-1 text-truncate opacity-75">· {course.name_en}</span>
             )}
@@ -365,10 +392,10 @@ export default function CourseBrowser({
                 </span>
               ))}
               {tags.length === 0 && !invalid && (
-                <span className="text-muted small" style={{ fontSize: "0.72rem" }}>無固定時段</span>
+                <span className="text-muted small" style={{ fontSize: "0.72rem" }}>{tx("無固定時段", "No fixed time")}</span>
               )}
               {invalid && (
-                <span className="badge text-bg-danger" style={{ fontSize: "0.68rem" }}>時間異常</span>
+                <span className="badge text-bg-danger" style={{ fontSize: "0.68rem" }}>{tx("時間異常", "Bad time data")}</span>
               )}
             </div>
 
@@ -386,32 +413,32 @@ export default function CourseBrowser({
               }}
             >
               {picked ? <Check2 size={13} /> : <PlusLg size={11} />}
-              <span>{picked ? "已在課表" : "加入課表"}</span>
+              <span>{picked ? tx("已在課表", "On timetable") : tx("加入課表", "Add")}</span>
             </button>
           </div>
         </div>
       );
     },
-    [effIsPicked, effToggle, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview],
+    [effIsPicked, effToggle, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview, lang, tx],
   );
 
   const ListFooter = useCallback(
     () => (
       <div className="py-3 text-center text-muted small">
         {loading
-          ? "正在探索課程中…"
+          ? tx("正在探索課程中…", "Loading courses…")
           : total === 0
-            ? "查無符合的課程條件"
+            ? tx("查無符合的課程條件", "No courses match these filters")
             : items.length < total
-              ? `已載入 ${items.length} / ${total} 門課程`
-              : `已載入全部 ${total} 門課程`}
+              ? tx(`已載入 ${items.length} / ${total} 門課程`, `${items.length} / ${total} courses loaded`)
+              : tx(`已載入全部 ${total} 門課程`, `All ${total} courses loaded`)}
       </div>
     ),
-    [loading, items.length, total],
+    [loading, items.length, total, tx],
   );
 
   return (
-    <section className="course-discovery-pane" aria-label="課程探索中心">
+    <section className="course-discovery-pane" aria-label={tx("課程探索中心", "Course discovery")}>
       {/* Header & Search */}
       <div className="discovery-search-header">
         <div className="studio-search-bar">
@@ -419,17 +446,17 @@ export default function CourseBrowser({
           <input
             type="search"
             className="studio-search-input"
-            placeholder="搜尋課名、教師姓名或關鍵字…"
+            placeholder={tx("搜尋課名、教師姓名或關鍵字…", "Search by title, teacher, or keyword…")}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            aria-label="搜尋課程"
+            aria-label={tx("搜尋課程", "Search courses")}
           />
           {searchInput && (
             <button
               type="button"
               className="studio-search-clear"
               onClick={() => setSearchInput("")}
-              aria-label="清除搜尋"
+              aria-label={tx("清除搜尋", "Clear search")}
             >
               <XLg size={12} />
             </button>
@@ -446,7 +473,7 @@ export default function CourseBrowser({
                 className={`category-chip ${selectedCategory === cat.key ? "active" : ""}`}
                 onClick={() => handleCategorySelect(cat.key)}
               >
-                {cat.label}
+                {categoryLabel(cat.key)}
               </button>
             ))}
           </div>
@@ -456,10 +483,10 @@ export default function CourseBrowser({
             className={`btn btn-sm ${showAdvancedFilters ? "btn-teal-700 bg-teal-50" : "btn-light border"} p-1 px-2 d-inline-flex align-items-center gap-1 rounded-pill`}
             style={{ fontSize: "0.74rem" }}
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            title="更多進階篩選"
+            title={tx("更多進階篩選", "More advanced filters")}
           >
             <Sliders size={12} />
-            <span>進階篩選</span>
+            <span>{tx("進階篩選", "Filters")}</span>
           </button>
         </div>
 
@@ -470,12 +497,12 @@ export default function CourseBrowser({
               className="compact-filter-select"
               value={filters.weekday}
               onChange={(e) => updateFilter({ weekday: e.target.value })}
-              aria-label="星期"
+              aria-label={tx("星期", "Weekday")}
             >
-              <option value="">星期（全部）</option>
+              <option value="">{tx("星期（全部）", "Weekday (all)")}</option>
               {WEEKDAYS.map((day) => (
                 <option key={day.apiWeekday} value={String(day.apiWeekday)}>
-                  週{day.label}
+                  {lang === "en" ? DAY_EN[day.index] ?? day.label : `週${day.label}`}
                 </option>
               ))}
             </select>
@@ -485,12 +512,12 @@ export default function CourseBrowser({
               value={filters.period}
               onChange={(e) => updateFilter({ period: e.target.value })}
               disabled={filters.weekday === ""}
-              aria-label="節次"
+              aria-label={tx("節次", "Period")}
             >
-              <option value="">節次（全部）</option>
+              <option value="">{tx("節次（全部）", "Period (all)")}</option>
               {PERIOD_CODES.map((code) => (
                 <option key={code} value={code}>
-                  第 {code} 節
+                  {tx(`第 ${code} 節`, `Period ${code}`)}
                 </option>
               ))}
             </select>
@@ -499,26 +526,26 @@ export default function CourseBrowser({
               className="compact-filter-select"
               value={filters.grade}
               onChange={(e) => updateFilter({ grade: e.target.value })}
-              aria-label="年級"
+              aria-label={tx("年級", "Year level")}
             >
-              <option value="">年級（全部）</option>
-              <option value="0">不分年級</option>
-              <option value="1">大一</option>
-              <option value="2">大二</option>
-              <option value="3">大三</option>
-              <option value="4">大四</option>
+              <option value="">{tx("年級（全部）", "Year (all)")}</option>
+              <option value="0">{tx("不分年級", "Any year")}</option>
+              <option value="1">{tx("大一", "Year 1")}</option>
+              <option value="2">{tx("大二", "Year 2")}</option>
+              <option value="3">{tx("大三", "Year 3")}</option>
+              <option value="4">{tx("大四", "Year 4")}</option>
             </select>
 
             <select
               className="compact-filter-select"
               value={filters.credit}
               onChange={(e) => updateFilter({ credit: e.target.value })}
-              aria-label="學分"
+              aria-label={tx("學分", "Credits")}
             >
-              <option value="">學分（全部）</option>
+              <option value="">{tx("學分（全部）", "Credits (all)")}</option>
               {creditOptions.map((credit) => (
                 <option key={credit} value={String(credit)}>
-                  {credit} 學分
+                  {lang === "en" ? `${credit} cr` : `${credit} 學分`}
                 </option>
               ))}
             </select>
@@ -527,11 +554,11 @@ export default function CourseBrowser({
               type="text"
               className="compact-filter-select"
               style={{ width: "110px" }}
-              placeholder="系所搜尋…"
+              placeholder={tx("系所搜尋…", "Dept…")}
               list="dept-options"
               value={filters.dept}
               onChange={(e) => updateFilter({ dept: e.target.value.trim() })}
-              aria-label="系所"
+              aria-label={tx("系所", "Department")}
             />
             <datalist id="dept-options">
               {deptOptions.map((dept) => (
@@ -545,7 +572,7 @@ export default function CourseBrowser({
               style={{ fontSize: "0.75rem" }}
               onClick={resetFilters}
             >
-              重設條件
+              {tx("重設條件", "Reset")}
             </button>
           </div>
         )}
@@ -553,13 +580,13 @@ export default function CourseBrowser({
 
       {error !== null && (
         <div className="alert alert-danger d-flex justify-content-between align-items-center py-2 mx-3 my-2 rounded-3" role="alert">
-          <span className="small">課程查詢失敗：{error}</span>
+          <span className="small">{tx("課程查詢失敗：", "Course query failed: ")}{error}</span>
           <button
             type="button"
             className="btn btn-sm btn-outline-danger"
             onClick={() => loadPage(filters, 1, false)}
           >
-            重試
+            {tx("重試", "Retry")}
           </button>
         </div>
       )}

@@ -33,6 +33,7 @@ import {
 import type { CourseOut } from "../lib/api";
 import { ApiError } from "../lib/api";
 import { downloadGridPng, downloadPlanIcs, icsErrorMessage } from "../lib/export";
+import { useI18n } from "../lib/i18n";
 import ScheduleTable from "../components/ScheduleTable";
 import type { PlanListItem, PlansSyncContextValue } from "../state/plansSync";
 import { usePlansSync } from "../state/plansSync";
@@ -47,6 +48,7 @@ function SortablePriorityRow({
   onEditPriority: (raw: string) => void;
   onRemove: () => void;
 }) {
+  const { tx } = useI18n();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.courseId });
   const name = item.course?.name_zh ?? item.course?.name_en ?? item.courseId;
@@ -64,7 +66,7 @@ function SortablePriorityRow({
       <button
         type="button"
         className="drag-handle"
-        aria-label={`拖曳排序 ${name}`}
+        aria-label={tx(`拖曳排序 ${name}`, `Drag to reorder ${name}`)}
         {...attributes}
         {...listeners}
       >
@@ -77,7 +79,7 @@ function SortablePriorityRow({
         className="form-control form-control-sm priority-input"
         defaultValue={item.priority === null ? "" : String(item.priority)}
         placeholder="–"
-        aria-label={`志願序 ${name}`}
+        aria-label={tx(`志願序 ${name}`, `Priority of ${name}`)}
         onBlur={(e) => onEditPriority(e.currentTarget.value)}
         onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
           if (e.key === "Enter") e.currentTarget.blur();
@@ -86,14 +88,14 @@ function SortablePriorityRow({
       <div className="priority-row-main">
         <span className="fw-bold text-dark">{name}</span>
         {!item.known && (
-          <span className="badge text-bg-secondary ms-1">目錄查無此課</span>
+          <span className="badge text-bg-secondary ms-1">{tx("目錄查無此課", "Not in catalog")}</span>
         )}
         {meta !== "" && <div className="text-muted small mt-0.5">{meta}</div>}
       </div>
       <button
         type="button"
         className="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center p-1.5 rounded-2"
-        aria-label={`從課表移除 ${name}`}
+        aria-label={tx(`從課表移除 ${name}`, `Remove ${name} from the plan`)}
         onClick={onRemove}
       >
         <Trash3 size={13} />
@@ -103,6 +105,7 @@ function SortablePriorityRow({
 }
 
 function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
+  const { tx } = useI18n();
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -154,10 +157,10 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
           <div>
             <h2 className="h5 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
               <Layers className="text-teal-600" size={18} />
-              <span>課表組合甲板 (Plan Deck)</span>
+              <span>{tx("課表組合甲板 (Plan Deck)", "Plan Deck")}</span>
             </h2>
             <p className="text-muted small mb-0">
-              建立多組不同選課方案（例如：衝堂備案、必修加選），自由切換測試。
+              {tx("建立多組不同選課方案（例如：衝堂備案、必修加選），自由切換測試。", "Create multiple course plans (e.g. clash backups, must-takes) and switch between them freely.")}
             </p>
           </div>
 
@@ -166,14 +169,14 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
               type="text"
               className="form-control form-control-sm rounded-pill px-3"
               style={{ width: "200px" }}
-              placeholder="新增方案名稱…"
-              aria-label="新課表名稱"
+              placeholder={tx("新增方案名稱…", "New plan name…")}
+              aria-label={tx("新課表名稱", "New plan name")}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
             <button type="submit" className="btn btn-brand btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 shadow-sm" disabled={creating}>
               <PlusLg size={13} />
-              <span>建立方案</span>
+              <span>{tx("建立方案", "Create plan")}</span>
             </button>
           </form>
         </div>
@@ -186,7 +189,7 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
 
         {sync.plans.length === 0 ? (
           <div className="text-center p-4 bg-light rounded-4 text-muted small">
-            尚無任何課表方案。輸入名稱並點擊「建立方案」即可開始！
+            {tx("尚無任何課表方案。輸入名稱並點擊「建立方案」即可開始！", "No plans yet. Enter a name and hit “Create plan” to start!")}
           </div>
         ) : (
           <div className="plan-deck-container">
@@ -205,9 +208,11 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                         type="button"
                         className="btn btn-sm p-0 border-0 bg-transparent"
                         aria-label={
-                          plan.is_primary ? `主課表 ${plan.name}` : `設為主課表 ${plan.name}`
+                          plan.is_primary
+                            ? tx(`主課表 ${plan.name}`, `Primary plan ${plan.name}`)
+                            : tx(`設為主課表 ${plan.name}`, `Set ${plan.name} as primary`)
                         }
-                        title={plan.is_primary ? "主課表" : "設為主課表"}
+                        title={plan.is_primary ? tx("主課表", "Primary plan") : tx("設為主課表", "Set as primary")}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (!plan.is_primary) {
@@ -231,7 +236,7 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                           type="text"
                           className="form-control form-control-sm"
                           defaultValue={plan.name}
-                          aria-label={`改名 ${plan.name}`}
+                          aria-label={tx(`改名 ${plan.name}`, `Rename ${plan.name}`)}
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setRenameValue(e.target.value)}
@@ -256,12 +261,12 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                     <div className="d-flex align-items-center gap-1">
                       {plan.is_primary && (
                         <span className="badge bg-amber-100 text-amber-800 border border-amber-300">
-                          主課表
+                          {tx("主課表", "Primary")}
                         </span>
                       )}
                       {active && (
                         <span className="badge bg-teal-100 text-teal-800 border border-teal-300">
-                          使用中
+                          {tx("使用中", "Active")}
                         </span>
                       )}
                     </div>
@@ -269,14 +274,14 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
 
                   <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-2">
                     <span className="badge text-bg-light border text-muted">
-                      共 {plan.item_count} 門課程
+                      {tx(`共 ${plan.item_count} 門課程`, `${plan.item_count} course(s)`)}
                     </span>
 
                     <div className="d-flex align-items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-secondary p-1 px-2 rounded-2"
-                        title="下載 ICS 行事曆"
+                        title={tx("下載 ICS 行事曆", "Download ICS calendar")}
                         disabled={icsBusyId !== null}
                         onClick={() => onIcs(plan.id)}
                       >
@@ -286,7 +291,7 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-secondary p-1 px-2 rounded-2"
-                        title="重新命名"
+                        title={tx("重新命名", "Rename")}
                         onClick={() => {
                           setRenamingId(plan.id);
                           setRenameValue(plan.name);
@@ -297,11 +302,14 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-danger p-1 px-2 rounded-2"
-                        title="刪除方案"
+                        title={tx("刪除方案", "Delete plan")}
                         onClick={() => {
                           if (
                             window.confirm(
-                              `確定刪除「${plan.name}」？其中 ${plan.item_count} 門課程紀錄將一併移除。`,
+                              tx(
+                                `確定刪除「${plan.name}」？其中 ${plan.item_count} 門課程紀錄將一併移除。`,
+                                `Delete “${plan.name}”? Its ${plan.item_count} course record(s) will be removed too.`,
+                              ),
                             )
                           ) {
                             sync.remove(plan.id).catch((err: unknown) => {
@@ -327,6 +335,7 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
 }
 
 function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
+  const { tx } = useI18n();
   const { remove } = useSelection();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -350,16 +359,18 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
       <div className="card-body p-4">
         <div className="d-flex align-items-center justify-content-between mb-2">
           <h2 className="h6 fw-bold mb-0 text-dark">
-            {activePlan !== null ? `「${activePlan.name}」志願序排序台` : "志願序排序"}
+            {activePlan !== null
+              ? tx(`「${activePlan.name}」志願序排序台`, `"${activePlan.name}" priority board`)
+              : tx("志願序排序", "Priority order")}
           </h2>
           {activePlan !== null && (
             <span className="badge text-bg-light border text-muted" role="status">
-              {sync.saving ? "儲存中…" : "已即時同步"}
+              {sync.saving ? tx("儲存中…", "Saving…") : tx("已即時同步", "Synced live")}
             </span>
           )}
         </div>
         <p className="text-muted small mb-3">
-          拖曳左側手柄調整順序（自動編號 1…N），或在格子內手動輸入 1–20 的志願序。
+          {tx("拖曳左側手柄調整順序（自動編號 1…N），或在格子內手動輸入 1–20 的志願序。", "Drag the handle on the left to reorder (auto-numbered 1…N), or type a priority of 1–20 directly in the box.")}
         </p>
 
         {sync.error !== null && (
@@ -370,11 +381,11 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
 
         {activePlan === null ? (
           <div className="text-center p-4 bg-light rounded-4 text-muted small">
-            請先在上方甲板選擇或建立一組課表方案。
+            {tx("請先在上方甲板選擇或建立一組課表方案。", "Pick or create a plan in the deck above first.")}
           </div>
         ) : sync.orderedItems.length === 0 ? (
           <div className="text-center p-4 bg-light rounded-4 text-muted small">
-            此方案尚無課程——到「查課・課表」加入課程後會自動寫入此方案。
+            {tx("此方案尚無課程——到「查課・課表」加入課程後會自動寫入此方案。", "This plan has no courses — add one from “Courses • Timetable” and it lands here automatically.")}
           </div>
         ) : (
           <div className="priority-list-container">
@@ -387,7 +398,7 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
                 items={sync.orderedItems.map((item) => item.courseId)}
                 strategy={verticalListSortingStrategy}
               >
-                <div role="list" aria-label="志願序列表">
+                <div role="list" aria-label={tx("志願序列表", "Priority list")}>
                   {sync.orderedItems.map((item) => (
                     <SortablePriorityRow
                       key={item.courseId}
@@ -409,6 +420,7 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
 }
 
 function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
+  const { tx } = useI18n();
   const gridRef = useRef<HTMLDivElement>(null);
   const [exportError, setExportError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"ics" | "png" | null>(null);
@@ -442,7 +454,7 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
     if (activePlan === null || busy !== null) return;
     setExportError(null);
     if (node === null || visualCourses.length === 0) {
-      setExportError("課表是空的——先去「查課·課表」加入有時段的課程，再下載 PNG。");
+      setExportError(tx("課表是空的——先去「查課·課表」加入有時段的課程，再下載 PNG。", "The timetable is empty — add time-slotted courses on “Courses • Timetable” before downloading a PNG."));
       return;
     }
     setBusy("png");
@@ -460,11 +472,11 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
           <div>
             <h2 className="h6 fw-bold mb-0 text-dark">
               {activePlan !== null
-                ? `「${activePlan.name}」方案課表畫布與匯出`
-                : "方案課表預覽・匯出"}
+                ? tx(`「${activePlan.name}」方案課表畫布與匯出`, `"${activePlan.name}" timetable canvas & export`)
+                : tx("方案課表預覽・匯出", "Plan timetable preview & export")}
             </h2>
             <p className="text-muted small mb-0 mt-0.5">
-              輸出為高解析度圖片或加入 Google / Apple Calendar 行事曆。
+              {tx("輸出為高解析度圖片或加入 Google / Apple Calendar 行事曆。", "Export as a high-resolution image, or push into Google / Apple Calendar.")}
             </p>
           </div>
           {activePlan !== null && (
@@ -480,7 +492,7 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
                 ) : (
                   <Calendar3 size={13} aria-hidden />
                 )}
-                <span>{busy === "ics" ? "匯出中…" : "匯出 ICS 行事曆"}</span>
+                <span>{busy === "ics" ? tx("匯出中…", "Exporting…") : tx("匯出 ICS 行事曆", "Export ICS calendar")}</span>
               </button>
               <button
                 type="button"
@@ -493,7 +505,7 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
                 ) : (
                   <Download size={13} aria-hidden />
                 )}
-                <span>{busy === "png" ? "匯出中…" : "下載課表 PNG"}</span>
+                <span>{busy === "png" ? tx("匯出中…", "Exporting…") : tx("下載課表 PNG", "Download PNG")}</span>
               </button>
             </div>
           )}
@@ -507,11 +519,11 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
 
         {activePlan === null ? (
           <p className="text-muted small mb-0 p-4 text-center bg-light rounded-4">
-            請先在上方甲板選擇或建立一組課表方案。
+            {tx("請先在上方甲板選擇或建立一組課表方案。", "Pick or create a plan in the deck above first.")}
           </p>
         ) : visualCourses.length === 0 ? (
           <p className="text-muted small mb-0 p-4 text-center bg-light rounded-4">
-            此方案尚未包含具時段之課程——匯出需至少包含一門有時段的課。
+            {tx("此方案尚未包含具時段之課程——匯出需至少包含一門有時段的課。", "This plan has no time-slotted courses yet — exporting needs at least one.")}
           </p>
         ) : (
           <div ref={gridRef} className="mt-2" data-testid="plan-export-grid">

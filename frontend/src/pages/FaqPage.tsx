@@ -1,8 +1,9 @@
 /** 常見問題 (todo 17): Q&A carrying the plan-mandated advisories. */
 
 import LegalPage, { type LegalSection } from "../components/LegalPage";
+import { useI18n } from "../lib/i18n";
 
-const SECTIONS: LegalSection[] = [
+const SECTIONS_ZH: LegalSection[] = [
   {
     heading: "Q1：你們會儲存我的選課密碼嗎？",
     paragraphs: [
@@ -48,17 +49,72 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "Q8：我要怎麼聯絡你們或回報問題？",
     paragraphs: [
-      "（待補：正式聯絡／回報管道將於公開上線前公告於本頁。）",
+      "兩個管道：GitHub 倉庫提 issue（https://github.com/SenCha930511/nsysu_crs），或寄信至 sencha930511@gmail.com。",
+    ],
+  },
+];
+
+const SECTIONS_EN: LegalSection[] = [
+  {
+    heading: "Q1: Do you store my course-selection password?",
+    paragraphs: [
+      "No — in no form whatsoever: no plaintext, no hashes, no “remember me”. The password is used from memory only during sign-in and submission confirm, then discarded. The selcrs cookie issued by the school is treated as a credential: Redis memory layer only, short TTL (sliding 30 minutes, hard cap 2 hours), never in the database or any log. Details in the Privacy Policy.",
+    ],
+  },
+  {
+    heading: "Q2: I heard the default password is the last six digits of my national ID. Should I do anything?",
+    paragraphs: [
+      "Yes. The school system's initial password is exactly that; if you have never changed it, anyone holding your student number plus those digits can sign in as you. Go change it to a strong password on the school system right away. This site cannot change it for you and accepts no password custody.",
+    ],
+  },
+  {
+    heading: "Q3: Why did my account get locked for 15 minutes?",
+    paragraphs: [
+      "Five wrong-password determinations by the school for the same student within 15 minutes trigger a fixed 15-minute lock. During the lock the site refuses locally and stops sending attempts, and a successful sign-in does NOT clear the failure record. The mechanism protects this site only — the school runs its own independent anomaly detection and locks; if you are locked on the school side, please contact the school.",
+    ],
+  },
+  {
+    heading: "Q4: Someone keeps deliberately triggering my lock and I can't use the site. What now?",
+    paragraphs: [
+      "This is a known abuse pattern (targeted lockout): roughly 5 bad attempts every 15 minutes keeps one student number nearly permanently locked. We count lock events in de-identified form and apply an operator SOP — we announce anomalies and respond when counts spike. Please switch to a strong password and watch for school-side notices too.",
+    ],
+  },
+  {
+    heading: "Q5: Why does the whole site sometimes become read-only?",
+    paragraphs: [
+      "When the school system fails or responds abnormally across consecutive attempts, the breaker opens and the site enters read-only safe mode: browsing and timetable keep working, sign-in and submissions pause, with a clear notice at the top. Once the school recovers and passes liveness checks, service resumes automatically — nothing for you to do.",
+    ],
+  },
+  {
+    heading: "Q6: Where does the course data come from, and how often is it updated?",
+    paragraphs: [
+      "Everything comes from the public course-query pages of the NSYSU course-selection system (no sign-in needed): hourly on normal days, every 10 minutes during selection windows. If a sync fails, the last successful snapshot stays in service with its update time announced at the top of the page.",
+    ],
+  },
+  {
+    heading: "Q7: Is this an official school service?",
+    paragraphs: [
+      "No. This is a student-built, third-party helper with no school mandate or endorsement. Formal information and selection records live at the NSYSU course-selection system.",
+    ],
+  },
+  {
+    heading: "Q8: How do I contact you or report a problem?",
+    paragraphs: [
+      "Two channels: open an issue on the GitHub repo (https://github.com/SenCha930511/nsysu_crs), or email sencha930511@gmail.com.",
     ],
   },
 ];
 
 function FaqPage() {
+  const { lang, tx } = useI18n();
   return (
     <LegalPage
-      title="常見問題"
-      intro="密碼怎麼被對待、鎖定與限速的目的、唯讀模式是什麼、資料從哪來——這裡一次說清楚。"
-      sections={SECTIONS}
+      title={tx("常見問題", "FAQ")}
+      intro={tx(
+        "密碼怎麼被對待、鎖定與限速的目的、唯讀模式是什麼、資料從哪來——這裡一次說清楚。",
+        "How passwords are treated, what locks and rate limits are for, what read-only mode means, and where the data comes from — all in one place.",
+      )}
+      sections={lang === "en" ? SECTIONS_EN : SECTIONS_ZH}
     />
   );
 }

@@ -49,6 +49,7 @@ import {
 } from "../lib/consoleOps";
 import type { StagedAdd } from "../lib/consoleOps";
 import { downloadGridPng } from "../lib/export";
+import { useI18n } from "../lib/i18n";
 import { buildSelectionGridCourses } from "../lib/selectionGrid";
 import { outcomeCopy } from "../lib/writeOps";
 import { useAuth } from "../state/auth";
@@ -64,6 +65,7 @@ function shortName(course: CourseOut | SelectionItem): string {
 }
 
 function HomePage() {
+  const { lang, tx } = useI18n();
   const { status, csrfToken } = useAuth();
   const authed = status === "authed" && csrfToken !== null;
 
@@ -110,13 +112,13 @@ function HomePage() {
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 503) {
-          setSyncError("學校系統異常，稍後再試");
+          setSyncError(tx("學校系統異常，稍後再試", "The school system is unavailable right now"));
         } else if (!(err instanceof ApiError) || err.status !== 401) {
-          setSyncError("無法讀取已選資料，請稍後再試");
+          setSyncError(tx("無法讀取已選資料，請稍後再試", "Couldn't load your selections. Please try again shortly"));
         }
       })
       .finally(() => setLoading(false));
-  }, [authed]);
+  }, [authed, tx]);
 
   useEffect(() => { loadSelections(); }, [loadSelections]);
 
@@ -140,18 +142,23 @@ function HomePage() {
         setItems(body.items);
         setSyncedAt(body.synced_at);
         setReconcileNote(
-          `對帳完成：新增 ${body.added.length} · 移除 ${body.removed.length} · 未變 ${body.unchanged.length}`,
+          lang === "en"
+            ? `Reconciled: +${body.added.length} added · −${body.removed.length} removed · ${body.unchanged.length} unchanged`
+            : `對帳完成：新增 ${body.added.length} · 移除 ${body.removed.length} · 未變 ${body.unchanged.length}`,
         );
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 503) {
-          setSyncError("學校系統異常，稍後再試（仍顯示上次同步結果）");
+          setSyncError(tx(
+            "學校系統異常，稍後再試（仍顯示上次同步結果）",
+            "The school system is unavailable right now (showing your last sync)",
+          ));
         } else if (!(err instanceof ApiError) || err.status !== 401) {
-          setSyncError("同步失敗，請稍後再試");
+          setSyncError(tx("同步失敗，請稍後再試", "Sync failed. Please try again shortly"));
         }
       })
       .finally(() => setSyncing(false));
-  }, [syncing, authed]);
+  }, [syncing, authed, lang, tx]);
 
   // Auto-load on fresh login: when authed and no snapshot exists yet (fresh
   // session => synced_at is null), pull the school truth once automatically.
@@ -279,8 +286,11 @@ function HomePage() {
     if (ops.length === 0) {
       setPreviewError(
         unaddable.length > 0
-          ? `${unaddable.length} 門課程目錄尚未取得課別代號，暫時無法送出（${unaddable.map((c) => c.name_zh ?? c.id).join("、")}）。`
-          : "沒有可送出的操作。",
+          ? tx(
+              `${unaddable.length} 門課程目錄尚未取得課別代號，暫時無法送出（${unaddable.map((c) => c.name_zh ?? c.id).join("、")}）。`,
+              `${unaddable.length} course(s) have no section code in the catalog and can't be submitted (${unaddable.map((c) => c.name_zh ?? c.id).join(", ")}).`,
+            )
+          : tx("沒有可送出的操作。", "Nothing staged to submit."),
       );
       setPhase("idle");
       return;
@@ -298,12 +308,12 @@ function HomePage() {
       .catch((err: unknown) => {
         setPhase("idle");
         if (err instanceof ApiError && err.status === 503) {
-          setPreviewError("學校系統異常，稍後再試");
+          setPreviewError(tx("學校系統異常，稍後再試", "The school system is unavailable right now"));
         } else if (!(err instanceof ApiError) || err.status !== 401) {
-          setPreviewError("預檢失敗，請稍後再試");
+          setPreviewError(tx("預檢失敗，請稍後再試", "Preview failed. Please try again shortly"));
         }
       });
-  }, [authed, csrfToken, phase, stagedAdds, stagedDrops]);
+  }, [authed, csrfToken, phase, stagedAdds, stagedDrops, tx]);
 
   const onConfirm = useCallback(() => {
     if (preview?.confirm_token == null || csrfToken === null || submitting || password === "") {
@@ -324,13 +334,13 @@ function HomePage() {
                 setSubmitting(false);
                 clearStaging();
                 onSync();
-                if (view.reconcile !== null) setJobNote("部分結果需要重新對帳；已自動同步已選。");
+                if (view.reconcile !== null) setJobNote(tx("部分結果需要重新對帳；已自動同步已選。", "Some results need a fresh reconcile; selections were re-synced automatically."));
               } else {
                 window.setTimeout(poll, POLL_MS);
               }
             })
             .catch(() => {
-              setJobNote("狀態查詢暫時失敗，稍候會自動重試。");
+              setJobNote(tx("狀態查詢暫時失敗，稍候會自動重試。", "Status check failed temporarily; it will retry automatically."));
               window.setTimeout(poll, POLL_MS * 2);
             });
         };
@@ -339,11 +349,13 @@ function HomePage() {
       .catch((err: unknown) => {
         setSubmitting(false);
         setSendError(
-          err instanceof ApiError ? String(err.detail ?? err.message) : "送出失敗，請稍後再試",
+          err instanceof ApiError
+            ? String(err.detail ?? err.message)
+            : tx("送出失敗，請稍後再試", "Submit failed. Please try again shortly"),
         );
       })
       .finally(() => setPassword(""));
-  }, [preview, csrfToken, submitting, password, clearStaging, onSync]);
+  }, [preview, csrfToken, submitting, password, clearStaging, onSync, tx]);
 
   const dropConfirmReady = preview?.confirm_token != null && password !== "";
 
@@ -354,9 +366,9 @@ function HomePage() {
         <div className="col-12 col-md-8 col-lg-5 text-center">
           <div className="card shadow-sm border-0 rounded-4">
             <div className="card-body p-4">
-              <h2 className="h5 fw-bold text-dark">選課主控台</h2>
-              <p className="text-muted small mb-3">登入後才能檢視你的真實課表、暫存加退選操作並送出選課。</p>
-              <Link to="/login" className="btn btn-brand rounded-pill px-4">前往登入</Link>
+              <h2 className="h5 fw-bold text-dark">{tx("選課主控台", "Course-selection Console")}</h2>
+              <p className="text-muted small mb-3">{tx("登入後才能檢視你的真實課表、暫存加退選操作並送出選課。", "Sign in to see your real timetable, stage add/drop operations, and submit them.")}</p>
+              <Link to="/login" className="btn btn-brand rounded-pill px-4">{tx("前往登入", "Go to sign-in")}</Link>
             </div>
           </div>
         </div>
@@ -372,11 +384,11 @@ function HomePage() {
           <div className="schedule-canvas-header">
             <div className="schedule-canvas-title">
               <CalendarCheck size={17} className="text-teal-600" />
-              <span>目前課表</span>
+              <span>{tx("目前課表", "Current Timetable")}</span>
             </div>
             <div className="d-flex align-items-center gap-2">
               <span className="text-muted small d-none d-sm-inline" role="status">
-                {syncedAt === null ? "尚未同步" : `上次同步：${syncedAt}`}
+                {syncedAt === null ? tx("尚未同步", "Not synced yet") : tx(`上次同步：${syncedAt}`, `Last synced: ${syncedAt}`)}
               </span>
               <button
                 type="button"
@@ -385,7 +397,7 @@ function HomePage() {
                 disabled={syncing}
               >
                 <ArrowRepeat size={12} className={syncing ? "spin" : ""} />
-                <span>{syncing ? "同步中…" : "同步"}</span>
+                <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步", "Sync")}</span>
               </button>
             </div>
           </div>
@@ -414,14 +426,14 @@ function HomePage() {
           {/* staged drops chips (undoable) */}
           {stagedDrops.length > 0 && (
             <div className="d-flex flex-wrap align-items-center gap-2 px-3 pb-2">
-              <span className="badge text-bg-danger rounded-pill">待退選 {stagedDrops.length}</span>
+              <span className="badge text-bg-danger rounded-pill">{tx("待退選", "Droppable")} {stagedDrops.length}</span>
               {stagedDrops.map((item) => (
                 <button
                   key={selectionGridKey(item)}
                   type="button"
                   className="btn btn-sm btn-outline-danger rounded-pill py-0 px-2 d-inline-flex align-items-center gap-1"
                   onClick={() => toggleDrop(item)}
-                  title="點擊還原"
+                  title={tx("點擊還原", "Click to undo")}
                   style={{ fontSize: "0.74rem" }}
                 >
                   <span className="text-decoration-line-through">{shortName(item)}</span>
@@ -444,14 +456,14 @@ function HomePage() {
                 }`}
               >
                 {stage === null
-                  ? "階段資訊載入中…"
+                  ? tx("階段資訊載入中…", "Loading stage info…")
                   : stage.writable
-                    ? `可送單（${stage.stage}）`
-                    : `目前非可寫階段（${stage.stage}）`}
+                    ? tx(`可送單（${stage.stage}）`, `Writable now (${stage.stage})`)
+                    : tx(`目前非可寫階段（${stage.stage}）`, `Not in a writable stage (${stage.stage})`)}
               </span>
               {stagedCount > 0 && (
                 <span className="small text-muted">
-                  ＋{stagedAdds.length} 加選 · −{stagedDrops.length} 退選
+                  ＋{stagedAdds.length} {tx("加選", "add")} · −{stagedDrops.length} {tx("退選", "drop")}
                 </span>
               )}
             </div>
@@ -463,7 +475,7 @@ function HomePage() {
                 disabled={stagedCount === 0 || phase !== "idle"}
               >
                 <Eraser size={12} />
-                <span>清空</span>
+                <span>{tx("清空", "Clear all")}</span>
               </button>
               <button
                 type="button"
@@ -473,7 +485,7 @@ function HomePage() {
                 data-testid="console-preview"
               >
                 <Send size={12} />
-                <span>預覽並送出</span>
+                <span>{tx("預覽並送出", "Preview & submit")}</span>
               </button>
             </div>
           </div>
@@ -481,7 +493,7 @@ function HomePage() {
           {/* preview-blocked verdict panel (inline, no modal) */}
           {preview !== null && !preview.writable && phase === "idle" && (
             <div className="alert alert-danger mx-3 mb-3 py-2 px-3 small rounded-3" role="alert">
-              <div className="fw-semibold mb-1">此批次無法送出</div>
+              <div className="fw-semibold mb-1">{tx("此批次無法送出", "This batch cannot be submitted")}</div>
               <ul className="mb-0 ps-3">
                 {preview.ops.map((op) =>
                   op.verdict !== "ok" ? (
@@ -508,17 +520,22 @@ function HomePage() {
                     {job === null || !JOB_TERMINAL.has(job.status) ? (
                       <>
                         <HourglassSplit className="text-teal-600" />
-                        <span className="fw-semibold small">送單執行中{job !== null ? `（${job.status}）` : ""}…</span>
+                        <span className="fw-semibold small">{tx(`送單執行中${job !== null ? `（${job.status}）` : ""}…`, `Submitting${job !== null ? ` (${job.status})` : ""}…`)}</span>
                       </>
                     ) : job.status === "done" ? (
                       <>
                         <CheckCircleFill className="text-success" />
-                        <span className="fw-semibold small">送單完成</span>
+                        <span className="fw-semibold small">{tx("送單完成", "Submission finished")}</span>
                       </>
                     ) : (
                       <>
                         <XCircleFill className="text-danger" />
-                        <span className="fw-semibold small">送單{job.status === "cancelled" ? "已取消" : "失敗"}（{job.status}）</span>
+                        <span className="fw-semibold small">
+                          {tx(
+                            `送單${job.status === "cancelled" ? "已取消" : "失敗"}（${job.status}）`,
+                            `Submission ${job.status === "cancelled" ? "cancelled" : "failed"} (${job.status})`,
+                          )}
+                        </span>
                       </>
                     )}
                   </div>
@@ -537,11 +554,11 @@ function HomePage() {
                         return (
                           <li key={`${op.code}-${i}`}>
                             <span className="font-monospace">{op.code}</span>
-                            {" "}{op.action === "+" ? "加選" : "退選"}：
+                            {" "}{op.action === "+" ? tx("加選", "Add") : tx("退選", "Drop")}：
                             <span className={`fw-semibold ${toneClass}`}>{copy.label}</span>
                             {op.school_msg !== null && op.outcome !== "success" ? (
                               <span className="text-muted d-block" style={{ whiteSpace: "pre-wrap" }}>
-                                原因：{op.school_msg}
+                                {tx("原因：", "Reason: ")}{op.school_msg}
                               </span>
                             ) : null}
                           </li>
@@ -552,7 +569,10 @@ function HomePage() {
                   {jobNote !== null && <p className="text-muted small mb-0 mt-1">{jobNote}</p>}
                   {unplaced.length > 0 && (
                     <p className="text-muted small mb-0 mt-1">
-                      {unplaced.length} 門「選上」課程時間資料無法解析，未排入課表。
+                      {tx(
+                        `${unplaced.length} 門「選上」課程時間資料無法解析，未排入課表。`,
+                        `${unplaced.length} held course(s) have unparseable time data and were left off the grid.`,
+                      )}
                     </p>
                   )}
                 </div>
@@ -570,7 +590,7 @@ function HomePage() {
 
       {/* RIGHT: two-tab side panel */}
       <div className="col-12 col-xl-5">
-        <div className="d-flex gap-2 mb-2" role="tablist" aria-label="右側檢視切換">
+        <div className="d-flex gap-2 mb-2" role="tablist" aria-label={tx("右側檢視切換", "Right-panel view switch")}>
           <button
             type="button"
             role="tab"
@@ -578,7 +598,7 @@ function HomePage() {
             className={`btn btn-sm rounded-pill px-3 ${tab === "browse" ? "btn-brand" : "btn-outline-secondary"}`}
             onClick={() => setTab("browse")}
           >
-            查課
+            {tx("查課", "Find courses")}
           </button>
           <button
             type="button"
@@ -588,7 +608,7 @@ function HomePage() {
             onClick={() => setTab("selections")}
           >
             <BookmarkCheck size={12} className="me-1" />
-            已選 {items.length > 0 ? `(${items.length})` : ""}
+            {tx("已選", "My selections")} {items.length > 0 ? `(${items.length})` : ""}
           </button>
         </div>
 
@@ -602,10 +622,10 @@ function HomePage() {
             onToggleCourse={onToggleCourse}
           />
         ) : (
-          <section className="card shadow-sm border-0 rounded-4" aria-label="我的已選課程">
+          <section className="card shadow-sm border-0 rounded-4" aria-label={tx("我的已選課程", "My selections")}>
             <div className="card-body p-3">
               <div className="d-flex align-items-center justify-content-between mb-2">
-                <span className="fw-bold text-dark small">已選課程（同步自學校）</span>
+                <span className="fw-bold text-dark small">{tx("已選課程（同步自學校）", "Selections (synced from the school)")}</span>
                 <button
                   type="button"
                   className="btn btn-sm btn-brand d-inline-flex align-items-center gap-1 rounded-pill"
@@ -613,16 +633,16 @@ function HomePage() {
                   disabled={syncing}
                 >
                   <ArrowRepeat size={12} />
-                  <span>{syncing ? "同步中…" : "同步我的已選"}</span>
+                  <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步我的已選", "Sync my selections")}</span>
                 </button>
               </div>
 
               {loading ? (
-                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">讀取中…</p>
+                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("讀取中…", "Loading…")}</p>
               ) : syncedAt === null ? (
-                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">尚未同步。按下「同步我的已選」從學校系統讀取。</p>
+                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("尚未同步。按下「同步我的已選」從學校系統讀取。", "Not synced yet. Hit “Sync my selections” to pull from the school.")}</p>
               ) : items.length === 0 ? (
-                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">學校系統目前無任何已選紀錄。</p>
+                <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("學校系統目前無任何已選紀錄。", "No selections on the school system right now.")}</p>
               ) : (
                 <ul className="list-unstyled mb-0">
                   {items.map((item) => {
@@ -641,11 +661,11 @@ function HomePage() {
                               {selectionShortCode(item) ?? item.code ?? ""}
                             </span>
                             {item.unknown && (
-                              <span className="badge text-bg-secondary ms-1" style={{ fontSize: "0.68rem" }}>目錄查無此課</span>
+                              <span className="badge text-bg-secondary ms-1" style={{ fontSize: "0.68rem" }}>{tx("目錄查無此課", "Not in catalog")}</span>
                             )}
                           </div>
                           <div className="text-muted" style={{ fontSize: "0.74rem" }}>
-                            {[item.times, item.room ?? item.room_text, item.teacher, item.credit !== null ? `${item.credit} 學分` : null]
+                            {[item.times, item.room ?? item.room_text, item.teacher, item.credit !== null ? (lang === "en" ? `${item.credit} cr` : `${item.credit} 學分`) : null]
                               .filter((p): p is string => p !== null && p !== "")
                               .join(" · ")}
                           </div>
@@ -664,7 +684,7 @@ function HomePage() {
                               onClick={() => toggleDrop(item)}
                               style={{ fontSize: "0.72rem" }}
                             >
-                              {dropped ? "還原" : "退選"}
+                              {dropped ? tx("還原", "Undo") : tx("退選", "Drop")}
                             </button>
                           )}
                         </div>
@@ -685,8 +705,8 @@ function HomePage() {
           <div className="crs-modal" role="dialog" aria-modal="true" aria-labelledby="console-confirm-title">
             <div className="crs-modal-card card shadow-lg border-0 rounded-4" style={{ maxWidth: "34rem", width: "100%" }}>
               <div className="card-body p-4">
-                <h2 className="h5 fw-bold mb-2 text-dark" id="console-confirm-title">二次確認：送出選課操作</h2>
-                <p className="text-muted small mb-3">將送出以下 {preview.ops.length} 筆操作；送去學校系統後結果以學校回應為準。</p>
+                <h2 className="h5 fw-bold mb-2 text-dark" id="console-confirm-title">{tx("二次確認：送出選課操作", "Confirm before submitting")}</h2>
+                <p className="text-muted small mb-3">{tx(`將送出以下 ${preview.ops.length} 筆操作；送去學校系統後結果以學校回應為準。`, `About to submit ${preview.ops.length} operation(s); once sent, the school's response is final.`)}</p>
                 <ul className="small mb-3 ps-3" data-testid="console-confirm-list">
                   {preview.ops.map((op) => {
                     const isAdd = op.action === "+";
@@ -700,15 +720,15 @@ function HomePage() {
                     return (
                       <li key={`${op.code}-${op.index}`} className="mb-1">
                         <span className={`badge me-1 ${isAdd ? "text-bg-primary" : "text-bg-danger"}`}>
-                          {isAdd ? "＋加選" : "−退選"}
+                          {isAdd ? tx("＋加選", "+ Add") : tx("−退選", "− Drop")}
                         </span>
                         <span className="fw-semibold text-dark">{name ?? op.code}</span>
                         <span className="text-muted ms-1 font-monospace">{op.code}</span>
                         {isAdd && addRow !== undefined && (
-                          <span className="text-muted ms-1">（志願 {addRow.priority}）</span>
+                          <span className="text-muted ms-1">{tx(`（志願 ${addRow.priority}）`, `(priority ${addRow.priority})`)}</span>
                         )}
                         {op.quota !== null && op.quota.remaining === 0 && (
-                          <span className="badge text-bg-warning ms-1">額滿警示</span>
+                          <span className="badge text-bg-warning ms-1">{tx("額滿警示", "Full — quota warning")}</span>
                         )}
                         {op.verdict !== "ok" && (
                           <span className="badge text-bg-danger ms-1">{op.verdict}</span>
@@ -720,12 +740,15 @@ function HomePage() {
                 {preview.warnings.length > 0 && (
                   <div className="text-warning-emphasis small mb-2" role="alert">
                     <ExclamationTriangleFill size={12} className="me-1" />
-                    名額資料為目錄快照{preview.quota_as_of !== null ? `（${preview.quota_as_of}）` : ""}，實際以學校系統為準。
+                    {tx(
+                      `名額資料為目錄快照${preview.quota_as_of !== null ? `（${preview.quota_as_of}）` : ""}，實際以學校系統為準。`,
+                      `Availability is a catalog snapshot${preview.quota_as_of !== null ? ` (${preview.quota_as_of})` : ""}; the school system decides`,
+                    )}
                   </div>
                 )}
                 <div className="mb-3">
                   <label htmlFor="console-confirm-password" className="form-label small fw-semibold text-dark mb-1">
-                    重新輸入選課密碼
+                    {tx("重新輸入選課密碼", "Re-enter your course password")}
                   </label>
                   <input
                     id="console-confirm-password"
@@ -747,7 +770,7 @@ function HomePage() {
                     onClick={() => { if (!submitting) { setPhase("idle"); setSendError(null); } }}
                     disabled={submitting}
                   >
-                    取消
+                    {tx("取消", "Cancel")}
                   </button>
                   <button
                     type="button"
@@ -756,7 +779,7 @@ function HomePage() {
                     disabled={!dropConfirmReady || submitting}
                     data-testid="console-confirm-submit"
                   >
-                    {submitting ? "送出中…" : "確認送出"}
+                    {submitting ? tx("送出中…", "Submitting…") : tx("確認送出", "Confirm & submit")}
                   </button>
                 </div>
               </div>

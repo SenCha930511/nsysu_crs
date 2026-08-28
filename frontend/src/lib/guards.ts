@@ -46,12 +46,13 @@ export function shouldSoftLogout(statusBefore: AuthStatus): boolean {
   return statusBefore === "authed";
 }
 
-export function loginNoticeText(reason: string | null): string | null {
+export function loginNoticeText(reason: string | null, lang: "zh" | "en" = "zh"): string | null {
+  const en = lang === "en";
   switch (reason) {
     case LOGIN_REASON_EXPIRED:
-      return "登入階段已過期，請重新登入。";
+      return en ? "Your sign-in session has expired. Please sign in again." : "登入階段已過期，請重新登入。";
     case LOGIN_REASON_REQUIRED:
-      return "此頁面需要先登入。";
+      return en ? "This page requires sign-in." : "此頁面需要先登入。";
     default:
       return null;
   }
@@ -62,22 +63,34 @@ export function loginErrorText(
   status: number,
   detail: string,
   retryAfterMinutes: number | null,
+  lang: "zh" | "en" = "zh",
 ): string {
+  const en = lang === "en";
   if (status === 401 && detail === "invalid_credentials") {
-    return "學號或密碼錯誤";
+    return en ? "Incorrect student ID or password" : "學號或密碼錯誤";
   }
   if (status === 429) {
+    if (en) {
+      return retryAfterMinutes !== null
+        ? `Too many attempts; account temporarily locked. Try again in about ${retryAfterMinutes} minutes`
+        : "Too many attempts. Please try again shortly";
+    }
     return retryAfterMinutes !== null
       ? `嘗試次數過多，帳號暫時鎖定，請約 ${retryAfterMinutes} 分鐘後再試`
       : "嘗試次數過多，請稍後再試";
   }
   if (status === 423) {
+    if (en) {
+      return retryAfterMinutes !== null
+        ? `Account locked. Try again in about ${retryAfterMinutes} minutes`
+        : "Account locked. Please try again shortly";
+    }
     return retryAfterMinutes !== null
       ? `帳號已鎖定，請約 ${retryAfterMinutes} 分鐘後再試`
       : "帳號已鎖定，請稍後再試";
   }
   if (status === 503) {
-    return "學校系統異常，稍後再試";
+    return en ? "The school system is unavailable right now" : "學校系統異常，稍後再試";
   }
-  return "登入失敗，請稍後再試";
+  return en ? "Sign-in failed. Please try again shortly" : "登入失敗，請稍後再試";
 }

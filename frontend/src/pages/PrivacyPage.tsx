@@ -1,8 +1,9 @@
 /** 隱私權政策 (todo 17): credentials policy, PII minimization, audit lifecycle. */
 
 import LegalPage, { type LegalSection } from "../components/LegalPage";
+import { useI18n } from "../lib/i18n";
 
-const SECTIONS: LegalSection[] = [
+const SECTIONS_ZH: LegalSection[] = [
   {
     heading: "本服務定位（非官方聲明）",
     paragraphs: [
@@ -32,7 +33,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "稽核紀錄與去識別化生命週期",
     paragraphs: [
-      "代送（寫入）操作會留下稽核紀錄，以供異常對帳與責任釐清。稽核中的學號一律以「加鹽雜湊」關聯，不儲存明文學號。其生命週期為：",
+      "代送（寫入）操作會留下稽核紀錄，以供異常對帳與責任釐清。稽核中的學號一律以「加鹽雜湊」關聯，不儲存明文學號；學校回應中的學號亦於入庫前遮罩。其生命週期為：",
     ],
     list: [
       "熱層保存 90 天：可對帳、可查詢。",
@@ -49,7 +50,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "聯絡管道",
     paragraphs: [
-      "（待補：正式聯絡與通報管道將於本站公開上線前公告於本頁。在此之前，請透過你認識的開發者本人聯繫。）",
+      "GitHub 倉庫提 issue：https://github.com/SenCha930511/nsysu_crs；或寄信至 sencha930511@gmail.com。",
     ],
   },
   {
@@ -60,12 +61,74 @@ const SECTIONS: LegalSection[] = [
   },
 ];
 
+const SECTIONS_EN: LegalSection[] = [
+  {
+    heading: "Service status (unofficial notice)",
+    paragraphs: [
+      "This site is a student-built, third-party course-browsing and selection helper. It has no affiliation, mandate, partnership, or endorsement from National Sun Yat-sen University. The school's formal selection records and system state are authoritative only at the NSYSU course-selection system (selcrs.nsysu.edu.tw).",
+    ],
+  },
+  {
+    heading: "We never store your school password in any form",
+    paragraphs: [
+      "The core promise: your course-selection password never lands on disk. We store no plaintext, no hash of any kind, and there is no “remember me”. The password lives only in server memory during sign-in and the second-confirm of submissions, is used to authenticate against the school system, and is discarded immediately — never written to any database, file, or log.",
+      "After sign-in, the selcrs session cookie issued by the school is treated as a credential: it stays only in Redis (memory layer) with a short TTL (sliding 30 minutes, hard cap 2 hours), never in Postgres, never in any log. If Redis fails, sign-in and submit features fail loudly while read-only browsing keeps working.",
+    ],
+  },
+  {
+    heading: "Data minimization",
+    paragraphs: [
+      "We keep only the minimum data required to serve you, and most person-linked data expires automatically:",
+    ],
+    list: [
+      "Student ID: identifies sign-in and owns your plans.",
+      "Plans and priority orders: created by you, deletable by you anytime.",
+      "Synced “my selections”: scoped to your current session only (deleted on sign-out or expiry) — never persisted long-term.",
+      "Course catalog: scraped from the school's public query pages and contains no personal data.",
+      "We do NOT collect names, emails, phone numbers, grades, or any school-records data; we use no Google Analytics or third-party tracking; there is no email registration system on this site.",
+    ],
+  },
+  {
+    heading: "Audit records and de-identification lifecycle",
+    paragraphs: [
+      "Submit (write) operations leave an audit trail for reconciliation and accountability. Student IDs inside audits are only linked via a salted hash — never stored in plaintext; IDs echoed back by the school are masked before they reach the database. Lifecycle:",
+    ],
+    list: [
+      "Hot tier for 90 days: reconcilable and viewable.",
+      "De-identified archive: after 90 days, compressed (gz) in de-identified form for 1 more year.",
+      "Deletion: permanently removed once the archive year ends.",
+    ],
+  },
+  {
+    heading: "Data source",
+    paragraphs: [
+      "All course data is scraped by our crawler from the public course-query pages of the NSYSU course-selection system (pages readable without sign-in): hourly on normal days, every 10 minutes during selection windows. If scraping fails, the site keeps serving the last successful snapshot and announces its update time at the top of the page.",
+    ],
+  },
+  {
+    heading: "Contact",
+    paragraphs: [
+      "Open an issue on the GitHub repo: https://github.com/SenCha930511/nsysu_crs — or email sencha930511@gmail.com.",
+    ],
+  },
+  {
+    heading: "Policy updates",
+    paragraphs: [
+      "Material changes to this policy take effect after being announced at a visible spot on this site.",
+    ],
+  },
+];
+
 function PrivacyPage() {
+  const { lang, tx } = useI18n();
   return (
     <LegalPage
-      title="隱私權政策"
-      intro="本頁說明本站如何（不）處理你的憑證與個人資料：密碼零落盤、cookie 僅記憶體短效保存、個資最小化、稽核去識別化生命週期。"
-      sections={SECTIONS}
+      title={tx("隱私權政策", "Privacy Policy")}
+      intro={tx(
+        "本頁說明本站如何（不）處理你的憑證與個人資料：密碼零落盤、cookie 僅記憶體短效保存、個資最小化、稽核去識別化生命週期。",
+        "How this site does (not) handle your credentials and personal data: passwords never persisted, session cookies kept memory-only and short-lived, data minimization, de-identified audit lifecycle.",
+      )}
+      sections={lang === "en" ? SECTIONS_EN : SECTIONS_ZH}
     />
   );
 }

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Award, Book, Clock, ExclamationTriangleFill } from "react-bootstrap-icons";
 
 import { conflictPairs } from "../lib/conflicts";
+import { useI18n } from "../lib/i18n";
 import { totalCreditsAndHours } from "../lib/totals";
 import type { CourseOut } from "../lib/api";
 
@@ -20,6 +21,7 @@ function TotalsPanel({
   onDownloadPng,
   isDownloadingPng = false,
 }: TotalsPanelProps) {
+  const { tx } = useI18n();
   const totals = useMemo(
     () => totalCreditsAndHours(selectedCourses),
     [selectedCourses],
@@ -34,20 +36,20 @@ function TotalsPanel({
     .join("\n");
 
   return (
-    <div className="floating-stats-dock" aria-label="選課統計懸浮資訊">
+    <div className="floating-stats-dock" aria-label={tx("選課統計懸浮資訊", "Selection statistics dock")}>
       <div className="dock-stat-item">
         <Book size={14} className="text-teal-400" />
-        <span>已選 {totals.courseCount} 門</span>
+        <span>{tx(`已選 ${totals.courseCount} 門`, `${totals.courseCount} course(s)`)}</span>
       </div>
       <div className="dock-divider" />
       <div className="dock-stat-item">
         <Award size={14} className="text-cyan-400" />
-        <span>總學分 {totals.totalCredits}</span>
+        <span>{tx(`總學分 ${totals.totalCredits}`, `${totals.totalCredits} credits`)}</span>
       </div>
       <div className="dock-divider" />
       <div className="dock-stat-item">
         <Clock size={14} className="text-indigo-300" />
-        <span>{totals.totalHours} 節</span>
+        <span>{tx(`${totals.totalHours} 節`, `${totals.totalHours} periods`)}</span>
       </div>
 
       {pairs.length > 0 && (
@@ -55,7 +57,7 @@ function TotalsPanel({
           <div className="dock-divider" />
           <div className="dock-stat-item text-danger fw-bold" title={conflictTitle}>
             <ExclamationTriangleFill size={14} className="text-warning" />
-            <span>衝堂 {pairs.length} 組</span>
+            <span>{tx(`衝堂 ${pairs.length} 組`, `${pairs.length} clash(es)`)}</span>
           </div>
         </>
       )}
@@ -69,7 +71,7 @@ function TotalsPanel({
             disabled={isDownloadingPng}
             onClick={onDownloadPng}
           >
-            {isDownloadingPng ? "匯出中…" : "下載課表圖"}
+            {isDownloadingPng ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}
           </button>
         </>
       )}

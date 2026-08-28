@@ -1,6 +1,7 @@
-import { Trash3 } from "react-bootstrap-icons";
+import { GeoAltFill, Trash3 } from "react-bootstrap-icons";
 
 import type { CourseOut } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 
 export type CourseCategory = "compulsory" | "elective" | "general" | "other";
 
@@ -8,6 +9,8 @@ export interface CoursePalette {
   category: CourseCategory;
   categoryLabel: string;
   bg: string;
+  badgeBg: string;
+  badgeText: string;
   border: string;
   text: string;
   roomText: string;
@@ -20,6 +23,8 @@ export const CATEGORY_PALETTES: Record<CourseCategory, CoursePalette> = {
     category: "compulsory",
     categoryLabel: "必修",
     bg: "#f0f9ff",
+    badgeBg: "#e0f2fe",
+    badgeText: "#0369a1",
     border: "#bae6fd",
     text: "#0369a1",
     roomText: "#0284c7",
@@ -30,6 +35,8 @@ export const CATEGORY_PALETTES: Record<CourseCategory, CoursePalette> = {
     category: "elective",
     categoryLabel: "選修",
     bg: "#f0fdf4",
+    badgeBg: "#dcfce7",
+    badgeText: "#15803d",
     border: "#bbf7d0",
     text: "#166534",
     roomText: "#15803d",
@@ -39,6 +46,8 @@ export const CATEGORY_PALETTES: Record<CourseCategory, CoursePalette> = {
   general: {
     category: "general",
     categoryLabel: "通識",
+    badgeBg: "#f3e8ff",
+    badgeText: "#7e22ce",
     bg: "#faf5ff",
     border: "#e9d5ff",
     text: "#6b21a8",
@@ -49,6 +58,8 @@ export const CATEGORY_PALETTES: Record<CourseCategory, CoursePalette> = {
   other: {
     category: "other",
     categoryLabel: "其他",
+    badgeBg: "#f1f5f9",
+    badgeText: "#334155",
     bg: "#f8fafc",
     border: "#cbd5e1",
     text: "#334155",
@@ -102,6 +113,10 @@ export interface CourseBlockProps {
   /** Static preview mode (todo 12 export card): no hover effects, no delete
    * button - the block is a pure visual rendering of the course. */
   readOnly?: boolean;
+  /** Number of periods spanned in this contiguous block */
+  spanCount?: number;
+  /** Clock range string (e.g. "09:10-12:00") */
+  timeRange?: string;
 }
 
 function CourseBlock({
@@ -110,29 +125,36 @@ function CourseBlock({
   onHover,
   onRemove,
   readOnly = false,
+  spanCount = 1,
+  timeRange,
 }: CourseBlockProps) {
+  const { lang, tx } = useI18n();
   const name = course.name_zh ?? course.name_en ?? course.code ?? course.id;
-  const roomLines = (course.room ?? "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+  const room = (course.room ?? "").trim();
 
   const palette = getCoursePalette(course);
   const lit = hovered && !readOnly;
+  const EN_CATEGORY: Record<CourseCategory, string> = {
+    compulsory: "Required",
+    elective: "Elective",
+    general: "GE",
+    other: "Other",
+  };
+  const categoryLabel = lang === "en" ? EN_CATEGORY[palette.category] : palette.categoryLabel;
 
   const style: React.CSSProperties = {
     backgroundColor: lit ? "var(--crs-brand)" : palette.bg,
     color: lit ? "#ffffff" : palette.text,
-    border: `1px solid ${lit ? "var(--crs-brand)" : palette.border}`,
-    borderLeft: `3.5px solid ${lit ? "#ffffff" : palette.stripe}`,
+    border: `1.5px solid ${lit ? "var(--crs-brand)" : palette.border}`,
+    borderLeft: `4px solid ${lit ? "#ffffff" : palette.stripe}`,
     boxShadow: lit
-      ? "0 4px 12px var(--crs-brand-glow), 0 0 0 2px var(--crs-brand)"
+      ? "0 4px 14px var(--crs-brand-glow), 0 0 0 2px var(--crs-brand)"
       : "0 1px 3px rgba(0, 0, 0, 0.04)",
   };
 
   const title = [
     course.name_zh,
-    palette.categoryLabel,
+    categoryLabel,
     course.teacher,
     course.room,
   ]
@@ -141,7 +163,7 @@ function CourseBlock({
 
   return (
     <div
-      className="course-block"
+      className={`course-block ${spanCount > 1 ? "course-block-spanned" : ""}`}
       style={style}
       title={title}
       {...(readOnly
@@ -151,21 +173,49 @@ function CourseBlock({
             onMouseLeave: () => onHover(null),
           })}
     >
-      <span className="course-block-title">{name}</span>
-      {roomLines.map((room, index) => (
+      {/* Top Meta Pill: Category + Period Count + Clock Time */}
+      <div className="course-block-header">
         <span
-          key={`room-${index}`}
+          className="course-block-badge"
+          style={{
+            backgroundColor: lit ? "rgba(255, 255, 255, 0.2)" : palette.badgeBg,
+            color: lit ? "#ffffff" : palette.badgeText,
+          }}
+        >
+          {categoryLabel} • {spanCount}{tx("節", "p")}
+        </span>
+        {timeRange && (
+          <span
+            className="course-block-time"
+            style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : "var(--studio-text-muted)" }}
+          >
+            {timeRange}
+          </span>
+        )}
+      </div>
+
+      {/* Course Title */}
+      <div className="course-block-title">
+        {name}
+      </div>
+
+      {/* Bottom Room Location */}
+      {room && (
+        <div
           className="course-block-room"
           style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : palette.roomText }}
         >
-          {room}
-        </span>
-      ))}
+          <GeoAltFill size={10} className="flex-shrink-0" />
+          <span>{room}</span>
+        </div>
+      )}
+
+      {/* Delete Action */}
       {!readOnly && (
         <button
           type="button"
           className="course-block-delete"
-          aria-label={`移除 ${name}`}
+          aria-label={tx(`移除 ${name}`, `Remove ${name}`)}
           onClick={(event) => {
             event.stopPropagation();
             onRemove(course);
@@ -179,4 +229,3 @@ function CourseBlock({
 }
 
 export default CourseBlock;
-

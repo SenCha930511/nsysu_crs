@@ -11,6 +11,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import AppShell from "./components/AppShell";
 import { RequireAuth } from "./components/RequireAuth";
+import { I18nProvider } from "./lib/i18n";
 import FaqPage from "./pages/FaqPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -24,8 +25,9 @@ import { SelectionProvider } from "./state/selection";
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+    <I18nProvider>
+      <BrowserRouter>
+        <AuthProvider>
         <SelectionProvider>
           <PlansSyncProvider>
             <Routes>
@@ -56,8 +58,9 @@ function App() {
             </Routes>
           </PlansSyncProvider>
         </SelectionProvider>
-      </AuthProvider>
-    </BrowserRouter>
+        </AuthProvider>
+      </BrowserRouter>
+    </I18nProvider>
   );
 }
 
