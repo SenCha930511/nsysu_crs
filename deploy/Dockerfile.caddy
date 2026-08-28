@@ -8,8 +8,14 @@ RUN npm run build
 
 # caddy official image is alpine-based: add tzdata so `date +%Z` honors TZ.
 FROM caddy:2-alpine
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata \
+    && adduser -D -H -u 10002 caddy \
+    && mkdir -p /data /config /srv \
+    && chown -R caddy:caddy /data /config /srv
 ENV TZ=Asia/Taipei
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
-COPY --from=frontend-build /build/dist /srv
-EXPOSE 80
+COPY --from=frontend-build --chown=caddy:caddy /build/dist /srv
+# Non-root: binding 80/443 works because compose sets
+# net.ipv4.ip_unprivileged_port_start=0 on this service.
+USER caddy
+EXPOSE 80 443

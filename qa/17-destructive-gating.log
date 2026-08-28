@@ -1,0 +1,33 @@
+qa/17-destructive-gating.log — debt (b): destructive catalog DB tests are opt-in [2026-08-28 09:47:26 CST]
+====================================================================================
+
+LIVE catalog before: {"ok":true,"updated_at":"2026-08-28T00:52:22.378510Z","row_count":1,"source":"self-scrape"}
+
+PART 1 — default run INSIDE a container against live compose Postgres: all SKIP, nothing wiped
+cmd: docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml run --rm --no-deps -T worker uv run pytest tests/test_catalog_db.py -p no:cacheprovider -o addopts= -v
+--------------------------------------------------------------------------------
+tests/test_catalog_db.py::test_full_ingest_persists_snapshot_and_meta SKIPPED [ 20%]
+tests/test_catalog_db.py::test_second_run_updates_in_place_and_deletes_vanished SKIPPED [ 40%]
+tests/test_catalog_db.py::test_mid_run_failure_keeps_previous_snapshot SKIPPED [ 60%]
+tests/test_catalog_db.py::test_layout_break_aborts_without_touching_snapshot SKIPPED [ 80%]
+tests/test_catalog_db.py::test_duplicate_rows_within_one_scrape_dedup SKIPPED [100%]
+
+============================== 5 skipped in 0.17s ==============================
+
+PART 2 — opted-in run (CATALOG_DB_DESTRUCTIVE=1) against SCRATCH DB qa17_scratch (never live): full assertions, 5 passed
+cmd: drop/create qa17_scratch; run with -e DATABASE_URL=.../qa17_scratch -e CATALOG_DB_DESTRUCTIVE=1 (alembic upgrade head first)
+--------------------------------------------------------------------------------
+DROP DATABASE
+CREATE DATABASE
+tests/test_catalog_db.py::test_full_ingest_persists_snapshot_and_meta PASSED [ 20%]
+tests/test_catalog_db.py::test_second_run_updates_in_place_and_deletes_vanished PASSED [ 40%]
+tests/test_catalog_db.py::test_mid_run_failure_keeps_previous_snapshot PASSED [ 60%]
+tests/test_catalog_db.py::test_layout_break_aborts_without_touching_snapshot PASSED [ 80%]
+tests/test_catalog_db.py::test_duplicate_rows_within_one_scrape_dedup PASSED [100%]
+
+============================== 5 passed in 0.47s ===============================
+DROP DATABASE
+scratch dropped.
+
+LIVE catalog after:  {"ok":true,"updated_at":"2026-08-28T00:52:22.378510Z","row_count":1,"source":"self-scrape"}
+VERDICT: default=SKIP(5) / flagged+scratch=PASS(5) / live catalog identical before and after

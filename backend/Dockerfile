@@ -7,17 +7,20 @@ ENV TZ=Asia/Taipei \
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends tzdata \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 --create-home app
 
 WORKDIR /app
+RUN chown app:app /app
 
 # Dependency layer first for build-cache efficiency; uv.lock pins everything.
-COPY pyproject.toml uv.lock ./
+COPY --chown=app:app pyproject.toml uv.lock ./
+USER app
 RUN uv sync --locked --no-dev --no-install-project
 
-COPY app ./app
-COPY alembic.ini ./
-COPY alembic ./alembic
+COPY --chown=app:app app ./app
+COPY --chown=app:app alembic.ini ./
+COPY --chown=app:app alembic ./alembic
 
 ENV PATH="/app/.venv/bin:$PATH"
 

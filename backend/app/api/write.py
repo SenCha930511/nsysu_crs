@@ -1,7 +1,10 @@
 """POST /api/write/preview (plan todo 14): checks + replay payload preview +
 single-use confirm_token. Every school call is FRESH (no caching between
 previews): after the CSRF middleware (403) and site-session (401), we run
-selcrs-jar check -> fresh Studfun stage probe + form GET (409/503/401
+selcrs-jar check (401) -> school breaker gate (todo 17: open -> 503 LOCAL -
+the write entrance is hard-off with zero school contact; coherent school
+outcomes close the breaker, failures re-feed the streak) -> fresh Studfun
+stage probe + form GET (409/503/401
 routing) -> typed-400 shape checks -> app.write.preview per-op verdicts
 (無課號/同批加退混雜/不在已選/衝堂, quota only as warnings) -> on full pass,
 canonicalize (app.write.canonical, shared with todo 15) -> replay payload
@@ -20,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_student, get_redis, get_session
 from app.api.write_probe import probe_stage
+from app.auth.breaker import build_breaker
 from app.auth.redis_iface import AuthRedis
 from app.auth.sessions import SESSION_COOKIE_NAME, load_selcrs
 from app.config import Settings
@@ -160,8 +164,22 @@ async def post_write_preview(
     if jar_payload is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_EXPIRED)
 
-    # Fresh stage probe (plan: preview never rides a cached stage).
-    probe = await probe_stage()
+    breaker = build_breaker(redis, settings)
+    if not await breaker.admit():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        )
+    # Fresh stage probe (plan: preview never rides a cached stage). probe_stage
+    # already mapped SelcrsUnavailable/Expired onto its 503/401 contract.
+    try:
+        probe = await probe_stage()
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_503_SERVICE_UNAVAILABLE and exc.detail == ERR_SCHOOL:
+            await breaker.record_unknown()
+        elif exc.status_code == status.HTTP_401_UNAUTHORIZED and exc.detail == ERR_EXPIRED:
+            await breaker.record_classified()
+        raise
+    await breaker.record_classified()
     detection = probe.detection
     if not is_writable(
         detection,

@@ -1,0 +1,54 @@
+qa/17-smoke.log — todo 17 prod-hardened compose smoke [2026-08-28 09:40:53 CST]
+cmd: scripts/qa17_smoke.sh (expects the rebuilt stack already up: docker compose -f deploy/docker-compose.yml up --build -d)
+======================================================================
+
+## compose ps (all healthy)
+nsysu-crs-app-1 Up 7 minutes (healthy)
+nsysu-crs-caddy-1 Up 6 minutes (healthy)
+nsysu-crs-postgres-1 Up 48 minutes (healthy)
+nsysu-crs-redis-1 Up 3 hours (healthy)
+nsysu-crs-worker-1 Up 10 minutes
+
+## 200 smoke through Caddy (the only published entry)
+/                      -> HTTP_200
+/api/health            -> HTTP_200
+/api/catalog/meta      -> HTTP_200
+/api/ops/state         -> HTTP_200
+/privacy               -> HTTP_200
+/tos                   -> HTTP_200
+/faq                   -> HTTP_200
+
+## bodies of the API smokes
+--- /api/health
+{"status":"ok","postgres":{"status":"ok","error":null},"redis":{"status":"ok","error":null}}
+--- /api/catalog/meta
+{"ok":true,"updated_at":"2026-08-28T00:52:22.378510Z","row_count":1,"source":"self-scrape"}
+--- /api/ops/state (public posture)
+{"breaker":{"state":"closed","mode":"normal","streak":null,"opened_at":null,"failure_threshold":null,"recovery_after":null,"probe_gate_seconds":null},"lockouts":null}
+--- /api/ops/state (admin, X-App-Secret)
+{"breaker":{"state":"closed","mode":"normal","streak":0,"opened_at":null,"failure_threshold":5,"recovery_after":300,"probe_gate_seconds":60},"lockouts":{"today":0,"yesterday":0,"total":0}}
+
+## security headers dump (curl -sI http://localhost/)
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+Referrer-Policy: strict-origin-when-cross-origin
+Server: NSYSU-Course-Wrapper
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+
+## non-root containers (app/worker/caddy uid; postgres/redis drop via official entrypoints)
+app      uid=10001
+worker   uid=10001
+caddy    uid=10002
+nsysu-crs-postgres-1     pid1-uid=999
+nsysu-crs-redis-1        pid1-uid=999
+
+## published ports (only caddy 80/443; everything else internal)
+nsysu-crs-app-1          {}
+nsysu-crs-worker-1       {}
+nsysu-crs-postgres-1     {}
+nsysu-crs-redis-1        {}
+nsysu-crs-caddy-1        {"443/tcp":[{"HostIp":"","HostPort":"443"}],"80/tcp":[{"HostIp":"","HostPort":"80"}]}
+
+## container TZ spot check
+app=CST caddy=CST

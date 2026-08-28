@@ -18,14 +18,24 @@ If a global install ever becomes unavoidable, it must be recorded in `qa/install
 cp .env.example .env   # fill in APP_SECRET etc. for anything non-local
 ```
 
-### Prod-ish (static frontend served by Caddy)
+### Prod (static frontend served by Caddy)
 
 ```bash
 docker compose -f deploy/docker-compose.yml up --build -d
-curl -sf http://localhost:8000/api/health   # app direct
-curl -sf http://localhost/api/health        # via Caddy
+curl -sf http://localhost/api/health        # via Caddy (the only published entry: 80/443)
 curl -sf http://localhost/                  # frontend page
+curl -sf http://localhost/api/ops/state     # breaker posture / banner seam
 ```
+
+Only Caddy publishes ports in prod. To reach `app`/`postgres`/`redis` from the host for one-off debugging, use the untracked override snippet in [`docs/runbook.md`](docs/runbook.md) (§1) — never commit a published port.
+
+### Backups
+
+```bash
+scripts/backup.sh    # pg_dump | gzip -> deploy/backups/, keeps the newest 14
+```
+
+Install daily on the host (cron line + restore SOP in [`docs/runbook.md`](docs/runbook.md) §2). `deploy/backups/` is gitignored. Restore proof lives at `qa/17-backup.log` (scratch-DB restore with matching row counts).
 
 ### Dev (hot reload: uvicorn --reload + Vite dev server)
 
@@ -57,7 +67,7 @@ Alembic runs inside the `app` container, so `DATABASE_URL` resolves against the 
 cd backend && uv run pytest
 ```
 
-Credential storage policy (no passwords, selcrs cookies in Redis only): see [`docs/architecture.md`](docs/architecture.md).
+Credential storage policy (no passwords, selcrs cookies in Redis only): see [`docs/architecture.md`](docs/architecture.md); operations & env-knob table: [`docs/runbook.md`](docs/runbook.md); 115-2 launch: [`docs/launch-checklist.md`](docs/launch-checklist.md).
 
 TZ is pinned to `Asia/Taipei` everywhere (images + compose env). Redis is pinned to `--maxmemory 128mb --maxmemory-policy noeviction`; volatile-\*/allkeys-\* eviction policies are forbidden for this instance because credential and write-queue keys must never be silently evicted.
 

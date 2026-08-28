@@ -227,6 +227,28 @@ export function fetchCatalogMeta(signal?: AbortSignal): Promise<CatalogMeta> {
   return request<CatalogMeta>("/api/catalog/meta", signal !== undefined ? { signal } : {});
 }
 
+// ---------- ops posture (anonymous; todo 17 breaker banner seam) ----------
+
+/** Public shape of GET /api/ops/state (gated admin fields are absent here). */
+export interface OpsState {
+  breaker: {
+    /** "closed" | "open" | "half-open" */
+    state: string;
+    /** "normal" | "read-only" */
+    mode: string;
+    streak: number | null;
+    opened_at: string | null;
+    failure_threshold: number | null;
+    recovery_after: number | null;
+    probe_gate_seconds: number | null;
+  };
+  lockouts: { today: number; yesterday: number; total: number } | null;
+}
+
+export function fetchOpsState(signal?: AbortSignal): Promise<OpsState> {
+  return request<OpsState>("/api/ops/state", signal !== undefined ? { signal } : {});
+}
+
 // ---------- auth (session cookie is httpOnly; fetch carries it same-origin) ----------
 
 export interface LoginResponse {

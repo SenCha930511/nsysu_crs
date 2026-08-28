@@ -77,6 +77,20 @@ function AppShell() {
       <main className="container-fluid px-3 py-3">
         <Outlet />
       </main>
+      <footer className="small text-secondary text-center py-3 border-top">
+        <NavLink to="/privacy" className="link-secondary">
+          隱私權政策
+        </NavLink>
+        <span className="mx-2">·</span>
+        <NavLink to="/tos" className="link-secondary">
+          服務條款
+        </NavLink>
+        <span className="mx-2">·</span>
+        <NavLink to="/faq" className="link-secondary">
+          常見問題
+        </NavLink>
+        <div className="mt-1">本站為學生自建之第三方工具，非國立中山大學官方服務。</div>
+      </footer>
     </>
   );
 }

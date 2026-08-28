@@ -30,7 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_student, get_redis, get_session
-from app.auth.breaker import SchoolBreaker
+from app.auth.breaker import build_breaker
 from app.auth.redis_iface import AuthRedis
 from app.auth.sessions import SESSION_COOKIE_NAME, store_selcrs
 from app.config import Settings
@@ -88,11 +88,7 @@ async def post_write_submit(
     if record is None or record.student_no != student_no:
         return _error(status.HTTP_409_CONFLICT, _ERR_UNKNOWN_TOKEN)
 
-    breaker = SchoolBreaker(
-        redis,
-        failure_threshold=settings.breaker_failure_threshold,
-        recovery_after=settings.breaker_recovery_after,
-    )
+    breaker = build_breaker(redis, settings)
     if not await breaker.admit():
         return _error(status.HTTP_503_SERVICE_UNAVAILABLE, _ERR_SCHOOL)
     try:

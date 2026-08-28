@@ -5,10 +5,14 @@ Flow (read-only — the only school traffic is GETs, never a POST):
 1. Site session required (``get_current_student`` -> 401 not_authenticated);
    selcrs jar from Redis (sliding-TTL refreshed — this IS school activity).
    Jar gone -> 401 SELCRS_EXPIRED.
-2. One GET Studfun.asp, parsed by ``app.stage.detect`` into
+2. School breaker gate (todo 17 full-degraded posture): while the breaker is
+   open this endpoint answers 503 LOCALLY — anything that needs the school is
+   hard-off, while catalog/meta reads stay up.
+3. One GET Studfun.asp, parsed by ``app.stage.detect`` into
    stage/variant/params/reason. A login-page bounce -> 401 SELCRS_EXPIRED;
-   unrecognized transport/HTTP behaviour -> 503 school_unavailable.
-3. When the page is open (a write-form link exists), ONE more same-session
+   unrecognized transport/HTTP behaviour -> 503 school_unavailable AND feeds
+   the breaker streak; any coherent outcome closes/resets it.
+4. When the page is open (a write-form link exists), ONE more same-session
    GET of that form page feeds ``need_confirmation`` (必修課程確認 pre-step:
    blocked until the user completes the confirmation on the school site).
 
@@ -30,6 +34,7 @@ from fastapi.exceptions import HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from app.api.deps import get_current_student, get_redis
+from app.auth.breaker import build_breaker
 from app.auth.redis_iface import AuthRedis
 from app.auth.sessions import SESSION_COOKIE_NAME, load_selcrs
 from app.config import Settings
@@ -37,8 +42,8 @@ from app.selcrs.endpoints import SELCRS_BASE_URL, get_studfun, get_write_form
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
 from app.selcrs.jar import deserialize_cookies
 from app.stage.detect import (
-    StudfunDetection,
     StageParams,
+    StudfunDetection,
     detect_need_confirmation,
     is_writable,
     parse_studfun,
@@ -99,6 +104,11 @@ async def get_api_stage(
     if jar_payload is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_EXPIRED)
 
+    breaker = build_breaker(redis, settings)
+    if not await breaker.admit():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        )
     try:
         cookies = deserialize_cookies(jar_payload)
         detection = parse_studfun(await get_studfun(cookies))
@@ -107,13 +117,17 @@ async def get_api_stage(
             form_html = await get_write_form(cookies, urljoin(_STUDFUN_URL, detection.form_href))
             need_confirmation = detect_need_confirmation(form_html)
     except SelcrsSessionExpired:
+        # A login-page bounce still proves the host speaks its protocol.
+        await breaker.record_classified()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_EXPIRED
         ) from None
     except SelcrsUnavailable as exc:
+        await breaker.record_unknown()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
         ) from exc
+    await breaker.record_classified()
 
     return StageResponse(
         stage=detection.stage,

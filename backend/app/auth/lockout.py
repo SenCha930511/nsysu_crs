@@ -26,9 +26,14 @@ is deliberately loose (dorm-NAT rationale in docs).
 import time
 import uuid
 from collections.abc import Callable
+from datetime import datetime
 from typing import Final
+from zoneinfo import ZoneInfo
 
 from app.auth.redis_iface import AuthRedis
+
+LOCKOUT_TOTAL_KEY: Final = "lockout:events:total"
+LOCKOUT_DAILY_TTL_SECONDS: Final = 30 * 24 * 3600
 
 
 def _fail_log_key(student_no: str) -> str:
@@ -43,6 +48,12 @@ def _ip_key(ip: str, hour_bucket: int) -> str:
     return f"loginip:{ip}:{hour_bucket}"
 
 
+def lockout_daily_key(moment: float, tz_name: str) -> str:
+    """Per-day lockout bucket (YYYYMMDD in the deployment zone; 30d TTL)."""
+    day = datetime.fromtimestamp(moment, ZoneInfo(tz_name)).strftime("%Y%m%d")
+    return f"lockout:events:{day}"
+
+
 class FailureLog:
     """Sliding per-account credential-failure log with a fixed, non-extending lock."""
 
@@ -53,11 +64,13 @@ class FailureLog:
         fail_limit: int,
         lock_minutes: int,
         now: Callable[[], float] = time.time,
+        tz_name: str = "Asia/Taipei",
     ) -> None:
         self._redis: Final = redis
         self.fail_limit: Final = fail_limit
         self.window_seconds: Final = lock_minutes * 60
         self._now: Final = now
+        self._tz_name: Final = tz_name
 
     async def is_locked(self, student_no: str) -> bool:
         """True while the fixed lock key exists (never extended once set)."""
@@ -85,7 +98,14 @@ class FailureLog:
         # expiry lives in the scores, so refreshing it changes no semantics.
         await self._redis.expire(key, self.window_seconds)
         if await self._redis.zcard(key) >= self.fail_limit:
-            await self._redis.set(_lock_key(student_no), "1", nx=True, ex=self.window_seconds)
+            created = await self._redis.set(
+                _lock_key(student_no), "1", nx=True, ex=self.window_seconds
+            )
+            if created:  # NEW lock only: feeds the abuse-monitor counters (todo 17).
+                await self._redis.incr(LOCKOUT_TOTAL_KEY)
+                daily = lockout_daily_key(now, self._tz_name)
+                await self._redis.incr(daily)
+                await self._redis.expire(daily, LOCKOUT_DAILY_TTL_SECONDS)
             return True
         return False
 

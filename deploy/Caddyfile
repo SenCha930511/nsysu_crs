@@ -8,6 +8,43 @@
 	root * /srv
 	encode zstd gzip
 
+	# Structured access log: one JSON object per request on stdout
+	# (`docker logs` / journald collect it). Caddy's JSON encoder includes the
+	# full request-header map by default, which would leak session cookies and
+	# app secrets into logs - the filter excises every credential-bearing
+	# header field before the line is written.
+	log {
+		output stdout
+		level INFO
+		format filter {
+			wrap json
+			fields {
+				request>headers>Cookie delete
+				request>headers>Set-Cookie delete
+				request>headers>X-App-Secret delete
+				request>headers>X-CSRF-Token delete
+				request>headers>Authorization delete
+				resp_headers>Set-Cookie delete
+			}
+		}
+	}
+
+	# Security headers (todo 17). HSTS is deliberately NOT active on :80 -
+	# it poisons clients that reach the plain-HTTP local stack. When the VPS
+	# serves the real domain over HTTPS and the smoke run confirms no
+	# fallback path needs plain HTTP, UNCOMMENT this line:
+	#	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Built-SPA CSP: Vite emits external module scripts only (no inline
+		# script); React writes style= attributes ('unsafe-inline' needed for
+		# style-src-attr); PNG export previews use data:/blob: object URLs.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Server "NSYSU-Course-Wrapper"
+	}
+
 	# API goes to the FastAPI app. `handle` blocks are mutually exclusive and
 	# ordered, so /api/* can never fall through to the SPA fallback.
 	handle /api/* {

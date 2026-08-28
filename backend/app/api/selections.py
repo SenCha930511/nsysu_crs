@@ -6,10 +6,14 @@ on failure):
 1. Site session required (``get_current_student`` -> 401 not_authenticated).
 2. selcrs jar from Redis (``load_selcrs`` refreshes the school jar's sliding
    TTL - this sync IS school activity). Jar gone -> 401 SELCRS_EXPIRED.
-3. One school GET slt_result.asp. A login-page bounce -> 401 SELCRS_EXPIRED;
+3. School breaker gate (todo 17 full-degraded posture): open breaker -> 503
+   LOCALLY, zero school contact. Catalog/meta reads stay up; syncing needs the
+   school, so it is hard-off while the school is believed down.
+4. One school GET slt_result.asp. A login-page bounce -> 401 SELCRS_EXPIRED;
    unrecognized/unreachable school behaviour -> 503 school_unavailable
-   (SelcrsUnavailable; never a per-account signal).
-4. Parse (real 14/13-col layouts) -> join courses by code (unmatched rows
+   (SelcrsUnavailable; never a per-account signal) AND feeds the breaker
+   streak; any coherent outcome closes/resets it.
+5. Parse (real 14/13-col layouts) -> join courses by code (unmatched rows
    stay, ``unknown=true``) -> identity diff vs the previous snapshot ->
    replace the session-scoped Redis snapshot.
 
@@ -28,9 +32,13 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_student, get_redis, get_session
+from app.auth.breaker import build_breaker
 from app.auth.redis_iface import AuthRedis
 from app.auth.sessions import SESSION_COOKIE_NAME, load_selcrs
 from app.config import Settings
+from app.selcrs.endpoints import get_slt_result
+from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
+from app.selcrs.jar import deserialize_cookies
 from app.selections.join import attach_course_matches
 from app.selections.parse import SelectionItem, parse_slt_result
 from app.selections.store import (
@@ -39,9 +47,6 @@ from app.selections.store import (
     load_snapshot,
     store_snapshot,
 )
-from app.selcrs.endpoints import get_slt_result
-from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
-from app.selcrs.jar import deserialize_cookies
 
 router: Final = APIRouter()
 
@@ -98,17 +103,25 @@ async def post_selections_sync(
     if jar_payload is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_EXPIRED)
 
+    breaker = build_breaker(redis, settings)
+    if not await breaker.admit():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        )
     try:
         html = await get_slt_result(deserialize_cookies(jar_payload))
         items = parse_slt_result(html)
     except SelcrsSessionExpired:
+        await breaker.record_classified()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_EXPIRED
         ) from None
     except SelcrsUnavailable as exc:
+        await breaker.record_unknown()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
         ) from exc
+    await breaker.record_classified()
 
     items = await attach_course_matches(
         db, year_sem=settings.semester_year_sem, items=items

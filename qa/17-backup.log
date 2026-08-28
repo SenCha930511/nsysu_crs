@@ -1,0 +1,16 @@
+qa/17-backup.log — todo 17 backup + scratch-restore proof [2026-08-28 09:31:40 CST]
+cmd: scripts/backup.sh (pg_dump -F plain | gzip -> deploy/backups/, rotation keeps newest 14)
+------------------------------------------------------------------------
+ARTIFACT: deploy/backups/nsysu_crs-20260828-093102.sql.gz (3730 bytes; gzip -t: OK)
+
+[backup.sh] wrote deploy/backups/nsysu_crs-20260828-093140.sql.gz (3729 bytes)
+[backup.sh] done: 2 archives kept
+
+LIVE counts (nsysu_crs):      courses=1 ingest_runs=1 students=2 plans=2 write_jobs=0 write_audit=0 alembic=1
+
+RESTORE into scratch qa17_restore_scratch: drop/create + gunzip|psql (ON_ERROR_STOP)
+NOTICE:  database "qa17_restore_scratch" does not exist, skipping
+RESTORED counts (scratch):    courses=1 ingest_runs=1 students=2 plans=2 write_jobs=0 write_audit=0 alembic=1
+scratch DB dropped.
+
+VERDICT: see RESTORED counts line above (equals LIVE counts)

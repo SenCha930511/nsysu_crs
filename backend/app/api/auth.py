@@ -32,7 +32,8 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
-from app.auth.breaker import SchoolBreaker
+from app.api.deps import get_current_student, get_redis
+from app.auth.breaker import build_breaker
 from app.auth.lockout import FailureLog, IpLimiter
 from app.auth.redis_iface import AuthRedis
 from app.auth.sessions import (
@@ -42,7 +43,6 @@ from app.auth.sessions import (
     store_selcrs,
 )
 from app.auth.students import record_successful_login
-from app.api.deps import get_current_student, get_redis
 from app.config import Settings
 from app.selcrs.endpoints import Sso2Result, login_sso2
 from app.selcrs.errors import SelcrsUnavailable
@@ -94,11 +94,7 @@ async def post_login(
     if not limiter.admits(await limiter.hit(_client_ip(request))):
         return _error(status.HTTP_429_TOO_MANY_REQUESTS, _ERR_TOO_MANY)
 
-    breaker = SchoolBreaker(
-        redis,
-        failure_threshold=settings.breaker_failure_threshold,
-        recovery_after=settings.breaker_recovery_after,
-    )
+    breaker = build_breaker(redis, settings)
     if not await breaker.admit():
         return _error(status.HTTP_503_SERVICE_UNAVAILABLE, _ERR_SCHOOL)
 
@@ -109,6 +105,7 @@ async def post_login(
         redis,
         fail_limit=settings.login_fail_limit,
         lock_minutes=settings.login_lock_minutes,
+        tz_name=settings.tz,
     )
     if await failure_log.is_locked(student_no):
         # The login page (todo 11) shows the fixed lock window as the retry

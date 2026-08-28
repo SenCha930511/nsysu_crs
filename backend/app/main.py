@@ -12,6 +12,7 @@ from app.api.auth import router as auth_router
 from app.api.catalog import router as catalog_router
 from app.api.courses import router as courses_router
 from app.api.health import router as health_router
+from app.api.ops import router as ops_router
 from app.api.plans import router as plans_router
 from app.api.plans_export import router as plans_export_router
 from app.api.selections import router as selections_router
@@ -21,12 +22,14 @@ from app.api.write_jobs import router as write_jobs_router
 from app.api.write_submit import router as write_submit_router
 from app.config import Settings
 from app.db import build_engine, build_session_factory
+from app.request_log import RequestLogMiddleware, configure_access_log
 from app.write.csrf import CsrfMiddleware
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     """Build the app. Tests inject a constructed Settings; prod parses env."""
     resolved = settings if settings is not None else Settings()
+    configure_access_log()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -55,7 +58,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content={"detail": "redis_unavailable"},
         )
 
+    # Starlette ordering: the last-registered middleware is outermost, so the
+    # access log wraps the CSRF guard and csrf_failed 403s are logged too.
     app.add_middleware(CsrfMiddleware)
+    app.add_middleware(RequestLogMiddleware)
     app.include_router(health_router)
     app.include_router(catalog_router)
     app.include_router(courses_router)
@@ -67,4 +73,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(write_router)
     app.include_router(write_submit_router)
     app.include_router(write_jobs_router)
+    app.include_router(ops_router)
     return app

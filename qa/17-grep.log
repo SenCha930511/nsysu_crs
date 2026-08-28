@@ -1,0 +1,42 @@
+qa/17-grep.log — todo 17 security sweep [2026-08-28 09:47:53 CST]
+cmd: scripts/security_sweep.sh
+======================================================================
+
+### 1. backend/app/models must never contain password|cookie
+[OK] models secret-word grep: 0 hits
+
+### 2. backend/app logger calls must never name credential material
+[OK] source credential-logging grep: 0 hits
+
+### 3. live DB schema: no column named like password|cookie
+[OK] DB schema credential-column grep: 0 hits
+
+### 4. app container logs: no password / cookie value / authorization
+[OK] app runtime-log grep: 0 hits
+
+### 5. caddy JSON access logs: credential header keys excised (sentry-injected)
+[OK] caddy access-log sentry grep: 0 hits
+[OK] app access-log sentry grep: 0 hits
+
+### 6. CORS posture
+[OK] no CORSMiddleware usage (same-origin posture: API+SPA share the Caddy origin): 0 hits
+[OK] ALLOWED_ORIGINS wildcard grep: 0 hits
+
+### 7. Python dependency audit
+tool: pip-audit (via uvx ephemeral env; installs stay out of any project venv)
+target: backend/.venv site-packages (uv sync locked superset incl. dev; prod installs --no-dev subset of the same lock)
+No known vulnerabilities found
+
+### 8. Node dependency audit
+tool: npm audit --omit=dev (production dependencies only)
+found 0 vulnerabilities
+
+### 9. Findings & actions
+- pip-audit: 0 vulnerabilities (no action).
+- npm audit --omit=dev: 0 vulnerabilities (no action).
+- Caddy access logs previously included the full request-header map;
+  action: format filter in deploy/Caddyfile now deletes Cookie/Set-Cookie/
+  X-App-Secret/X-CSRF-Token/Authorization fields before any line is written.
+
+SWEEP VERDICT: CLEAN (all greps 0-hit, both audits executed)
+exit 0

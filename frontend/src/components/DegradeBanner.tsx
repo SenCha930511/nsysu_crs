@@ -1,56 +1,44 @@
 /**
- * Degrade banner (plan todo 10): polls /api/catalog/meta; if the catalog
- * ingest reports failure (ok=false) or the request itself fails, show a
- * visible "last successful snapshot" notice. The rest of the page stays
- * fully usable — this is read-only degrade posture, not an outage page.
+ * Degrade banner (todo 10 + todo 17): polls /api/catalog/meta (stale-catalog
+ * notice) AND /api/ops/state (breaker read-only posture notice) and renders a
+ * stacked alert per active notice. The rest of the page stays fully usable —
+ * this is the degraded posture surface, not an outage page. The mapping
+ * itself is pure and vitest-pinned in lib/degrade.ts.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { fetchCatalogMeta } from "../lib/api";
+import { fetchCatalogMeta, fetchOpsState, type CatalogMeta } from "../lib/api";
+import { bannerNotices, type BannerNotice } from "../lib/degrade";
 
 const POLL_INTERVAL_MS = 60_000;
 
-interface MetaState {
-  degraded: boolean;
-  /** Last known snapshot timestamp (from meta.updated_at, any state). */
-  updatedAt: string | null;
-}
-
-function formatSnapshotTime(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return iso;
-  }
-  return date.toLocaleString("zh-TW", {
-    timeZone: "Asia/Taipei",
-    hour12: false,
-  });
-}
-
 function DegradeBanner() {
-  const [state, setState] = useState<MetaState>({
-    degraded: false,
-    updatedAt: null,
-  });
+  const [notices, setNotices] = useState<BannerNotice[]>([]);
+  const lastMetaRef = useRef<CatalogMeta | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
 
     const poll = async () => {
-      try {
-        const meta = await fetchCatalogMeta(controller.signal);
-        if (cancelled) return;
-        setState({
-          degraded: !meta.ok,
-          updatedAt: meta.updated_at ?? null,
-        });
-      } catch (error) {
-        if (cancelled || controller.signal.aborted) return;
-        console.warn("catalog meta fetch failed:", error);
-        setState((prev) => ({ ...prev, degraded: true }));
+      const [metaResult, opsResult] = await Promise.allSettled([
+        fetchCatalogMeta(controller.signal),
+        fetchOpsState(controller.signal),
+      ]);
+      if (cancelled || controller.signal.aborted) return;
+      if (metaResult.status === "fulfilled") {
+        lastMetaRef.current = metaResult.value;
+      } else {
+        console.warn("catalog meta fetch failed:", metaResult.reason);
       }
+      if (opsResult.status === "rejected") {
+        console.warn("ops state fetch failed:", opsResult.reason);
+      }
+      const ops = opsResult.status === "fulfilled" ? opsResult.value : null;
+      setNotices(
+        bannerNotices(lastMetaRef.current, metaResult.status === "rejected", ops),
+      );
     };
 
     void poll();
@@ -62,22 +50,24 @@ function DegradeBanner() {
     };
   }, []);
 
-  if (!state.degraded) {
+  if (notices.length === 0) {
     return null;
   }
 
-  const message =
-    state.updatedAt !== null
-      ? `課程資料為 ${formatSnapshotTime(state.updatedAt)} 更新（學校目錄暫時無法同步）`
-      : "課程資料更新時間未知（學校目錄暫時無法同步）";
-
   return (
-    <div
-      className="alert alert-warning text-center mb-0 rounded-0"
-      role="alert"
-      data-testid="degrade-banner"
-    >
-      {message}
+    <div data-testid="degrade-banner">
+      {notices.map((notice) => (
+        <div
+          key={notice.kind}
+          className={`alert ${
+            notice.kind === "breaker" ? "alert-danger" : "alert-warning"
+          } text-center mb-0 rounded-0`}
+          role="alert"
+          data-testid={notice.testId}
+        >
+          {notice.message}
+        </div>
+      ))}
     </div>
   );
 }

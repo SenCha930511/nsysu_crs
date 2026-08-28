@@ -1,8 +1,13 @@
 """DB-backed catalog pipeline tests (plan todo 6, QA qa/06-partial.log).
 
-These need a reachable Postgres (compose service). They SKIP when the DB is
-unreachable, so the host-only suite still runs offline; run them in-container
-(see qa/06-partial.log) for the real evidence.
+DESTRUCTIVE OPT-IN (todo 17 hardening, debt b): every test here wipes the
+WHOLE ``courses`` and ``ingest_runs`` tables (table-wide ``delete()``), so a
+flagged run against the live compose DB erases the serving catalog. They are
+therefore SKIPPED unless the operator explicitly sets
+``CATALOG_DB_DESTRUCTIVE=1`` *and* a Postgres is reachable; assertions are
+unchanged when opted in. Point ``DATABASE_URL`` at a scratch database for the
+flagged run (see docs/runbook.md) - never run them flagged against the live
+catalog.
 
 Covers: full ingest happy path (2 scripted pages), upsert identity stability
 across runs (same course id, quota counters refreshed), vanished-row
@@ -10,6 +15,7 @@ deletion, mid-run failure leaving the previous snapshot intact with
 ok=false in the ledger, and the meta reader's shape.
 """
 
+import os
 import re
 from pathlib import Path
 
@@ -141,7 +147,14 @@ def _db_available() -> bool:
     return anyio.run(probe)
 
 
-pytestmark = pytest.mark.skipif(not _db_available(), reason="compose Postgres unreachable")
+# Short-circuit order matters: without the flag there is no DB dial at all.
+pytestmark = pytest.mark.skipif(
+    os.environ.get("CATALOG_DB_DESTRUCTIVE") != "1" or not _db_available(),
+    reason=(
+        "destructive full-table wipes are opt-in: set CATALOG_DB_DESTRUCTIVE=1 "
+        "AND provide a reachable Postgres (see module docstring)"
+    ),
+)
 
 
 async def _with_db(body) -> None:

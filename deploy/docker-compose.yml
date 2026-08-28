@@ -1,5 +1,14 @@
-# Production-ish local stack: caddy (frontend + TLS entry), FastAPI app,
-# worker, Postgres, Redis. Dev overrides live in docker-compose.dev.yml.
+# Production stack: caddy (frontend + TLS entry), FastAPI app, worker,
+# Postgres, Redis. Dev overrides live in docker-compose.dev.yml.
+#
+# Hardening invariants (todo 17; deviating = plan change):
+# - Only caddy publishes ports, exactly 80 (+443 reserved for the VPS domain;
+#   the shipped Caddyfile serves :80 only, so 443 accepts nothing locally).
+#   To reach a backend service ad hoc from the host, use the override snippet
+#   in docs/runbook.md (`app` debugging) - never commit a published port.
+# - app/worker/caddy run as non-root users (baked into their images);
+#   postgres/redis already drop to their own non-root daemon users via the
+#   official entrypoints.
 name: nsysu-crs
 
 services:
@@ -11,8 +20,7 @@ services:
         required: false
     environment:
       TZ: Asia/Taipei
-    ports:
-      - "8000:8000"
+    # No published port: only Caddy talks to the app (internal network).
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,11 +86,26 @@ services:
     restart: unless-stopped
     environment:
       TZ: Asia/Taipei
+    # The image runs as uid 10002; this sysctl lets a non-root process bind 80/443.
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       app:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

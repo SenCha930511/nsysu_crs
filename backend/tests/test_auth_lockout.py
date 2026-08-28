@@ -8,8 +8,13 @@ window is the fixed CLOCK hour, not a TTL.
 
 import pytest
 
-from app.auth.lockout import FailureLog, IpLimiter
-
+from app.auth.lockout import (
+    LOCKOUT_DAILY_TTL_SECONDS,
+    LOCKOUT_TOTAL_KEY,
+    FailureLog,
+    IpLimiter,
+    lockout_daily_key,
+)
 from tests.fake_redis import FakeRedis
 
 WINDOW = 15 * 60
@@ -86,6 +91,35 @@ async def test_lock_is_scoped_per_student():
         await log.record_credential_fail("M004")
     assert await log.is_locked("M004")
     assert await log.is_locked("M005") is False
+
+
+@pytest.mark.anyio
+async def test_new_locks_increment_the_abuse_monitor_counters():
+    clock, redis = Clock(), FakeRedis()
+    redis._now = clock
+    log = _log(redis, clock)
+    daily = lockout_daily_key(clock.moment, "Asia/Taipei")
+
+    # Given the first fixed lock trigger
+    for _ in range(5):
+        await log.record_credential_fail("M123")
+    # Then the abuse monitor counters moved exactly once
+    assert redis.peek(LOCKOUT_TOTAL_KEY) == "1"
+    assert redis.peek(daily) == "1"
+    assert redis.remaining_ttl(daily) == LOCKOUT_DAILY_TTL_SECONDS
+
+    # When a racing record lands while the lock still stands (NX did not create)
+    clock.advance(300)
+    await log.record_credential_fail("M123")
+    # Then nothing double-counts
+    assert redis.peek(LOCKOUT_TOTAL_KEY) == "1"
+
+    # And when the lock and the failure window both decay, the next real trigger counts again
+    clock.advance(WINDOW - 300 + 1)
+    for _ in range(5):
+        await log.record_credential_fail("M123")
+    assert redis.peek(LOCKOUT_TOTAL_KEY) == "2"
+    assert redis.peek(daily) == "2"
 
 
 @pytest.mark.anyio
