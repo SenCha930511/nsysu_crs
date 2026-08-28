@@ -23,10 +23,37 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "httpx2>=2.0",  # test-only: starlette TestClient transport; the selcrs adapter arrives in todo 3
+    "ruff>=0.16.5",
+    "mypy>=2.3.1",
 ]
 
 [tool.uv]
 package = false
+
+[tool.ruff]
+# F2 quality gate (qa/F2-quality.md). Default rule set; py312 target mirrors
+# requires-python. B008 is configured away below because FastAPI's own idiom
+# is Depends()/Query() in argument defaults (ruff's documented recommended
+# escape hatch for FastAPI projects) — these three call sites are DI, not
+# shared-mutable-default bugs.
+target-version = "py312"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body"]
+
+[tool.mypy]
+# Non-strict baseline (the project never promised strict); python_version is
+# pinned so CI/dev machines agree. Fixes applied in F2 are recorded in
+# qa/F2-quality.md.
+python_version = "3.12"
+files = ["app"]
+
+# Third-party packages without py.typed markers / typeshed stubs. Hiding
+# their import sites would silently also hide OUR typed use of them, so the
+# override is per-module only.
+[[tool.mypy.overrides]]
+module = ["ddddocr", "croniter", "asyncpg", "asyncpg.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
