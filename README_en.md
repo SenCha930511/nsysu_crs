@@ -4,9 +4,12 @@
 
 ---
 
+> [!NOTE]
+> 🚀 **Website Coming Soon! Stay tuned.**
+
 A modern course selection wrapper and planning system designed for National Sun Yat-sen University (NSYSU). It provides an intuitive catalog browser with multi-dimensional filtering, an interactive weekly timetable with real-time clash and credit validation, direct syllabus links, PNG timetable export, and school selection synchronization. Under strict **human-in-the-loop confirmation** and high-standard security guardrails, it supports asynchronous proxy course add/drop submissions.
 
-**Tech Stack**: FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / Caddy
+FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / Caddy
 
 ---
 
@@ -38,12 +41,12 @@ A modern course selection wrapper and planning system designed for National Sun 
 
 ```mermaid
 flowchart LR
-  U[Browser (Guest / SSO2 Login)] --> C[Caddy Reverse Proxy: / + /api + Security Headers/CSP]
-  C --> A[FastAPI Backend Application]
-  A --> P[(PostgreSQL 16 Database)]
-  A --> R[(Redis: Cache / Session / Breaker / Queue)]
-  A --> S[NSYSU selcrs / SSO2 Integration]
-  W[Worker Service: Catalog Ingest + Queue Worker] --> P
+  U["Browser (Guest / SSO2 Login)"] --> C["Caddy Reverse Proxy: / + /api + Security Headers/CSP"]
+  C --> A["FastAPI Backend Application"]
+  A --> P[("PostgreSQL 16 Database")]
+  A --> R[("Redis: Cache / Session / Breaker / Queue")]
+  A --> S["NSYSU selcrs / SSO2 Integration"]
+  W["Worker Service: Catalog Ingest + Queue Worker"] --> P
   W --> R
   W --> S
 ```

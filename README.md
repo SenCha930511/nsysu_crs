@@ -4,9 +4,12 @@
 
 ---
 
+> [!NOTE]
+> 🚀 **網站即將正式上線，敬請期待！**
+
 專為國立中山大學（NSYSU）設計的現代化選課輔助系統。提供流暢的課程檢索、多維度進階篩選、即時週課表排課與衝堂／學分檢查、課程大綱直連、課表 PNG 圖檔匯出，以及校內已選課程同步。在嚴格的**二次確認機制**與高規格資訊安全保障下，支援非同步代理加退選功能。
 
-**技術棧**：FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / Caddy
+FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / Caddy
 
 ---
 
@@ -38,12 +41,12 @@
 
 ```mermaid
 flowchart LR
-  U[瀏覽器 (訪客 / SSO2 登入)] --> C[Caddy 反向代理: / + /api + 安全標頭/CSP]
-  C --> A[FastAPI 後端 API 服務]
-  A --> P[(PostgreSQL 16 資料庫)]
-  A --> R[(Redis 快取 / 會話 / 熔斷器 / 任務佇列)]
-  A --> S[中山選課系統 selcrs / SSO2 介接]
-  W[Worker 後台任務: 課程爬取 + 加退選佇列消費] --> P
+  U["瀏覽器 (訪客 / SSO2 登入)"] --> C["Caddy 反向代理: / + /api + 安全標頭/CSP"]
+  C --> A["FastAPI 後端 API 服務"]
+  A --> P[("PostgreSQL 16 資料庫")]
+  A --> R[("Redis 快取 / 會話 / 熔斷器 / 任務佇列")]
+  A --> S["中山選課系統 selcrs / SSO2 介接"]
+  W["Worker 後台任務: 課程爬取 + 加退選佇列消費"] --> P
   W --> R
   W --> S
 ```
