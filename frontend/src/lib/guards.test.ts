@@ -8,7 +8,7 @@ import {
 } from "./guards";
 
 describe("decideGuard", () => {
-  it.each(["/plans", "/write"])(
+  it.each(["/write"])(
     "redirects anonymous visitors of %s to /login?reason=required",
     (path) => {
       expect(decideGuard("anon", path)).toEqual({
@@ -19,7 +19,7 @@ describe("decideGuard", () => {
   );
 
   it("redirects to /login?reason=expired after a soft logout", () => {
-    expect(decideGuard("anon", "/plans", true)).toEqual({
+    expect(decideGuard("anon", "/write", true)).toEqual({
       allow: false,
       redirectTo: "/login?reason=expired",
     });
@@ -29,10 +29,6 @@ describe("decideGuard", () => {
   });
 
   it("lets authed users into protected paths", () => {
-    expect(decideGuard("authed", "/plans")).toEqual({
-      allow: true,
-      redirectTo: null,
-    });
     expect(decideGuard("authed", "/write")).toEqual({
       allow: true,
       redirectTo: null,
@@ -40,7 +36,7 @@ describe("decideGuard", () => {
   });
 
   it("holds (no redirect) while the session is still unknown", () => {
-    expect(decideGuard("loading", "/plans")).toEqual({
+    expect(decideGuard("loading", "/write")).toEqual({
       allow: false,
       redirectTo: null,
     });

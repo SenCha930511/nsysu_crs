@@ -11,7 +11,7 @@ This project never persists school credentials:
   - a sliding TTL of `SELCRS_SESSION_TTL_SLIDING` seconds (default 1800) refreshed on activity, and
   - a hard cap of `SELCRS_SESSION_TTL_HARD` seconds (default 7200) from issuance.
   - It is **never** written to Postgres and never written to logs. Redis failure means login/write hard-fail while read paths stay available.
-- **Postgres** stores only: `students` (student number), `plans` / `plan_items` (candidate plans), `courses` / `ingest_runs` (scraped catalog), and the write path ledger `write_jobs` / `write_audit` / `write_audit_archive_meta`. `write_audit` correlates students via a **salted `stuid_hash`**, never the raw student number (PII lifecycle: hot 90 days → de-identified gz archive 1 year → delete).
+- **Postgres** stores only: `students` (student number), `courses` / `ingest_runs` (scraped catalog), and the write path ledger `write_jobs` / `write_audit` / `write_audit_archive_meta`. `write_audit` correlates students via a **salted `stuid_hash`**, never the raw student number (PII lifecycle: hot 90 days → de-identified gz archive 1 year → delete).
 - There is intentionally **no `selcrs_sessions` table**.
 
 ## Login throttling & circuit breaker (todo 8)

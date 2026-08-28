@@ -1,19 +1,15 @@
 /**
- * Export-lib unit tests (todo 12 PNG path rules + ICS friendly errors):
+ * Export-lib unit tests (PNG path rules):
  *   - empty-grid guard: 0 courses -> EmptyGridExportError, >=1 -> pass
- *   - PNG filename carries the plan name + capture date, sanitized
- *   - icsErrorMessage maps the server's 409 detail-object codes to friendly
- *     copy and keeps generic fallbacks honest
+ *   - PNG filename carries the timetable name + capture date, sanitized
  */
 
 import { describe, expect, it } from "vitest";
 
-import { ApiError } from "./api";
 import {
   buildPngFilename,
   EmptyGridExportError,
   assertExportable,
-  icsErrorMessage,
 } from "./export";
 
 describe("assertExportable (is-empty guard)", () => {
@@ -59,27 +55,3 @@ describe("buildPngFilename (plan name + date)", () => {
   });
 });
 
-describe("icsErrorMessage", () => {
-  it("uses the server-phrased message from 409 detail objects when present", () => {
-    const err = new ApiError(409, "plan_empty_no_events", {
-      message: "此課表沒有可匯出的課程時間（尚無課程，或課程皆無上課時段資料）。",
-    });
-    expect(icsErrorMessage(err)).toContain("此課表沒有可匯出的課程時間");
-  });
-
-  it("maps codes directly when no server message rides along", () => {
-    expect(icsErrorMessage(new ApiError(409, "plan_empty_no_events"))).toContain(
-      "沒有可匯出的課程時間",
-    );
-    expect(icsErrorMessage(new ApiError(409, "bad_period_code"))).toContain(
-      "不支援的節次代碼",
-    );
-  });
-
-  it("has honest fallbacks for 404 and unexpected statuses", () => {
-    expect(icsErrorMessage(new ApiError(404, "plan_not_found"))).toBe(
-      "找不到這組課表（可能已被刪除）。",
-    );
-    expect(icsErrorMessage(new ApiError(500, "boom"))).toBe("ICS 匯出失敗（500）。");
-  });
-});

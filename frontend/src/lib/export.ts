@@ -1,21 +1,14 @@
 /**
- * Export helpers (todo 12): per-plan .ics (server built) + client-side PNG
- * of the 15x7 timetable grid via html-to-image.
+ * Export helpers: client-side PNG of the 15x7 timetable grid via
+ * html2canvas (dom-painted canvas, no SVG-foreignObject serialization).
  *
  * Pure/decidable parts are exported for vitest: the PNG filename rule
- * (plan name + date, filesystem-safe) and the empty-grid guard / friendly
- * ICS error mapping. DOM-heavy parts (html-to-image capture, anchor
- * download) are kept thin at the module edges.
- *
+ * (timetable name + date, filesystem-safe) and the empty-grid guard.
  * Empty-grid rule: never produce a blank PNG file - the guard throws
- * EmptyGridExportError and the button surface shows the friendly copy
- * instead. Same honesty for ICS: the server speaks 409 detail objects
- * ({code, message}); this module maps them to UI-facing Chinese text.
+ * EmptyGridExportError and the button surface shows the friendly copy.
  */
 
 import html2canvas from "html2canvas";
-
-import { ApiError } from "./api";
 
 export const EMPTY_GRID_MESSAGE =
   "課表是空的——先去「查課·課表」加入課程，再下載 PNG。";
@@ -154,80 +147,4 @@ export async function downloadGridPng(
   const filename = buildPngFilename(planName);
   triggerDownload(dataUrl, filename);
   return filename;
-}
-
-// ---------- ICS ----------
-
-/** Friendly copy for the ICS endpoint's failure codes (409 detail objects). */
-export function icsErrorMessage(err: ApiError): string {
-  if (err.status === 409 && typeof err.extras.message === "string") {
-    return err.extras.message; // server already phrased it for humans
-  }
-  if (err.status === 409 && err.detail === "plan_empty_no_events") {
-    return "此課表沒有可匯出的課程時間（尚無課程，或課程皆無上課時段資料）。";
-  }
-  if (err.status === 409 && err.detail === "bad_period_code") {
-    return "課程時間資料含有不支援的節次代碼，無法匯出 ICS。";
-  }
-  if (err.status === 404) {
-    return "找不到這組課表（可能已被刪除）。";
-  }
-  return `ICS 匯出失敗（${err.status}）。`;
-}
-
-function filenameFromDisposition(disposition: string | null): string | null {
-  if (disposition === null) return null;
-  const star = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
-  if (star !== null) {
-    try {
-      return decodeURIComponent(star[1] as string);
-    } catch {
-      // fall through to the plain filename
-    }
-  }
-  const plain = /filename="([^"]+)"/.exec(disposition);
-  return plain !== null ? (plain[1] as string) : null;
-}
-
-/** Fetch the server-built ICS for one plan and save it. Throws ApiError for
- * the caller to phrase via icsErrorMessage(). */
-export async function downloadPlanIcs(planId: string): Promise<void> {
-  const response = await fetch(`/api/plans/${planId}/export.ics`, {
-    headers: { Accept: "text/calendar" },
-  });
-  if (!response.ok) {
-    let detail = response.statusText;
-    let extras: Record<string, unknown> = {};
-    try {
-      const body: unknown = await response.json();
-      if (typeof body === "object" && body !== null) {
-        const record = body as Record<string, unknown>;
-        const d = record.detail;
-        if (typeof d === "string") {
-          detail = d;
-          const { detail: _dropped, ...rest } = record;
-          extras = rest;
-        } else if (typeof d === "object" && d !== null) {
-          // 409 detail objects: {code, message, ...context}
-          const drec = d as Record<string, unknown>;
-          const { detail: _bodyDetail, ...recordRest } = record;
-          extras = { ...drec, ...recordRest };
-          detail = typeof drec.code === "string" ? drec.code : detail;
-        }
-      }
-    } catch {
-      // keep statusText
-    }
-    throw new ApiError(response.status, detail, extras);
-  }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  try {
-    const filename =
-      filenameFromDisposition(response.headers.get("content-disposition")) ??
-      "nsysu-crs-plan.ics";
-    triggerDownload(url, filename);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
 }

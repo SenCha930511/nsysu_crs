@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRepeat,
   BookmarkCheck,
-  BookmarkStar,
   CalendarCheck,
   CheckCircleFill,
   Download,
@@ -56,7 +55,6 @@ import { buildSelectionGridCourses } from "../lib/selectionGrid";
 import { totalCreditsAndHours } from "../lib/totals";
 import { outcomeCopy } from "../lib/writeOps";
 import { useAuth } from "../state/auth";
-import { usePlansSync } from "../state/plansSync";
 import { useSelection } from "../state/selection";
 
 type Tab = "browse" | "selections";
@@ -122,7 +120,6 @@ function HomePage() {
   const [submitting, setSubmitting] = useState(false);
   const [job, setJob] = useState<JobView | null>(null);
   const [jobNote, setJobNote] = useState<string | null>(null);
-  const [reconcileNote, setReconcileNote] = useState<string | null>(null);
 
   // ---- loaders ----
   const loadSelections = useCallback(() => {
@@ -163,11 +160,6 @@ function HomePage() {
       .then((body) => {
         setItems(body.items);
         setSyncedAt(body.synced_at);
-        setReconcileNote(
-          lang === "en"
-            ? `Reconciled: +${body.added.length} added · −${body.removed.length} removed · ${body.unchanged.length} unchanged`
-            : `對帳完成：新增 ${body.added.length} · 移除 ${body.removed.length} · 未變 ${body.unchanged.length}`,
-        );
       })
       .catch((err: unknown) => {
         if (err instanceof ApiError && err.status === 503) {
@@ -590,19 +582,6 @@ function HomePage() {
             </div>
 
             <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
-              {activePlan !== null && orderedItems.length > 0 && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-brand rounded-pill px-3 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
-                  style={{ fontSize: "0.84rem", gap: "0.45rem" }}
-                  onClick={onLoadActivePlan}
-                  title={tx(`將方案「${activePlan.name}」的所有課程載入至暫存加選`, `Load all courses from plan "${activePlan.name}" into staging`)}
-                >
-                  <BookmarkStar size={13} className="text-teal-600" />
-                  <span>{tx(`載入方案「${activePlan.name}」`, `Load plan "${activePlan.name}"`)}</span>
-                </button>
-              )}
-
               <button
                 type="button"
                 className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
@@ -635,9 +614,6 @@ function HomePage() {
 
           {syncError !== null && (
             <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{syncError}</div>
-          )}
-          {reconcileNote !== null && (
-            <div className="alert alert-info py-1.5 px-3 mx-3 mt-2 small rounded-3" role="status">{reconcileNote}</div>
           )}
           {pngError !== null && (
             <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{pngError}</div>

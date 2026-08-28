@@ -1,12 +1,11 @@
 /**
- * Degrade banner (todo 10 + todo 17): polls /api/catalog/meta (stale-catalog
- * notice) AND /api/ops/state (breaker read-only posture notice) and renders a
- * stacked alert per active notice. The rest of the page stays fully usable —
- * this is the degraded posture surface, not an outage page. The mapping
- * itself is pure and vitest-pinned in lib/degrade.ts.
+ * Degrade banner: polls /api/catalog/meta (stale-catalog notice) AND
+ * /api/ops/state (breaker read-only posture notice) and renders a sleek,
+ * centered studio pill alert. The rest of the page stays fully usable.
+ * Pinned in lib/degrade.ts for vitest contracts.
  */
-
 import { useEffect, useRef, useState } from "react";
+import { ExclamationTriangleFill, InfoCircleFill } from "react-bootstrap-icons";
 
 import { fetchCatalogMeta, fetchOpsState, type CatalogMeta } from "../lib/api";
 import { bannerNotices, type BannerNotice } from "../lib/degrade";
@@ -57,19 +56,22 @@ function DegradeBanner() {
   }
 
   return (
-    <div data-testid="degrade-banner">
-      {notices.map((notice) => (
-        <div
-          key={notice.kind}
-          className={`alert ${
-            notice.kind === "breaker" ? "alert-danger" : "alert-warning"
-          } text-center mb-0 rounded-0`}
-          role="alert"
-          data-testid={notice.testId}
-        >
-          {notice.message}
-        </div>
-      ))}
+    <div data-testid="degrade-banner" className="studio-degrade-wrapper">
+      {notices.map((notice) => {
+        const isBreaker = notice.kind === "breaker";
+        const Icon = isBreaker ? ExclamationTriangleFill : InfoCircleFill;
+        return (
+          <div
+            key={notice.kind}
+            className={`studio-degrade-pill ${isBreaker ? "kind-breaker" : "kind-catalog"}`}
+            role="alert"
+            data-testid={notice.testId}
+          >
+            <Icon size={14} className="flex-shrink-0" />
+            <span>{notice.message}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

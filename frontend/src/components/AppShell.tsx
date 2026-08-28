@@ -4,7 +4,6 @@ import {
   Envelope,
   Github,
   Globe2,
-  Layers,
   PersonCircle,
   Send,
 } from "react-bootstrap-icons";
@@ -13,17 +12,13 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import DegradeBanner from "./DegradeBanner";
 import { LangToggle, useI18n } from "../lib/i18n";
 import { useAuth } from "../state/auth";
-import { usePlansSync } from "../state/plansSync";
 
 function AppShell() {
   const { tx } = useI18n();
   const { status, studentNo, logout } = useAuth();
-  const { plans, activePlanId } = usePlansSync();
-  const activePlan = plans.find((p) => p.id === activePlanId) ?? null;
 
   const NAV_LINKS = [
     { to: "/", label: tx("查課・課表", "Courses • Timetable"), icon: CalendarWeek, end: true },
-    { to: "/plans", label: tx("方案實驗室", "Plan Lab"), icon: Layers, end: false },
     { to: "/write", label: tx("紀錄", "Records"), icon: Send, end: false },
   ];
   const navigate = useNavigate();
@@ -34,10 +29,9 @@ function AppShell() {
 
   return (
     <div className="min-vh-100 d-flex flex-column">
-      <DegradeBanner />
-      
       {/* Top App Bar */}
       <div className="studio-header-wrapper">
+        <DegradeBanner />
         <header className="floating-navbar">
           {/* Left: Brand & Semester & Active Plan */}
           <div className="d-flex align-items-center gap-3 flex-shrink-0">
@@ -50,12 +44,6 @@ function AppShell() {
             </NavLink>
             <span className="semester-pill ms-1">115-1</span>
 
-            {status === "authed" && activePlan !== null && (
-              <span className="badge text-bg-light border text-muted d-none d-xl-inline-flex align-items-center gap-1 font-monospace" style={{ fontSize: "0.8rem", padding: "0.32rem 0.65rem" }}>
-                <span>{tx("方案：", "Plan:")}</span>
-                <strong className="text-teal-700">{activePlan.name}</strong>
-              </span>
-            )}
           </div>
 
           {/* Center: Prominent Navigation Tabs */}

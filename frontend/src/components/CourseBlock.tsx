@@ -1,4 +1,4 @@
-import { GeoAltFill, Trash3 } from "react-bootstrap-icons";
+import { GeoAltFill, PersonFill, Trash3 } from "react-bootstrap-icons";
 
 import type { CourseOut } from "../lib/api";
 import { useI18n } from "../lib/i18n";
@@ -130,6 +130,7 @@ function CourseBlock({
 }: CourseBlockProps) {
   const { lang, tx } = useI18n();
   const name = course.name_zh ?? course.name_en ?? course.code ?? course.id;
+  const teacher = (course.teacher ?? "").trim();
   const room = (course.room ?? "").trim();
 
   const palette = getCoursePalette(course);
@@ -199,14 +200,27 @@ function CourseBlock({
         {name}
       </div>
 
-      {/* Bottom Room Location */}
-      {room && (
-        <div
-          className="course-block-room"
-          style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : palette.roomText }}
-        >
-          <GeoAltFill size={10} className="flex-shrink-0" />
-          <span>{room}</span>
+      {/* Bottom Meta: Teacher & Classroom */}
+      {(teacher !== "" || room !== "") && (
+        <div className="course-block-meta">
+          {teacher !== "" && (
+            <div
+              className="course-block-teacher"
+              style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+            >
+              <PersonFill size={10.5} className="flex-shrink-0" />
+              <span>{teacher}</span>
+            </div>
+          )}
+          {room !== "" && (
+            <div
+              className="course-block-room"
+              style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+            >
+              <GeoAltFill size={9.5} className="flex-shrink-0" />
+              <span>{room}</span>
+            </div>
+          )}
         </div>
       )}
 

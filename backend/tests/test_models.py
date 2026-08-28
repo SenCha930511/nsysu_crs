@@ -9,8 +9,6 @@ from app.models.base import Base
 
 _EXPECTED_TABLES = (
     "students",
-    "plans",
-    "plan_items",
     "courses",
     "ingest_runs",
     "write_jobs",

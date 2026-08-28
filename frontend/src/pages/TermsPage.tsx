@@ -13,7 +13,7 @@ const SECTIONS_ZH: LegalSection[] = [
   {
     heading: "服務內容與界線",
     paragraphs: [
-      "本站提供：課程瀏覽與篩選、週課表與衝堂/學分即時檢查、名額快照、多組課表與志願序管理、ICS/PNG 匯出、「我的已選」同步，以及經你「二次確認」後之加退選／初選志願代送。",
+      "本站提供：課程瀏覽與篩選（含學系下拉）、週課表與衝堂/學分即時檢查、名額快照、課程大綱外連、PNG 匯出、「我的已選」同步，以及經你「二次確認」後之加退選代送。",
     ],
     list: [
       "代送結果以學校系統逐課回應為準，本站如實呈現，不包裝、不隱瞞。",
@@ -72,7 +72,7 @@ const SECTIONS_EN: LegalSection[] = [
   {
     heading: "Scope of service",
     paragraphs: [
-      "This site provides: catalog browsing and filtering, weekly timetable with realtime clash/credit checks, availability snapshots, multi-plan management with priority order, ICS/PNG export, “my selections” sync, and — only after your explicit second confirmation — add/drop or first-round priority submissions on your behalf.",
+      "This site provides: catalog browsing and filtering (incl. department dropdown), weekly timetable with realtime clash/credit checks, availability snapshots, syllabus links, PNG export, “my selections” sync, and — only after your explicit second confirmation — add/drop submissions on your behalf.",
     ],
     list: [
       "Results are whatever the school system says per course, shown verbatim — never beautified, never hidden.",

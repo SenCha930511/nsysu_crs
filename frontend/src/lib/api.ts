@@ -2,7 +2,7 @@
  * Typed client for the wrapper API:
  *   GET  /api/courses, /api/catalog/meta      - anonymous catalog reads (todo 7)
  *   POST /api/auth/login|logout, GET /api/auth/me - site session (todo 8)
- *   GET/POST/PATCH/DELETE /api/plans[...]     - multi-plan CRUD (todo 11)
+ *   GET  /api/catalog/depts, /api/courses/{id}/outline - dept & syllabus reads
  *   GET  /api/me/selections, POST .../sync    - real selections (todo 9)
  *   GET  /api/stage                           - live school stage probe (todo 13)
  *   POST /api/write/preview|submit, GET /api/write/jobs/{id} - write flow (todo 14/15/16)
@@ -97,23 +97,6 @@ export interface CourseQuery {
   weekday?: number; // 1 (Mon) .. 7 (Sun)
   period?: string; // single period code, requires weekday
   page?: number; // 1-based, 50 rows per page (server-fixed)
-}
-
-export interface PlanOut {
-  id: string;
-  name: string;
-  is_primary: boolean;
-  item_count: number;
-  created_at: string;
-  updated_at: string | null;
-}
-
-export interface PlanItemOut {
-  course_id: string;
-  priority: number | null;
-  added_at: string;
-  /** Embedded catalog row; null for accepted-but-unknown ids. */
-  course: CourseOut | null;
 }
 
 export interface SelectionItem {
@@ -310,47 +293,6 @@ export function logout(): Promise<{ ok: boolean }> {
 
 export function fetchMe(signal?: AbortSignal): Promise<{ student_no: string }> {
   return request("/api/auth/me", signal !== undefined ? { signal } : {});
-}
-
-// ---------- plans (session-gated) ----------
-
-export function fetchPlans(): Promise<PlanOut[]> {
-  return request("/api/plans");
-}
-
-export function createPlan(name: string): Promise<PlanOut> {
-  return request("/api/plans", { method: "POST", body: { name } });
-}
-
-export function clonePlan(planId: string): Promise<PlanOut> {
-  return request(`/api/plans/${planId}/clone`, { method: "POST" });
-}
-
-export function patchPlan(
-  planId: string,
-  patch: { name?: string; is_primary?: boolean },
-): Promise<PlanOut> {
-  return request(`/api/plans/${planId}`, { method: "PATCH", body: patch });
-}
-
-export function deletePlan(
-  planId: string,
-): Promise<{ ok: boolean; promoted_plan_id: string | null }> {
-  return request(`/api/plans/${planId}`, { method: "DELETE" });
-}
-
-export function fetchPlanItems(planId: string): Promise<PlanItemOut[]> {
-  return request(`/api/plans/${planId}/items`);
-}
-
-export function putPlanItems(
-  planId: string,
-  items: { course_id: string; priority: number | null }[],
-): Promise<PlanItemOut[]> {
-  return request(`/api/plans/${planId}/items`, {
-    method: "PUT",
-    body: { items },
-  });
 }
 
 // ---------- my selections (session-gated) ----------

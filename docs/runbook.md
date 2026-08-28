@@ -53,7 +53,7 @@ docker compose -f deploy/docker-compose.yml start app worker
 docker compose -f deploy/docker-compose.yml exec app alembic upgrade head   # no-op when dump is on head
 ```
 
-**Verify a backup without touching live** (what `qa/17-backup.log` did): create `qa17_restore_scratch`, gunzip|psql into it, compare row counts (`courses, ingest_runs, students, plans, write_jobs, write_audit`), drop the scratch DB. Script: `scripts/qa17_backup_evidence.sh`.
+**Verify a backup without touching live** (what `qa/17-backup.log` did): create `qa17_restore_scratch`, gunzip|psql into it, compare row counts (`courses, ingest_runs, students, write_jobs, write_audit`), drop the scratch DB. Script: `scripts/qa17_backup_evidence.sh`.
 
 ---
 

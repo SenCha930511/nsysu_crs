@@ -23,8 +23,7 @@ const SECTIONS_ZH: LegalSection[] = [
       "本站只保存提供服務所必要的最少資料，且多數與個人直接相關的資料都設定自動到期：",
     ],
     list: [
-      "學號：作為登入識別與課表組合之歸屬。",
-      "課表組合與志願序：你主動建立的內容，可隨時自行刪除。",
+      "學號：作為登入識別與擁有送單紀錄歸屬。",
       "「我的已選」同步結果：僅保存於你本次工作階段的範圍內（登出或工作階段到期即刪除），不持久保存於資料庫。",
       "課程目錄：來自學校公開查詢頁面，不含任何個人資料。",
       "本站不收集姓名、電子郵件、電話、成績或任何校務資料；不使用 Google Analytics 或任何第三方分析／追蹤工具；不建立本站 email 註冊體系。",
@@ -81,8 +80,7 @@ const SECTIONS_EN: LegalSection[] = [
       "We keep only the minimum data required to serve you, and most person-linked data expires automatically:",
     ],
     list: [
-      "Student ID: identifies sign-in and owns your plans.",
-      "Plans and priority orders: created by you, deletable by you anytime.",
+      "Student ID: identifies sign-in and owns your submission records.",
       "Synced “my selections”: scoped to your current session only (deleted on sign-out or expiry) — never persisted long-term.",
       "Course catalog: scraped from the school's public query pages and contains no personal data.",
       "We do NOT collect names, emails, phone numbers, grades, or any school-records data; we use no Google Analytics or third-party tracking; there is no email registration system on this site.",
