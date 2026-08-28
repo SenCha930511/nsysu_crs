@@ -72,6 +72,14 @@ export interface CourseOutline {
   fetched_at: string;
 }
 
+export interface CatalogDepts {
+  departments: string[];
+}
+
+export function fetchCatalogDepts(signal?: AbortSignal): Promise<CatalogDepts> {
+  return request<CatalogDepts>("/api/catalog/depts", signal !== undefined ? { signal } : {});
+}
+
 export interface CatalogMeta {
   ok: boolean;
   updated_at: string | null;

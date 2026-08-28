@@ -8,7 +8,7 @@ import {
   XLg,
 } from "react-bootstrap-icons";
 
-import { fetchCourses } from "../lib/api";
+import { fetchCatalogDepts, fetchCourses } from "../lib/api";
 import type { CourseOut, CourseQuery } from "../lib/api";
 import { findClashes } from "../lib/conflicts";
 import { useI18n } from "../lib/i18n";
@@ -188,11 +188,17 @@ export default function CourseBrowser({
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deptOptions, setDeptOptions] = useState<string[]>([]);
 
   const requestSeq = useRef(0);
-  const knownDepts = useRef(new Set<string>());
   const knownCredits = useRef(new Set<number>());
   const [optionVersion, setOptionVersion] = useState(0);
+
+  useEffect(() => {
+    fetchCatalogDepts()
+      .then((data) => setDeptOptions(data.departments))
+      .catch(() => setDeptOptions([]));
+  }, []);
 
   const loadPage = useCallback(
     (filt: Filters, page: number, append: boolean) => {
@@ -204,10 +210,6 @@ export default function CourseBrowser({
           if (seq !== requestSeq.current) return;
           let optionsChanged = false;
           for (const course of data.items) {
-            if (course.dept !== null && !knownDepts.current.has(course.dept)) {
-              knownDepts.current.add(course.dept);
-              optionsChanged = true;
-            }
             if (
               course.credit !== null &&
               !knownCredits.current.has(course.credit)
@@ -292,11 +294,6 @@ export default function CourseBrowser({
     setFilters(EMPTY_FILTERS);
   }, []);
 
-  const deptOptions = useMemo(
-    () => [...knownDepts.current].sort(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [optionVersion],
-  );
   const creditOptions = useMemo(
     () => [...knownCredits.current].sort((a, b) => a - b),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -623,21 +620,20 @@ export default function CourseBrowser({
               ))}
             </select>
 
-            <input
-              type="text"
+            <select
               className="compact-filter-select"
-              style={{ width: "110px" }}
-              placeholder={tx("系所搜尋…", "Dept…")}
-              list="dept-options"
+              style={{ width: "180px" }}
               value={filters.dept}
-              onChange={(e) => updateFilter({ dept: e.target.value.trim() })}
-              aria-label={tx("系所", "Department")}
-            />
-            <datalist id="dept-options">
+              onChange={(e) => updateFilter({ dept: e.target.value })}
+              aria-label={tx("學系", "Department")}
+            >
+              <option value="">{tx("學系（全部）", "Dept (all)")}</option>
               {deptOptions.map((dept) => (
-                <option key={dept} value={dept} />
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
               ))}
-            </datalist>
+            </select>
 
             <button
               type="button"

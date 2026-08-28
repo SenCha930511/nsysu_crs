@@ -48,8 +48,8 @@
   --studio-max-width: 1720px;
 
   /* Status Colors */
-  --crs-conflict-bg: #fffbeb;
-  --crs-conflict-border: #fef08a;
+  --crs-conflict-bg: #fff1f2;
+  --crs-conflict-border: #fecdd3;
   --crs-weekend-bg: #f8fafc;
   --crs-modal-backdrop: rgba(15, 23, 42, 0.6);
 }
@@ -511,7 +511,12 @@ h1, h2, h3, h4, h5, h6 {
 .studio-course-card.is-conflict {
   background: var(--crs-conflict-bg);
   border-color: var(--crs-conflict-border);
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid #f43f5e;
+}
+
+.studio-course-card.is-conflict:hover {
+  border-color: #fda4af;
+  border-left-color: #e11d48;
 }
 
 .card-top-row {

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRepeat,
   BookmarkCheck,
+  BookmarkStar,
   CalendarCheck,
   CheckCircleFill,
   Download,
@@ -55,6 +56,7 @@ import { buildSelectionGridCourses } from "../lib/selectionGrid";
 import { totalCreditsAndHours } from "../lib/totals";
 import { outcomeCopy } from "../lib/writeOps";
 import { useAuth } from "../state/auth";
+import { usePlansSync } from "../state/plansSync";
 import { useSelection } from "../state/selection";
 
 type Tab = "browse" | "selections";
@@ -587,7 +589,20 @@ function HomePage() {
               </div>
             </div>
 
-            <div className="d-flex align-items-center flex-wrap" style={{ gap: "1.25rem" }}>
+            <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
+              {activePlan !== null && orderedItems.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-brand rounded-pill px-3 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
+                  style={{ fontSize: "0.84rem", gap: "0.45rem" }}
+                  onClick={onLoadActivePlan}
+                  title={tx(`將方案「${activePlan.name}」的所有課程載入至暫存加選`, `Load all courses from plan "${activePlan.name}" into staging`)}
+                >
+                  <BookmarkStar size={13} className="text-teal-600" />
+                  <span>{tx(`載入方案「${activePlan.name}」`, `Load plan "${activePlan.name}"`)}</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"

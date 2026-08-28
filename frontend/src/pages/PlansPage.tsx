@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import {
   DndContext,
@@ -23,20 +23,26 @@ import {
   CardList,
   Copy,
   Download,
+  Download as ImportIcon,
   GripVertical,
   Layers,
   Pencil,
   PlusLg,
+  Search,
   Star,
   StarFill,
   Trash3,
+  XLg,
 } from "react-bootstrap-icons";
 
 import type { CourseOut } from "../lib/api";
-import { ApiError } from "../lib/api";
+import { ApiError, fetchSelections } from "../lib/api";
 import { downloadGridPng, downloadPlanIcs, icsErrorMessage } from "../lib/export";
+import CourseBrowser from "../components/CourseBrowser";
+import CourseDetailModal from "../components/CourseDetailModal";
 import PlanCompare from "../components/PlanCompare";
 import { useI18n } from "../lib/i18n";
+import { buildSelectionGridCourses } from "../lib/selectionGrid";
 import ScheduleTable from "../components/ScheduleTable";
 import type { PlanListItem, PlansSyncContextValue } from "../state/plansSync";
 import { usePlansSync } from "../state/plansSync";
@@ -298,39 +304,18 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                   </div>
 
                   <div className="d-flex align-items-center justify-content-between pt-2 border-top mt-2">
-                    <span className="badge text-bg-light border text-muted">
-                      {tx(`共 ${plan.item_count} 門課程`, `${plan.item_count} course(s)`)}
+                    <span className="text-muted font-monospace" style={{ fontSize: "0.78rem" }}>
+                      {tx(`${plan.item_count} 門課程`, `${plan.item_count} courses`)}
                     </span>
 
-                    <div className="d-flex align-items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="d-flex align-items-center gap-1">
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-secondary p-1 px-2 rounded-2"
-                        title={tx("下載 ICS 行事曆", "Download ICS calendar")}
-                        disabled={icsBusyId !== null}
-                        onClick={() => onIcs(plan.id)}
-                      >
-                        <Calendar3 size={12} className="me-1" />
-                        <span style={{ fontSize: "0.74rem" }}>{icsBusyId === plan.id ? "…" : "ICS"}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary p-1 px-2 rounded-2"
-                        title={tx("複製方案為副本", "Duplicate plan")}
-                        aria-label={tx(`複製 ${plan.name}`, `Duplicate ${plan.name}`)}
-                        onClick={() => {
-                          sync.clone(plan.id).catch((err: unknown) => {
-                            setActionError(err instanceof Error ? err.message : String(err));
-                          });
-                        }}
-                      >
-                        <Copy size={12} />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary p-1 px-2 rounded-2"
-                        title={tx("重新命名", "Rename")}
-                        onClick={() => {
+                        className="btn btn-sm btn-outline-secondary p-1 rounded-2"
+                        title={tx(`改名 ${plan.name}`, `Rename ${plan.name}`)}
+                        aria-label={tx(`改名 ${plan.name}`, `Rename ${plan.name}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setRenamingId(plan.id);
                           setRenameValue(plan.name);
                         }}
@@ -339,14 +324,46 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                       </button>
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-danger p-1 px-2 rounded-2"
-                        title={tx("刪除方案", "Delete plan")}
-                        onClick={() => {
+                        className="btn btn-sm btn-outline-secondary p-1 rounded-2"
+                        title={tx(`複製 ${plan.name}`, `Duplicate ${plan.name}`)}
+                        aria-label={tx(`複製 ${plan.name}`, `Duplicate ${plan.name}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          sync.clone(plan.id).catch((err: unknown) => {
+                            setActionError(
+                              err instanceof Error ? err.message : String(err),
+                            );
+                          });
+                        }}
+                      >
+                        <Copy size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary p-1 rounded-2"
+                        title={tx(`匯出 ${plan.name} 的 ICS 行事曆`, `Export ${plan.name} as ICS`)}
+                        aria-label={tx(`匯出 ${plan.name} 的 ICS 行事曆`, `Export ${plan.name} as ICS`)}
+                        disabled={icsBusyId === plan.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onIcs(plan.id);
+                        }}
+                      >
+                        <Download size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-danger p-1 rounded-2"
+                        title={tx(`刪除 ${plan.name}`, `Delete ${plan.name}`)}
+                        aria-label={tx(`刪除 ${plan.name}`, `Delete ${plan.name}`)}
+                        disabled={sync.plans.length <= 1}
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (
                             window.confirm(
                               tx(
-                                `確定刪除「${plan.name}」？其中 ${plan.item_count} 門課程紀錄將一併移除。`,
-                                `Delete “${plan.name}”? Its ${plan.item_count} course record(s) will be removed too.`,
+                                `確定要刪除「${plan.name}」嗎？`,
+                                `Delete plan "${plan.name}"?`,
                               ),
                             )
                           ) {
@@ -372,9 +389,18 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
   );
 }
 
-function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
+function ActivePlanEditor({
+  sync,
+  onOpenSearch,
+}: {
+  sync: PlansSyncContextValue;
+  onOpenSearch: () => void;
+}) {
   const { tx } = useI18n();
-  const { remove } = useSelection();
+  const { selected, add, remove } = useSelection();
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -390,26 +416,81 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
     sync.applyDragOrder(arrayMove(ids, from, to));
   };
 
+  const onImportEnrolled = useCallback(() => {
+    if (importing) return;
+    setImporting(true);
+    setImportMsg(null);
+    fetchSelections()
+      .then((body) => {
+        const { courses } = buildSelectionGridCourses(body.items);
+        const existingIds = new Set(selected.map((c) => c.id));
+        let addedCount = 0;
+        for (const course of courses) {
+          if (!existingIds.has(course.id)) {
+            add(course);
+            addedCount++;
+          }
+        }
+        setImportMsg(
+          addedCount > 0
+            ? tx(`成功匯入 ${addedCount} 門已選課程至本方案！`, `Imported ${addedCount} enrolled course(s) into this plan!`)
+            : tx("目前已選課程皆已存在於此方案中。", "All enrolled courses are already in this plan."),
+        );
+      })
+      .catch((err: unknown) => {
+        setImportMsg(
+          err instanceof Error ? err.message : tx("匯入失敗，請稍候重試", "Import failed. Please try again."),
+        );
+      })
+      .finally(() => setImporting(false));
+  }, [importing, selected, add, tx]);
+
   const activePlan = sync.plans.find((p) => p.id === sync.activePlanId) ?? null;
 
   return (
     <div className="card shadow-sm border-0 rounded-4 mb-4">
       <div className="card-body p-4">
-        <div className="d-flex align-items-center justify-content-between mb-2">
-          <h2 className="h6 fw-bold mb-0 text-dark">
-            {activePlan !== null
-              ? tx(`「${activePlan.name}」志願序排序台`, `"${activePlan.name}" priority board`)
-              : tx("志願序排序", "Priority order")}
-          </h2>
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <div>
+            <h2 className="h6 fw-bold mb-0 text-dark">
+              {activePlan !== null
+                ? tx(`「${activePlan.name}」志願序排序台`, `"${activePlan.name}" priority board`)
+                : tx("志願序排序", "Priority order")}
+            </h2>
+            <p className="text-muted small mb-0 mt-0.5">
+              {tx("拖曳左側手柄調整順序（自動編號 1…N），或手動輸入 1–20 的志願序。", "Drag handle to reorder (1…N), or type 1–20 directly in the box.")}
+            </p>
+          </div>
+
           {activePlan !== null && (
-            <span className="badge text-bg-light border text-muted" role="status">
-              {sync.saving ? tx("儲存中…", "Saving…") : tx("已即時同步", "Synced live")}
-            </span>
+            <div className="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-brand rounded-pill px-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs"
+                onClick={onImportEnrolled}
+                disabled={importing}
+              >
+                <ImportIcon size={12} />
+                <span>{importing ? tx("匯入中…", "Importing…") : tx("匯入已選課程", "Import enrolled")}</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-sm btn-brand rounded-pill px-3 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-sm"
+                onClick={onOpenSearch}
+              >
+                <PlusLg size={12} />
+                <span>{tx("搜尋加入課程", "Add courses")}</span>
+              </button>
+            </div>
           )}
         </div>
-        <p className="text-muted small mb-3">
-          {tx("拖曳左側手柄調整順序（自動編號 1…N），或在格子內手動輸入 1–20 的志願序。", "Drag the handle on the left to reorder (auto-numbered 1…N), or type a priority of 1–20 directly in the box.")}
-        </p>
+
+        {importMsg !== null && (
+          <div className="alert alert-info py-1.5 px-3 small rounded-3 mb-2" role="status">
+            {importMsg}
+          </div>
+        )}
 
         {sync.error !== null && (
           <div className="alert alert-danger py-1.5 px-3 small rounded-3 mb-2" role="alert">
@@ -423,7 +504,15 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
           </div>
         ) : sync.orderedItems.length === 0 ? (
           <div className="text-center p-4 bg-light rounded-4 text-muted small">
-            {tx("此方案尚無課程——到「查課・課表」加入課程後會自動寫入此方案。", "This plan has no courses — add one from “Courses • Timetable” and it lands here automatically.")}
+            <p className="mb-2">{tx("此方案尚無課程——您可以點擊上方「搜尋加入課程」或「匯入已選課程」。", "This plan has no courses — click “Add courses” or “Import enrolled” above to get started.")}</p>
+            <button
+              type="button"
+              className="btn btn-sm btn-brand rounded-pill px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm"
+              onClick={onOpenSearch}
+            >
+              <Search size={13} />
+              <span>{tx("立即搜尋並加入課程", "Search & add courses now")}</span>
+            </button>
           </div>
         ) : (
           <div className="priority-list-container">
@@ -492,7 +581,7 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
     if (activePlan === null || busy !== null) return;
     setExportError(null);
     if (node === null || visualCourses.length === 0) {
-      setExportError(tx("課表是空的——先去「查課·課表」加入有時段的課程，再下載 PNG。", "The timetable is empty — add time-slotted courses on “Courses • Timetable” before downloading a PNG."));
+      setExportError(tx("課表是空的——先加入有時段的課程，再下載 PNG。", "The timetable is empty — add time-slotted courses before downloading a PNG."));
       return;
     }
     setBusy("png");
@@ -580,7 +669,14 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
 }
 
 function PlansPage() {
+  const { tx } = useI18n();
   const sync = usePlansSync();
+  const { isSelected, toggle } = useSelection();
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [detailCourse, setDetailCourse] = useState<CourseOut | null>(null);
+
+  const activePlan = sync.plans.find((p) => p.id === sync.activePlanId) ?? null;
+
   return (
     <div className="pb-4">
       {/* Top Deck: Plan Deck Overview */}
@@ -589,12 +685,87 @@ function PlansPage() {
       {/* Bottom Area: Priority Editor & Export Canvas */}
       <div className="row g-4">
         <div className="col-12 col-xl-5">
-          <ActivePlanEditor sync={sync} />
+          <ActivePlanEditor sync={sync} onOpenSearch={() => setShowSearchModal(true)} />
         </div>
         <div className="col-12 col-xl-7">
           <PlanExportCard sync={sync} />
         </div>
       </div>
+
+      {/* Course Search Modal for Plan Lab */}
+      {showSearchModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex={-1}
+          role="dialog"
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.65)", backdropFilter: "blur(4px)", zIndex: 1060 }}
+          onClick={() => setShowSearchModal(false)}
+        >
+          <div
+            className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "880px" }}
+          >
+            <div className="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style={{ maxHeight: "88vh" }}>
+              <div className="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between">
+                <div className="d-flex align-items-center gap-2.5">
+                  <div className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center">
+                    <Search size={18} />
+                  </div>
+                  <div>
+                    <h5 className="modal-title fw-bold text-dark mb-0">
+                      {activePlan !== null
+                        ? tx(`搜尋並加入課程至「${activePlan.name}」`, `Search & add courses to "${activePlan.name}"`)
+                        : tx("搜尋並加入課程", "Search and add courses")}
+                    </h5>
+                    <p className="text-muted small mb-0" style={{ fontSize: "0.82rem" }}>
+                      {tx("點擊「加入課表」即可立即加入至此方案中。", "Click “Add” on any course to put it into this plan immediately.")}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label={tx("關閉", "Close")}
+                  onClick={() => setShowSearchModal(false)}
+                />
+              </div>
+
+              <div className="modal-body p-0 overflow-y-auto" style={{ height: "620px" }}>
+                <CourseBrowser
+                  hoveredCourseId={null}
+                  onCourseHover={() => undefined}
+                  pickState={(course) => (isSelected(course.id) ? "selected" : null)}
+                  onToggleCourse={(course) => toggle(course)}
+                  onViewCourse={setDetailCourse}
+                />
+              </div>
+
+              <div className="modal-footer border-top py-2.5 px-4 bg-light d-flex justify-content-between">
+                <span className="text-muted small">
+                  {tx(
+                    `目前方案共 ${sync.orderedItems.length} 門課程`,
+                    `Current plan: ${sync.orderedItems.length} courses`,
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-brand rounded-pill px-4 py-1.5 fw-semibold shadow-xs"
+                  onClick={() => setShowSearchModal(false)}
+                >
+                  {tx("完成", "Done")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Course Detail Modal */}
+      {detailCourse !== null && (
+        <CourseDetailModal course={detailCourse} onClose={() => setDetailCourse(null)} />
+      )}
     </div>
   );
 }
