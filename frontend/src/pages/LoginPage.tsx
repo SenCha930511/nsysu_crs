@@ -1,15 +1,7 @@
-/**
- * /login: student id + password ONLY (SSO2 - there is deliberately no
- * captcha field anywhere in this flow). Error mapping follows the school
- * verdict taxonomy: 401 invalid_credentials / 429|423 locked (with the
- * retry hint when the body carries it) / 503 school_unavailable; everything
- * else is a generic network-ish failure. Successful login returns to the
- * guarded page that bounced the visitor here.
- */
-
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useLocation, useNavigate, useSearchParams, Link } from "react-router-dom";
+import { ShieldCheck } from "react-bootstrap-icons";
 
 import { ApiError } from "../lib/api";
 import { loginErrorText, loginNoticeText } from "../lib/guards";
@@ -60,51 +52,61 @@ function LoginPage() {
   };
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-12 col-md-8 col-lg-5">
-        <div className="card login-card">
-          <div className="card-body">
-            <h2 className="h5 card-title fw-bold mb-1">學生登入</h2>
-            <p className="text-muted small mb-3">
-              使用中山選課系統帳號密碼登入（SSO，免驗證碼）。
-              密碼僅用於當次驗證，本站不留存任何密碼。
+    <div className="login-card-container">
+      <div className="col-12 col-md-7 col-lg-5 col-xl-4">
+        <div className="login-card">
+          <div className="text-center mb-3">
+            <div
+              className="d-inline-flex align-items-center justify-content-center bg-teal-50 text-teal-600 rounded-circle mb-2"
+              style={{ width: "48px", height: "48px" }}
+            >
+              <ShieldCheck size={26} />
+            </div>
+            <h2 className="h5 fw-bold mb-1 text-dark">學生登入</h2>
+            <p className="text-muted small mb-0">
+              使用中山選課系統帳號密碼登入（SSO，免驗證碼）
             </p>
+          </div>
 
-            {notice !== null && (
-              <div
-                className={`alert ${
-                  searchParams.get("reason") === "expired"
-                    ? "alert-warning"
-                    : "alert-info"
-                } py-2 small`}
-                role="alert"
-                data-testid="login-notice"
-              >
-                {notice}
-              </div>
-            )}
-            {errorText !== null && (
-              <div className="alert alert-danger py-2 small" role="alert">
-                {errorText}
-                {errorText === "學校系統異常，稍後再試" && (
-                  <span className="d-block mt-1">
-                    學校主機暫時連不上。你仍可
-                    <Link to="/">瀏覽課程目錄與本機課表</Link>
-                    ，登入相關功能暫停。
-                  </span>
-                )}
-              </div>
-            )}
+          {notice !== null && (
+            <div
+              className={`alert ${
+                searchParams.get("reason") === "expired"
+                  ? "alert-warning"
+                  : "alert-info"
+              } py-2 px-3 small rounded-3 mb-3`}
+              role="alert"
+              data-testid="login-notice"
+            >
+              {notice}
+            </div>
+          )}
+          {errorText !== null && (
+            <div className="alert alert-danger py-2 px-3 small rounded-3 mb-3" role="alert">
+              {errorText}
+              {errorText === "學校系統異常，稍後再試" && (
+                <span className="d-block mt-1">
+                  學校主機暫時連不上。你仍可
+                  <Link to="/" className="fw-semibold text-danger text-decoration-underline ms-1">
+                    瀏覽課程目錄與本機課表
+                  </Link>
+                  ，登入相關功能暫停。
+                </span>
+              )}
+            </div>
+          )}
 
-            <form onSubmit={onSubmit}>
-              <div className="mb-3">
-                <label htmlFor="login-student-no" className="form-label">
-                  學號
-                </label>
+          <form onSubmit={onSubmit}>
+            <div className="mb-3">
+              <label htmlFor="login-student-no" className="form-label small fw-semibold text-dark mb-1">
+                學號
+              </label>
+              <div className="position-relative">
                 <input
                   id="login-student-no"
                   type="text"
                   className="form-control"
+                  placeholder="例如：B113040001"
                   autoComplete="username"
                   value={studentNo}
                   onChange={(e) => setStudentNo(e.target.value)}
@@ -112,28 +114,36 @@ function LoginPage() {
                   autoFocus
                 />
               </div>
-              <div className="mb-3">
-                <label htmlFor="login-password" className="form-label">
-                  選課密碼
-                </label>
+            </div>
+            <div className="mb-4">
+              <label htmlFor="login-password" className="form-label small fw-semibold text-dark mb-1">
+                選課密碼
+              </label>
+              <div className="position-relative">
                 <input
                   id="login-password"
                   type="password"
                   className="form-control"
+                  placeholder="請輸入選課密碼"
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
-              <button
-                type="submit"
-                className="btn btn-brand w-100"
-                disabled={pending}
-              >
-                {pending ? "登入中…" : "登入"}
-              </button>
-            </form>
+            </div>
+            <button
+              type="submit"
+              className="btn btn-brand w-100 py-2"
+              disabled={pending}
+            >
+              {pending ? "登入中…" : "立即登入"}
+            </button>
+          </form>
+          <div className="text-center mt-3">
+            <span className="text-muted" style={{ fontSize: "0.74rem" }}>
+              🔒 密碼僅用於當次單向驗證，本站絕不留存任何密碼
+            </span>
           </div>
         </div>
       </div>
@@ -142,3 +152,4 @@ function LoginPage() {
 }
 
 export default LoginPage;
+

@@ -28,7 +28,18 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Download, GripVertical, Star, StarFill, Trash3 } from "react-bootstrap-icons";
+import {
+  ArrowRepeat,
+  Calendar3,
+  CalendarCheck,
+  Download,
+  GripVertical,
+  Pencil,
+  PlusLg,
+  Star,
+  StarFill,
+  Trash3,
+} from "react-bootstrap-icons";
 
 import type { CourseOut } from "../lib/api";
 import { ApiError } from "../lib/api";
@@ -68,7 +79,7 @@ function SortablePriorityRow({
         {...attributes}
         {...listeners}
       >
-        <GripVertical />
+        <GripVertical size={16} />
       </button>
       <input
         key={`${item.courseId}:${item.priority ?? "null"}`}
@@ -84,7 +95,7 @@ function SortablePriorityRow({
         }}
       />
       <div className="priority-row-main">
-        <span className="fw-semibold">{name}</span>
+        <span className="fw-semibold text-dark">{name}</span>
         {!item.known && (
           <span className="badge text-bg-secondary ms-1">目錄查無此課</span>
         )}
@@ -92,11 +103,11 @@ function SortablePriorityRow({
       </div>
       <button
         type="button"
-        className="btn btn-sm btn-outline-danger"
+        className="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center p-1.5 rounded-2"
         aria-label={`從課表移除 ${name}`}
         onClick={onRemove}
       >
-        <Trash3 />
+        <Trash3 size={13} />
       </button>
     </div>
   );
@@ -148,10 +159,13 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
   };
 
   return (
-    <div className="card">
-      <div className="card-body">
-        <h2 className="h6 fw-bold">我的課表</h2>
-        <form className="input-group input-group-sm mb-2" onSubmit={onCreate}>
+    <div className="card shadow-sm border-0 rounded-4 mb-3">
+      <div className="card-body p-3.5">
+        <h2 className="h6 fw-bold mb-3 d-flex align-items-center gap-1.5">
+          <CalendarCheck className="text-teal-600" size={16} />
+          <span>我的課表組合</span>
+        </h2>
+        <form className="input-group input-group-sm mb-3" onSubmit={onCreate}>
           <input
             type="text"
             className="form-control"
@@ -160,21 +174,22 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary" disabled={creating}>
-            新增
+          <button type="submit" className="btn btn-brand d-inline-flex align-items-center gap-1" disabled={creating}>
+            <PlusLg size={13} />
+            <span>新增</span>
           </button>
         </form>
         {actionError !== null && (
-          <div className="alert alert-danger py-1 px-2 small" role="alert">
+          <div className="alert alert-danger py-1.5 px-3 small rounded-3 mb-2" role="alert">
             {actionError}
           </div>
         )}
         {sync.plans.length === 0 && (
-          <p className="text-muted small mb-0">
+          <p className="text-muted small mb-0 p-2 text-center bg-light rounded-3">
             尚無課表。建立第一組後，挑課會自動存入該組。
           </p>
         )}
-        <div>
+        <div className="d-flex flex-column gap-1">
           {sync.plans.map((plan) => {
             const active = plan.id === sync.activePlanId;
             return (
@@ -185,7 +200,7 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
               >
                 <button
                   type="button"
-                  className="btn btn-sm p-0 border-0"
+                  className="btn btn-sm p-1 border-0"
                   aria-label={
                     plan.is_primary ? `主課表 ${plan.name}` : `設為主課表 ${plan.name}`
                   }
@@ -201,9 +216,9 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
                   }}
                 >
                   {plan.is_primary ? (
-                    <StarFill className="text-warning" />
+                    <StarFill className="text-warning" size={15} />
                   ) : (
-                    <Star className="text-muted" />
+                    <Star className="text-muted" size={15} />
                   )}
                 </button>
                 {renamingId === plan.id ? (
@@ -224,23 +239,23 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
                   <button
                     type="button"
                     className={`btn btn-sm plan-switch${
-                      active ? " fw-bold" : ""
+                      active ? " fw-bold text-teal-800" : ""
                     }`}
                     onClick={() => void sync.selectPlan(plan.id)}
                   >
                     {plan.name}
-                    <span className="text-muted small ms-1">
-                      {plan.item_count} 門
+                    <span className="badge text-bg-light border ms-1 font-monospace">
+                      {plan.item_count}
                     </span>
                   </button>
                 )}
                 {plan.is_primary && (
-                  <span className="badge text-bg-light border">主</span>
+                  <span className="badge bg-teal-100 text-teal-800 border border-teal-200">主</span>
                 )}
-                <span className="ms-auto d-flex gap-1">
+                <span className="ms-auto d-flex align-items-center gap-1">
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary"
+                    className="btn btn-sm btn-outline-secondary p-1 px-1.5 rounded-2"
                     title="下載 ICS（匯入 Google 日曆等）"
                     disabled={icsBusyId !== null}
                     onClick={() => onIcs(plan.id)}
@@ -249,17 +264,19 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary"
+                    className="btn btn-sm btn-outline-secondary p-1 px-1.5 rounded-2"
+                    title="重新命名"
                     onClick={() => {
                       setRenamingId(plan.id);
                       setRenameValue(plan.name);
                     }}
                   >
-                    改名
+                    <Pencil size={11} />
                   </button>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-danger"
+                    className="btn btn-sm btn-outline-danger p-1 px-1.5 rounded-2"
+                    title="刪除課表"
                     onClick={() => {
                       if (
                         window.confirm(
@@ -274,7 +291,7 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
                       }
                     }}
                   >
-                    刪除
+                    <Trash3 size={11} />
                   </button>
                 </span>
               </div>
@@ -306,57 +323,60 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
   const activePlan = sync.plans.find((p) => p.id === sync.activePlanId) ?? null;
 
   return (
-    <div className="card">
-      <div className="card-body">
-        <div className="d-flex align-items-baseline justify-content-between">
-          <h2 className="h6 fw-bold mb-1">
+    <div className="card shadow-sm border-0 rounded-4 mb-3">
+      <div className="card-body p-3.5">
+        <div className="d-flex align-items-center justify-content-between mb-1">
+          <h2 className="h6 fw-bold mb-0">
             {activePlan !== null ? `「${activePlan.name}」志願序` : "志願序"}
           </h2>
           {activePlan !== null && (
-            <span className="text-muted small" role="status">
+            <span className="badge text-bg-light border text-muted" role="status">
               {sync.saving ? "儲存中…" : "已自動儲存"}
             </span>
           )}
         </div>
-        <p className="text-muted small mb-2">
-          拖曳調整順序（自動編號 1…N），或直接輸入 1–20 的志願序；
-          同一號碼只能一門課。志願序會用於初選志願排序。
+        <p className="text-muted small mb-3">
+          拖曳調整順序（自動編號 1…N），或直接輸入 1–20 的志願序；同一號碼只能一門課。
         </p>
         {sync.error !== null && (
-          <div className="alert alert-danger py-1 px-2 small" role="alert">
+          <div className="alert alert-danger py-1.5 px-3 small rounded-3 mb-2" role="alert">
             {sync.error}
           </div>
         )}
         {activePlan === null ? (
-          <p className="text-muted small mb-0">先在左側建立或選擇一組課表。</p>
+          <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">
+            先在左側建立或選擇一組課表。
+          </p>
         ) : sync.orderedItems.length === 0 ? (
-          <p className="text-muted small mb-0">
+          <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">
             此課表尚無課程——到「查課·課表」加入後會自動寫入這一組。
           </p>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={onDragEnd}
-          >
-            <SortableContext
-              items={sync.orderedItems.map((item) => item.courseId)}
-              strategy={verticalListSortingStrategy}
+          <div className="priority-list-container">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={onDragEnd}
             >
-              <div role="list" aria-label="志願序列表">
-                {sync.orderedItems.map((item) => (
-                  <SortablePriorityRow
-                    key={item.courseId}
-                    item={item}
-                    onEditPriority={(raw) => {
-                      sync.editPriority(item.courseId, raw);
-                    }}
-                    onRemove={() => remove(item.courseId)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+              <SortableContext
+                items={sync.orderedItems.map((item) => item.courseId)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div role="list" aria-label="志願序列表">
+                  {sync.orderedItems.map((item) => (
+                    <SortablePriorityRow
+                      key={item.courseId}
+                      item={item}
+                      onEditPriority={(raw) => {
+                        sync.editPriority(item.courseId, raw);
+                      }}
+                      onRemove={() => remove(item.courseId)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
         )}
       </div>
     </div>
@@ -420,9 +440,9 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
   };
 
   return (
-    <div className="card mt-3">
-      <div className="card-body">
-        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div className="card shadow-sm border-0 rounded-4 mt-3">
+      <div className="card-body p-3.5">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
           <h2 className="h6 fw-bold mb-0">
             {activePlan !== null
               ? `「${activePlan.name}」課表預覽・匯出`
@@ -432,36 +452,44 @@ function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
             <div className="d-flex gap-2">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-primary"
+                className="btn btn-sm btn-outline-brand d-inline-flex align-items-center gap-1 shadow-sm"
                 disabled={busy !== null}
                 onClick={onIcs}
               >
-                <Download className="me-1" aria-hidden />
-                {busy === "ics" ? "匯出中…" : "下載 ICS"}
+                {busy === "ics" ? (
+                  <ArrowRepeat className="spinner-border spinner-border-sm" aria-hidden />
+                ) : (
+                  <Calendar3 size={13} aria-hidden />
+                )}
+                <span>{busy === "ics" ? "匯出中…" : "下載 ICS"}</span>
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-primary"
+                className="btn btn-sm btn-brand d-inline-flex align-items-center gap-1 shadow-sm"
                 disabled={busy !== null}
                 onClick={onPng}
               >
-                <Download className="me-1" aria-hidden />
-                {busy === "png" ? "匯出中…" : "下載課表 PNG"}
+                {busy === "png" ? (
+                  <ArrowRepeat className="spinner-border spinner-border-sm" aria-hidden />
+                ) : (
+                  <Download size={13} aria-hidden />
+                )}
+                <span>{busy === "png" ? "匯出中…" : "下載課表 PNG"}</span>
               </button>
             </div>
           )}
         </div>
         {exportError !== null && (
-          <div className="alert alert-warning py-1 px-2 small mt-2 mb-0" role="alert">
+          <div className="alert alert-warning py-1.5 px-3 small rounded-3 mt-2 mb-0" role="alert">
             {exportError}
           </div>
         )}
         {activePlan === null ? (
-          <p className="text-muted small mt-2 mb-0">
+          <p className="text-muted small mt-2 mb-0 p-3 text-center bg-light rounded-3">
             先在左側建立或選擇一組課表。
           </p>
         ) : visualCourses.length === 0 ? (
-          <p className="text-muted small mt-2 mb-0">
+          <p className="text-muted small mt-2 mb-0 p-3 text-center bg-light rounded-3">
             此課表沒有帶上課時段的課程——匯出的課表圖與 ICS 需要至少一門有時段的課。
           </p>
         ) : (

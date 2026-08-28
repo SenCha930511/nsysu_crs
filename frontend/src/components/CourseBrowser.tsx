@@ -1,18 +1,12 @@
-/**
- * Course browser: search box + multi-filters hitting GET /api/courses,
- * rendered as a virtualized infinite list (react-virtuoso, 50/page).
- *
- * Row layout and badge vocabulary follow the NSYSUSelectorHelper list rows
- * (MIT, https://github.com/NSYSU-OpenDev/NSYSUSelectorHelper): name, teacher
- * and dept meta, compulsory/credit/EMI badges, compact time tags ("三56"),
- * and the restrict/select/selected/remaining quota block. Conflict checking
- * against the current selection reuses our lib/conflicts.ts (same per-day
- * char-set rule as upstream's SelectorSetting.detectTimeConflict).
- */
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
-import { Check2, PlusLg, Search } from "react-bootstrap-icons";
+import {
+  Check2,
+  Filter,
+  PlusLg,
+  Search,
+  XLg,
+} from "react-bootstrap-icons";
 
 import { fetchCourses } from "../lib/api";
 import type { CourseOut, CourseQuery } from "../lib/api";
@@ -86,15 +80,6 @@ function gradeLabel(grade: string | null): string {
     default:
       return grade;
   }
-}
-
-function creditBadgeClass(credit: number | null): string {
-  if (credit === null) return "text-bg-light border";
-  if (credit <= 0) return "text-bg-secondary";
-  if (credit === 1) return "text-bg-info";
-  if (credit === 2) return "text-bg-primary";
-  if (credit === 3) return "text-bg-success";
-  return "text-bg-warning";
 }
 
 function timeTags(course: CourseOut): { tags: string[]; invalid: boolean } {
@@ -289,21 +274,24 @@ export default function CourseBrowser({
           onMouseEnter={() => onCourseHover(course.id)}
           onMouseLeave={() => onCourseHover(null)}
         >
-          <div className="d-flex justify-content-between gap-2">
-            <div className="course-row-main">
-              <div className="d-flex align-items-baseline gap-2 flex-wrap">
-                <span className="fw-semibold">{courseName(course)}</span>
+          <div className="d-flex justify-content-between align-items-start gap-3">
+            <div className="course-row-main flex-grow-1">
+              <div className="course-title">
+                <span>{courseName(course)}</span>
+                {course.dept && (
+                  <span className="course-dept-tag">{course.dept}</span>
+                )}
                 {course.name_en !== null && course.name_en !== "" && (
-                  <span className="text-muted small">{course.name_en}</span>
+                  <span className="text-muted fw-normal small">({course.name_en})</span>
                 )}
               </div>
               {metaParts.length > 0 && (
-                <div className="text-muted small">{metaParts.join(" · ")}</div>
+                <div className="course-meta">{metaParts.join(" · ")}</div>
               )}
               {invalid && (
                 <span className="badge text-bg-danger me-1">時間資料異常</span>
               )}
-              <div className="course-row-tags">
+              <div className="course-row-tags d-flex align-items-center flex-wrap gap-1 mt-1">
                 {tags.map((tag) => (
                   <span key={tag} className="time-tag">
                     {tag}
@@ -314,51 +302,54 @@ export default function CourseBrowser({
                 )}
               </div>
             </div>
-            <div className="course-row-side text-end">
-              <div className="mb-1">
+            <div className="course-row-side text-end flex-shrink-0">
+              <div className="mb-1.5 d-flex justify-content-end align-items-center gap-1 flex-wrap">
                 <span
-                  className={`badge me-1 ${
-                    course.compulsory
-                      ? "text-bg-danger"
-                      : "text-bg-light border"
+                  className={`badge ${
+                    course.compulsory ? "badge-compulsory" : "badge-elective"
                   }`}
                 >
                   {course.compulsory ? "必修" : "選修"}
                 </span>
-                <span className={`badge me-1 ${creditBadgeClass(course.credit)}`}>
+                <span className="badge text-bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
                   {course.credit === null ? "學分–" : `${course.credit} 學分`}
                 </span>
                 {course.english && (
-                  <span className="badge text-bg-dark me-1">EMI</span>
+                  <span className="badge badge-emi">EMI</span>
                 )}
               </div>
-              <div className="quota-badges mb-1" aria-label="名額">
-                <span className="badge text-bg-secondary" title="人數上限">
+              <div className="quota-badge-group justify-content-end mb-2" aria-label="名額">
+                <span className="quota-pill quota-pill-restrict" title="人數上限">
                   限 {num(course.restrict)}
                 </span>
-                <span className="badge text-bg-info" title="登記人數">
+                <span className="quota-pill quota-pill-reg" title="登記人數">
                   登 {num(course.select_n)}
                 </span>
-                <span className="badge text-bg-primary" title="已選上人數">
+                <span className="quota-pill quota-pill-sel" title="已選上人數">
                   上 {num(course.selected_n)}
                 </span>
                 <span
-                  className={`badge ${full ? "text-bg-danger" : "text-bg-success"}`}
+                  className={`quota-pill ${full ? "quota-pill-full" : "quota-pill-remaining"}`}
                   title="剩餘名額"
                 >
                   {full ? "額滿" : `餘 ${num(remaining)}`}
                 </span>
               </div>
-              <button
-                type="button"
-                className={`btn btn-sm ${
-                  picked ? "btn-danger" : "btn-outline-primary"
-                }`}
-                data-action={picked ? "remove" : "add"}
-                onClick={() => toggle(course)}
-              >
-                {picked ? <Check2 /> : <PlusLg />} {picked ? "已加入" : "加入"}
-              </button>
+              <div>
+                <button
+                  type="button"
+                  className={`btn btn-sm btn-add-course ${
+                    picked
+                      ? "btn-danger shadow-sm"
+                      : "btn-brand"
+                  }`}
+                  data-action={picked ? "remove" : "add"}
+                  onClick={() => toggle(course)}
+                >
+                  {picked ? <Check2 size={15} /> : <PlusLg size={13} />}
+                  <span>{picked ? "已選入" : "加選"}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -375,8 +366,8 @@ export default function CourseBrowser({
           : total === 0
             ? "查無符合的課程"
             : items.length < total
-              ? `已載入 ${items.length} / ${total} 門`
-              : `全部 ${total} 門已載入`}
+              ? `已載入 ${items.length} / ${total} 門課程`
+              : `已載入全部 ${total} 門課程`}
       </div>
     ),
     [loading, items.length, total],
@@ -384,26 +375,34 @@ export default function CourseBrowser({
 
   return (
     <section className="course-browser" aria-label="課程搜尋">
-      <div className="filter-bar">
-        <div className="row g-2 align-items-center">
-          <div className="col-12 col-xl-5">
-            <div className="input-group input-group-sm">
-              <span className="input-group-text">
-                <Search />
-              </span>
+      <div className="filter-card">
+        <div className="row g-2 align-items-center mb-2">
+          <div className="col-12 col-xl-6">
+            <div className="search-input-wrapper">
+              <Search className="search-icon" />
               <input
                 type="search"
-                className="form-control"
-                placeholder="搜尋課名 / 教師…"
+                className="form-control search-input"
+                placeholder="搜尋課名、教師姓名或關鍵字…"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 aria-label="搜尋課程"
               />
+              {searchInput && (
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => setSearchInput("")}
+                  aria-label="清除搜尋"
+                >
+                  <XLg size={12} />
+                </button>
+              )}
             </div>
           </div>
-          <div className="col-6 col-sm-4 col-xl-2">
+          <div className="col-6 col-sm-3 col-xl-3">
             <select
-              className="form-select form-select-sm"
+              className="form-select filter-select"
               value={filters.weekday}
               onChange={(e) => updateFilter({ weekday: e.target.value })}
               aria-label="星期"
@@ -416,9 +415,9 @@ export default function CourseBrowser({
               ))}
             </select>
           </div>
-          <div className="col-6 col-sm-4 col-xl-2">
+          <div className="col-6 col-sm-3 col-xl-3">
             <select
-              className="form-select form-select-sm"
+              className="form-select filter-select"
               value={filters.period}
               onChange={(e) => updateFilter({ period: e.target.value })}
               disabled={filters.weekday === ""}
@@ -432,10 +431,13 @@ export default function CourseBrowser({
               ))}
             </select>
           </div>
-          <div className="col-6 col-sm-4 col-xl-3">
+        </div>
+
+        <div className="row g-2 align-items-center">
+          <div className="col-6 col-sm-4 col-xl-2">
             <input
               type="text"
-              className="form-control form-control-sm"
+              className="form-control filter-select"
               placeholder="系所（如 資工系）"
               list="dept-options"
               value={filters.dept}
@@ -448,11 +450,9 @@ export default function CourseBrowser({
               ))}
             </datalist>
           </div>
-        </div>
-        <div className="row g-2 align-items-center mt-0">
-          <div className="col-6 col-sm-3 col-xl-2">
+          <div className="col-6 col-sm-4 col-xl-2">
             <select
-              className="form-select form-select-sm"
+              className="form-select filter-select"
               value={filters.grade}
               onChange={(e) => updateFilter({ grade: e.target.value })}
               aria-label="年級"
@@ -465,9 +465,9 @@ export default function CourseBrowser({
               <option value="4">大四</option>
             </select>
           </div>
-          <div className="col-6 col-sm-3 col-xl-2">
+          <div className="col-6 col-sm-4 col-xl-2">
             <select
-              className="form-select form-select-sm"
+              className="form-select filter-select"
               value={filters.credit}
               onChange={(e) => updateFilter({ credit: e.target.value })}
               aria-label="學分"
@@ -480,9 +480,9 @@ export default function CourseBrowser({
               ))}
             </select>
           </div>
-          <div className="col-6 col-sm-3 col-xl-2">
+          <div className="col-6 col-sm-4 col-xl-2">
             <select
-              className="form-select form-select-sm"
+              className="form-select filter-select"
               value={filters.compulsory}
               onChange={(e) => updateFilter({ compulsory: e.target.value })}
               aria-label="必選修"
@@ -492,36 +492,37 @@ export default function CourseBrowser({
               <option value="false">選修</option>
             </select>
           </div>
-          <div className="col-6 col-sm-3 col-xl-2">
+          <div className="col-6 col-sm-4 col-xl-2">
             <select
-              className="form-select form-select-sm"
+              className="form-select filter-select"
               value={filters.english}
               onChange={(e) => updateFilter({ english: e.target.value })}
               aria-label="英語授課"
             >
-              <option value="">語言（全部）</option>
-              <option value="true">英語授課</option>
-              <option value="false">非英語授課</option>
+              <option value="">語言</option>
+              <option value="true">EMI</option>
+              <option value="false">中文</option>
             </select>
           </div>
-          <div className="col-12 col-xl-4 d-flex justify-content-xl-end align-items-center gap-2">
-            <span className="text-muted small" aria-live="polite">
+          <div className="col-12 col-sm-4 col-xl-2 d-flex justify-content-between justify-content-sm-end align-items-center gap-2">
+            <span className="badge text-bg-light border text-secondary fw-semibold flex-shrink-0" aria-live="polite">
               共 {total} 門
             </span>
             <button
               type="button"
-              className="btn btn-sm btn-outline-secondary"
+              className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 flex-shrink-0 text-nowrap"
               onClick={resetFilters}
             >
-              清除條件
+              <Filter size={13} />
+              <span>重設</span>
             </button>
           </div>
         </div>
       </div>
 
       {error !== null && (
-        <div className="alert alert-danger d-flex justify-content-between align-items-center py-2" role="alert">
-          <span>課程查詢失敗:{error}</span>
+        <div className="alert alert-danger d-flex justify-content-between align-items-center py-2 rounded-3 mb-2" role="alert">
+          <span>課程查詢失敗：{error}</span>
           <button
             type="button"
             className="btn btn-sm btn-outline-danger"
@@ -543,3 +544,4 @@ export default function CourseBrowser({
     </section>
   );
 }
+

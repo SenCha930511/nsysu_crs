@@ -1,8 +1,5 @@
-/** Home: the todo-10 read-only core (course browser + weekly timetable). */
-
 import { useRef, useState } from "react";
-
-import { Download } from "react-bootstrap-icons";
+import { ArrowRepeat, CalendarCheck, Download } from "react-bootstrap-icons";
 
 import CourseBrowser from "../components/CourseBrowser";
 import ScheduleTable from "../components/ScheduleTable";
@@ -50,19 +47,34 @@ function HomePage() {
       </div>
       <div className="col-12 col-lg-5">
         <div className="schedule-side">
-          <div className="d-flex justify-content-end gap-2 mb-1">
+          <div className="d-flex justify-content-between align-items-center mb-2 px-1">
+            <div className="d-flex align-items-center gap-1.5">
+              <CalendarCheck className="text-teal-600" size={16} />
+              <span className="fw-bold text-dark" style={{ fontSize: "0.95rem" }}>
+                {activePlan?.name ? `課表：${activePlan.name}` : "目前預覽課表"}
+              </span>
+            </div>
             <button
               type="button"
-              className="btn btn-sm btn-outline-primary"
+              className="btn btn-sm btn-outline-brand d-inline-flex align-items-center gap-1 shadow-sm"
               disabled={pngState === "busy"}
               onClick={onPng}
             >
-              <Download className="me-1" aria-hidden />
-              {pngState === "busy" ? "匯出中…" : "下載課表 PNG"}
+              {pngState === "busy" ? (
+                <>
+                  <ArrowRepeat className="spinner-border spinner-border-sm" aria-hidden />
+                  <span>匯出中…</span>
+                </>
+              ) : (
+                <>
+                  <Download size={13} aria-hidden />
+                  <span>下載課表 PNG</span>
+                </>
+              )}
             </button>
           </div>
           {pngError !== null && (
-            <div className="alert alert-warning py-1 px-2 small" role="alert">
+            <div className="alert alert-warning py-1.5 px-3 small rounded-3 mb-2" role="alert">
               {pngError}
             </div>
           )}
@@ -82,3 +94,4 @@ function HomePage() {
 }
 
 export default HomePage;
+

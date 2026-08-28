@@ -7,10 +7,10 @@
  *   https://github.com/NSYSU-OpenDev/NSYSUSelectorHelper
  *
  * Kept from upstream: a plain HTML table keyed weekday-timeslot, multiple
- * course blocks per cell, weekend columns shaded gray, hover-synced course
+ * course blocks per cell, weekend columns shaded, hover-synced course
  * blocks. Our timeslot config and conflict layer come from our own
- * config/timeslots.ts; corrupt day strings (unknown codes) land in a visible
- * error strip instead of crashing the page.
+ * config/timeslots.ts; corrupt day strings (unknown codes) land in a
+ * visible error strip instead of crashing the page.
  */
 
 import { useMemo } from "react";
@@ -79,23 +79,23 @@ function ScheduleTable({
   return (
     <div className="schedule-wrapper">
       {invalid.length > 0 && (
-        <div className="alert alert-danger py-1 px-2 small" role="alert">
+        <div className="alert alert-danger py-1.5 px-3 small rounded-3 mb-2" role="alert">
           {invalid.length} 門課程時間資料異常，未排入課表：
           {invalid.map((c) => c.name_zh ?? c.id).join("、")}
         </div>
       )}
-      <div className="table-responsive">
-        <table className="schedule-table table table-bordered text-center align-middle mb-0">
+      <div className="schedule-table-wrapper table-responsive">
+        <table className="schedule-table table text-center align-middle mb-0">
           <thead>
             <tr>
               <th scope="col" className="schedule-timeslot-col">
-                節
+                節次
               </th>
               {WEEKDAYS.map((day) => (
                 <th
                   key={day.index}
                   scope="col"
-                  className={day.index >= 5 ? "table-secondary" : undefined}
+                  className={day.index >= 5 ? "schedule-weekend" : undefined}
                 >
                   {day.label}
                 </th>
@@ -106,7 +106,7 @@ function ScheduleTable({
             {TIMESLOTS.map((timeslot, rowIndex) => (
               <tr key={timeslot.code}>
                 <th scope="row" className="schedule-timeslot-col">
-                  <span className="d-block fw-bold">{timeslot.code}</span>
+                  <span className="schedule-timeslot-code d-block">{timeslot.code}</span>
                   <span className="schedule-clock">
                     {timeslot.start}–{timeslot.end}
                   </span>
@@ -138,3 +138,4 @@ function ScheduleTable({
 }
 
 export default ScheduleTable;
+

@@ -1,27 +1,14 @@
-/**
- * /selected: my real selections from the school system.
- *
- * - Boot: GET /api/me/selections (cached snapshot; "尚未同步" when never).
- * - 同步我的已選: POST /api/me/selections/sync -> synced_at + diff counts
- *   (added/removed/unchanged) + the list grouped by 選上/登記加選/失敗 with
- *   state badges; cards are quota-agnostic (the sync payload carries no
- *   quota fields by design).
- * - A dead school jar answers 401 SELCRS_EXPIRED; the global 401 seam turns
- *   that into soft logout + /login?reason=expired. School-down answers 503
- *   and shows the degrade text inline, previous snapshot untouched.
- */
-
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRepeat } from "react-bootstrap-icons";
+import { ArrowRepeat, BookmarkCheck } from "react-bootstrap-icons";
 
 import { ApiError, fetchSelections, syncSelections } from "../lib/api";
 import type { SelectionItem } from "../lib/api";
 
 const STATE_ORDER = ["選上", "登記加選", "失敗"];
 const STATE_BADGE: Record<string, string> = {
-  選上: "text-bg-success",
-  登記加選: "text-bg-info",
-  失敗: "text-bg-danger",
+  選上: "bg-emerald-100 text-emerald-800 border border-emerald-300",
+  登記加選: "bg-blue-100 text-blue-800 border border-blue-300",
+  失敗: "bg-red-100 text-red-800 border border-red-300",
 };
 
 interface DiffCounts {
@@ -52,14 +39,20 @@ function SelectionCard({ item }: { item: SelectionItem }) {
     <div className="selection-card" data-state={item.state}>
       <div className="d-flex justify-content-between align-items-start gap-2">
         <div>
-          <span className="fw-semibold">{item.name}</span>
-          {item.unknown && (
-            <span className="badge text-bg-secondary ms-1">目錄查無此課</span>
-          )}
-          {meta !== "" && <div className="text-muted small">{meta}</div>}
+          <div className="d-flex align-items-center gap-1.5 flex-wrap">
+            <span className="fw-bold text-dark">{item.name}</span>
+            {item.unknown && (
+              <span className="badge text-bg-secondary" style={{ fontSize: "0.7rem" }}>
+                目錄查無此課
+              </span>
+            )}
+          </div>
+          {meta !== "" && <div className="text-muted small mt-0.5">{meta}</div>}
           {where !== "" && <div className="text-muted small">{where}</div>}
         </div>
-        <span className={`badge ${badgeClass(item.state)}`}>{item.state}</span>
+        <span className={`badge ${badgeClass(item.state)} px-2.5 py-1 rounded-pill`} style={{ fontSize: "0.75rem" }}>
+          {item.state}
+        </span>
       </div>
     </div>
   );
@@ -137,53 +130,59 @@ function SelectedPage() {
   return (
     <div className="row justify-content-center">
       <div className="col-12 col-lg-9">
-        <div className="card">
-          <div className="card-body">
-            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <h2 className="h6 fw-bold mb-0">我的已選</h2>
+        <div className="card shadow-sm border-0 rounded-4">
+          <div className="card-body p-4">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <div>
+                <h2 className="h5 fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                  <BookmarkCheck className="text-teal-600" size={20} />
+                  <span>我的已選課程</span>
+                </h2>
+                <div className="text-muted small mt-1" role="status">
+                  {syncedAt === null ? (
+                    "尚未同步。按下「同步我的已選」從學校系統讀取最新狀態。"
+                  ) : (
+                    <>上次同步：{syncedAt}</>
+                  )}
+                  {diff !== null && (
+                    <span className="ms-2 badge text-bg-light border" data-testid="sync-diff">
+                      新增 {diff.added} · 移除 {diff.removed} · 未變 {diff.unchanged}
+                    </span>
+                  )}
+                </div>
+              </div>
               <button
                 type="button"
-                className="btn btn-primary btn-sm"
+                className="btn btn-brand d-inline-flex align-items-center gap-1.5 shadow-sm"
                 onClick={onSync}
                 disabled={syncing}
               >
-                <ArrowRepeat className="me-1" />
-                {syncing ? "同步中…" : "同步我的已選"}
+                <ArrowRepeat className={syncing ? "spinner-border spinner-border-sm" : ""} size={14} />
+                <span>{syncing ? "同步中…" : "同步我的已選"}</span>
               </button>
             </div>
 
-            <p className="text-muted small mt-2 mb-2" role="status">
-              {syncedAt === null ? (
-                "尚未同步。按下「同步我的已選」從學校系統讀取最新狀態。"
-              ) : (
-                <>上次同步：{syncedAt}</>
-              )}
-              {diff !== null && (
-                <span className="ms-2" data-testid="sync-diff">
-                  （新增 {diff.added}｜移除 {diff.removed}｜未變 {diff.unchanged}）
-                </span>
-              )}
-            </p>
-
             {errorText !== null && (
-              <div className="alert alert-warning py-2 small" role="alert">
+              <div className="alert alert-warning py-2 px-3 small rounded-3 mb-3" role="alert">
                 {errorText}
               </div>
             )}
 
             {loading ? (
-              <p className="text-muted small mb-0">讀取中…</p>
+              <p className="text-muted small mb-0 p-4 text-center bg-light rounded-3">讀取中…</p>
             ) : syncedAt === null ? null : items.length === 0 ? (
-              <p className="text-muted small mb-0">學校系統目前無任何已選紀錄。</p>
+              <p className="text-muted small mb-0 p-4 text-center bg-light rounded-3">學校系統目前無任何已選紀錄。</p>
             ) : (
               groups.map((group) => (
-                <section key={group.state} className="mb-3">
-                  <h3 className="h6 small text-muted mb-1">
-                    <span className={`badge ${badgeClass(group.state)} me-1`}>
+                <section key={group.state} className="mb-3.5">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <span className="fw-bold text-dark small" style={{ fontSize: "0.88rem" }}>
                       {group.state}
                     </span>
-                    {group.rows.length} 門
-                  </h3>
+                    <span className="badge text-bg-light border rounded-pill font-monospace">
+                      {group.rows.length} 門
+                    </span>
+                  </div>
                   <div className="selection-group">
                     {group.rows.map((item, index) => (
                       <SelectionCard
@@ -203,3 +202,4 @@ function SelectedPage() {
 }
 
 export default SelectedPage;
+

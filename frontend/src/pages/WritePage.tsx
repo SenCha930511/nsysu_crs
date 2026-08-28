@@ -179,9 +179,9 @@ function StageGate({
   }
 
   return (
-    <div className={`alert ${alertClass} d-flex align-items-start gap-2`} role="status">
+    <div className={`alert ${alertClass} d-flex align-items-start gap-2 rounded-4 shadow-sm`} role="status">
       <div className="flex-grow-1">
-        <div className="fw-semibold" data-testid="stage-title">
+        <div className="fw-bold" data-testid="stage-title">
           {title}
           {stage !== null && (
             <span className="badge text-bg-secondary ms-2">{stage.stage}</span>
@@ -448,7 +448,7 @@ function VerdictRow({ op, names }: { op: OpVerdictOut; names: NameMaps }) {
       <td className="small">
         <div className="fw-semibold">{verdictLabel(op)}</div>
         {op.warnings.map((warning) => (
-          <div key={warning} className="text-muted">
+          <div key={warning} className="text-warning-emphasis">
             {opWarningText(warning)}
           </div>
         ))}
@@ -476,51 +476,61 @@ function ConfirmModal({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dropRows = composer.drops.filter(dropIncludable);
+  const dropRows = composer.drops.filter((d) =>
+    preview.ops.some((op) => op.action === "-" && op.code === d.code),
+  );
   const formCheck = checkConfirmForm(password, dropRows);
 
   const submit = async () => {
     if (!formCheck.ok || pending) return;
     setPending(true);
     setError(null);
-    const result = await onConfirm(password);
-    setPassword(""); // 密碼只用於當次，送出不留存
-    setPending(false);
-    if (result !== null) setError(result);
+    try {
+      const err = await onConfirm(password);
+      if (err !== null) setError(err);
+    } finally {
+      setPassword(""); // 密碼只用於當次，送出不留存
+      setPending(false);
+    }
   };
 
   return (
     <>
       <div className="crs-modal-backdrop" onClick={onCancel} />
-      <div className="crs-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
-        <div className="card shadow" style={{ maxWidth: "34rem", width: "100%" }}>
-          <div className="card-body">
-            <h2 className="h6 fw-bold" id="confirm-modal-title">
-              確認送單（二次確認）
+      <div
+        className="crs-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+      >
+        <div className="crs-modal-card card shadow-lg border-0 rounded-4">
+          <div className="card-body p-4">
+            <h2 id="confirm-modal-title" className="h5 fw-bold mb-2 text-dark">
+              二次確認：送出選課操作
             </h2>
-            <p className="text-muted small mb-2">
+            <p className="text-muted small mb-3">
               將送出以下 {preview.ops.length} 筆操作；送出後進入排隊，結果以學校系統回應為準。
             </p>
-            <ul className="small mb-3" data-testid="confirm-diff-list">
+            <ul className="small mb-3 ps-3" data-testid="confirm-diff-list">
               {preview.ops.map((op) => (
-                <li key={op.index}>
+                <li key={op.index} className="mb-1">
                   {op.action === "+" ? (
                     <>
                       <span className="badge text-bg-primary me-1">＋加選</span>
-                      {opDisplayName(op, names)}
+                      <span className="fw-semibold text-dark">{opDisplayName(op, names)}</span>
                       {(() => {
                         const add = composer.adds.find(
                           (a) => a.courseId === op.course_id,
                         );
                         return add !== undefined && add.priority !== null ? (
-                          <span className="text-muted">（志願 {add.priority}）</span>
+                          <span className="text-muted ms-1">（志願 {add.priority}）</span>
                         ) : null;
                       })()}
                     </>
                   ) : (
                     <>
                       <span className="badge text-bg-danger me-1">−退選</span>
-                      {opDisplayName(op, names)}
+                      <span className="fw-semibold text-dark">{opDisplayName(op, names)}</span>
                     </>
                   )}
                 </li>
@@ -528,15 +538,15 @@ function ConfirmModal({
             </ul>
 
             {dropRows.length > 0 && (
-              <div className="mb-3" data-testid="confirm-drop-codes">
-                <div className="small fw-semibold mb-1">退選課號確認</div>
+              <div className="mb-3 p-3 bg-light rounded-3" data-testid="confirm-drop-codes">
+                <div className="small fw-semibold mb-1 text-dark">退選課號確認</div>
                 {dropRows.map((drop) => (
                   <div
                     key={drop.key}
-                    className="d-flex align-items-center gap-2 small"
+                    className="d-flex align-items-center gap-2 small mb-1"
                     data-testid={`confirm-drop-${drop.key}`}
                   >
-                    <span className="font-monospace">{drop.code}</span>
+                    <span className="font-monospace fw-bold">{drop.code}</span>
                     <span>{drop.name}</span>
                     {dropIncludable(drop) ? (
                       <span className="badge text-bg-success">課號一致</span>
@@ -549,7 +559,7 @@ function ConfirmModal({
             )}
 
             <div className="mb-3">
-              <label htmlFor="confirm-password" className="form-label small fw-semibold">
+              <label htmlFor="confirm-password" className="form-label small fw-semibold text-dark mb-1">
                 重新輸入選課密碼
               </label>
               <input
@@ -564,7 +574,7 @@ function ConfirmModal({
             </div>
 
             {!formCheck.ok && password.length > 0 && formCheck.error !== null && (
-              <div className="alert alert-danger py-1 small" role="alert">
+              <div className="alert alert-danger py-1.5 px-3 small rounded-3 mb-3" role="alert">
                 {confirmFormErrorText(formCheck.error)}
               </div>
             )}
@@ -1071,9 +1081,12 @@ function WritePage() {
   return (
     <div className="row justify-content-center">
       <div className="col-12 col-lg-10">
-        <div className="card mb-3">
-          <div className="card-body">
-            <h2 className="h6 fw-bold mb-2">送單中心</h2>
+        <div className="card shadow-sm border-0 rounded-4 mb-3">
+          <div className="card-body p-4">
+            <h2 className="h5 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+              <Send className="text-teal-600" size={18} />
+              <span>送單中心</span>
+            </h2>
             <StageGate
               stage={stage}
               loading={stageLoading}
@@ -1081,9 +1094,9 @@ function WritePage() {
               onRefresh={() => void loadStage()}
             />
             {authStatus === "authed" && csrfToken === null && (
-              <div className="alert alert-warning small" role="alert" data-testid="csrf-missing">
+              <div className="alert alert-warning py-2 px-3 small rounded-3" role="alert" data-testid="csrf-missing">
                 本次登入缺少送單憑證（CSRF token），無法使用送單功能；請
-                <Link to="/login" className="alert-link">重新登入</Link>
+                <Link to="/login" className="alert-link ms-1">重新登入</Link>
                 以取得憑證。
               </div>
             )}
@@ -1091,7 +1104,7 @@ function WritePage() {
             {phase === "compose" && (
               <>
                 {!stageWritable && stage !== null && (
-                  <p className="text-muted small" data-testid="composer-disabled-hint">
+                  <p className="text-muted small p-3 bg-light rounded-3 mb-3" data-testid="composer-disabled-hint">
                     目前非可寫入階段，以下送單功能全部暫停；階段開放後會自動恢復。
                   </p>
                 )}
@@ -1100,10 +1113,10 @@ function WritePage() {
                   dispatch={dispatch}
                   disabled={!writableNow}
                 />
-                <div className="d-flex align-items-center gap-2 mt-3 flex-wrap">
+                <div className="d-flex align-items-center gap-2 mt-4 pt-3 border-top flex-wrap">
                   <button
                     type="button"
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-brand btn-sm px-3.5 py-1.5 shadow-sm"
                     onClick={() => void runPreview()}
                     disabled={!writableNow || previewing || opsNow.length === 0}
                     data-testid="preview-button"
@@ -1112,7 +1125,7 @@ function WritePage() {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-success btn-sm"
+                    className="btn btn-success btn-sm px-3.5 py-1.5 shadow-sm"
                     onClick={() => setModalOpen(true)}
                     disabled={!confirmReady}
                     data-testid="confirm-open"
@@ -1120,18 +1133,18 @@ function WritePage() {
                     確認送單
                   </button>
                   {previewStale && (
-                    <span className="text-warning small" data-testid="preview-stale">
+                    <span className="text-warning small fw-semibold" data-testid="preview-stale">
                       批次內容已變更，請重新預檢
                     </span>
                   )}
                   {preview !== null && !previewStale && blockedCount(preview) > 0 && (
-                    <span className="text-danger small" data-testid="confirm-blocked-hint">
+                    <span className="text-danger small fw-semibold" data-testid="confirm-blocked-hint">
                       仍有遭阻擋的課程，排除後請重新預檢
                     </span>
                   )}
                 </div>
                 {previewError !== null && (
-                  <div className="alert alert-danger py-2 small mt-2" role="alert" data-testid="preview-error">
+                  <div className="alert alert-danger py-2 px-3 small rounded-3 mt-3" role="alert" data-testid="preview-error">
                     {previewError}
                   </div>
                 )}
@@ -1140,7 +1153,7 @@ function WritePage() {
             )}
 
             {phase === "job" && jobError !== null && (
-              <div className="alert alert-danger py-2 small mt-2" role="alert">
+              <div className="alert alert-danger py-2 px-3 small rounded-3 mt-3" role="alert">
                 {jobError}
               </div>
             )}

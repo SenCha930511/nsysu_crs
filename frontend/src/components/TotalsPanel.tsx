@@ -1,10 +1,5 @@
-/**
- * Credit / hours totals + conflict summary for the current selection.
- * Data comes from lib/totals.ts and lib/conflicts.ts (both adapted from
- * NSYSUSelectorHelper, see those files for attribution).
- */
-
 import { useMemo } from "react";
+import { Award, Book, Clock, ExclamationTriangleFill } from "react-bootstrap-icons";
 
 import { conflictPairs } from "../lib/conflicts";
 import { totalCreditsAndHours } from "../lib/totals";
@@ -33,17 +28,28 @@ function TotalsPanel({ selectedCourses }: TotalsPanelProps) {
     .join("\n");
 
   return (
-    <div className="totals-panel">
-      <span className="badge text-bg-light border">已選 {totals.courseCount} 門</span>
-      <span className="badge text-bg-primary">總學分 {totals.totalCredits}</span>
-      <span className="badge text-bg-info">總時數 {totals.totalHours} 節</span>
+    <div className="totals-panel" aria-label="選課統計">
+      <div className="stat-chip stat-chip-count">
+        <Book size={13} />
+        <span>已選 {totals.courseCount} 門</span>
+      </div>
+      <div className="stat-chip stat-chip-credits">
+        <Award size={14} />
+        <span>總學分 {totals.totalCredits}</span>
+      </div>
+      <div className="stat-chip stat-chip-hours">
+        <Clock size={13} />
+        <span>總時數 {totals.totalHours} 節</span>
+      </div>
       {pairs.length > 0 && (
-        <span className="badge text-bg-danger" title={conflictTitle}>
-          衝堂 {pairs.length} 組
-        </span>
+        <div className="stat-chip stat-chip-conflict" title={conflictTitle}>
+          <ExclamationTriangleFill size={13} />
+          <span>衝堂 {pairs.length} 組</span>
+        </div>
       )}
     </div>
   );
 }
 
 export default TotalsPanel;
+

@@ -7,12 +7,10 @@
  *   https://github.com/NSYSU-OpenDev/NSYSUSelectorHelper
  *
  * Behavior kept from upstream: bold name + room lines, deterministic light
- * hash-color per course, hover swaps to the brand color with a glow, delete
- * button appears on hover. Deviation: upstream hashes the leading-alpha
- * prefix of the school course number (so same-dept courses share a color;
- * Number is a school course code in their data). Our id is a UUID, so we
- * hash the full id+name instead — still deterministic per course, and the
- * light brightness mask is unchanged.
+ * hash-color per course, hover swaps to the brand color, delete button
+ * appears on hover. Deviation: upstream hashes the leading-alpha prefix of
+ * the school course number; our id is a UUID, so we hash the full id+name
+ * instead — still deterministic per course, light mask unchanged.
  */
 
 import { Trash3 } from "react-bootstrap-icons";
@@ -58,8 +56,11 @@ function CourseBlock({
     backgroundColor: lit
       ? "var(--crs-brand)"
       : hashLightColor(course.id + (course.name_zh ?? "")),
-    color: lit ? "#fff" : "initial",
-    boxShadow: lit ? "0 0 0 0.25rem var(--crs-brand-glow)" : "none",
+    color: lit ? "#ffffff" : "#1e293b",
+    boxShadow: lit
+      ? "0 4px 12px var(--crs-brand-glow), 0 0 0 2px var(--crs-brand)"
+      : "0 1px 2px rgba(0,0,0,0.05)",
+    borderColor: lit ? "var(--crs-brand)" : "rgba(0, 0, 0, 0.08)",
   };
 
   const title = [course.name_zh, course.teacher, course.room]
@@ -78,9 +79,9 @@ function CourseBlock({
             onMouseLeave: () => onHover(null),
           })}
     >
-      <span className="d-block fw-bold">{name}</span>
+      <span className="course-block-title">{name}</span>
       {roomLines.map((room, index) => (
-        <span key={`room-${index}`} className="d-block">
+        <span key={`room-${index}`} className="course-block-room">
           {room}
         </span>
       ))}
@@ -102,3 +103,4 @@ function CourseBlock({
 }
 
 export default CourseBlock;
+
