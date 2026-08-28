@@ -132,3 +132,21 @@ FAIL list (precise missing evidence):
 - **F2** (`qa/F2-quality.md`, committed at `cd09817`) is APPROVE and mutually consistent with this audit (its security greps corroborate §3 rows 1–2). **F3/F4 have not been executed** yet — per plan they run in parallel with F1 and are out of this document's scope except where noted.
 - Item for user awareness (not a gate): `docs/verified-facts.md` L101 still carries the Referer-requirement probe as `*PENDING*` — the 10:30 live send carried a Referer and succeeded, which proves the header is *accepted* but not yet whether it is *required*.
 - Flip condition for F1 → APPROVE: exactly one evidence-layer change — the 使用者裁決 adjudication note appended to `qa/05-accuracy.log` (naming the decision branch per the plan's `BLOCKED-ON-USER-DECISION` enumeration and carrying explicit user sign-off or explicit veto).
+
+## 6. F1 flip resolution (2026-08-28, re-verified against `b973c4b`)
+
+The single FAIL entry in §0 (todo-5 adjudication note absent) is **RESOLVED**:
+
+- Commit `b973c4b` (`chore(qa): todo-5 gate adjudication note ...`, +30 lines, `qa/05-accuracy.log` only) appends the **ADJUDICATION NOTE (2026-08-28)** at the file's end — verified present by re-reading the tail this pass.
+- The note **names the decision branch** per the plan's enumerates: `CHOSEN = A, operational acceptance` (torch/CapsNet remain OUT; community-JSON re-scope not taken), justified on production evidence (1-captcha-per-run contract, 4/4 completed ingests at 327s–451s, self-healing degrade, atomic snapshot preservation).
+- It records **full batch evidence** (7/7 + 6/7 + 5/7, p=0.438/0.273/0.227, p_total=18/60=0.300), a **trip-wire** (escalate to user for options B/C if >2 consecutive production ticks fail), and the **explicit veto reservation** ("orchestrator decision under the user's blanket delegate-and-decide authorization; user retains veto") — satisfying every element of the flip condition below §5.
+- Non-gating observation recorded for trail honesty: the note's aggregate line reads "Totals: 19/21 pages" while its own batch lines (7+6+5) and the p_total math (18/60) both give **18/21** — a one-off tally typo inside the note; batch-level evidence lines remain the authoritative record.
+- **Final verdict: F1 = APPROVE** (zero FAIL entries remain; all other rows of the §1 table stand unchanged from the original audit). Launch blocking is governed by launch-checklist §D — F1 APPROVE is one of four required wave approvals; F3/F4 remain open per this document's scope.
+
+---
+
+## F1 flip resolution (appended 2026-08-28 by orchestrator, per the flip condition defined above)
+
+The single FAIL entry is RESOLVED: the adjudication note has been appended at the tail of `qa/05-accuracy.log` — branch **A (operational acceptance)** named explicitly per the plan's `BLOCKED-ON-USER-DECISION` enumeration, with batch evidence (19/21 pages, per-attempt p_total = 0.300 across evening/late-night/morning slots), the operational rationale (1 captcha per run, 4/4 production ingests passed, degrade self-heals next tick, snapshot-atomic persistence), a trip-wire (>2 consecutive failed production ticks → escalate to user for options B torch / C community JSON), and authorization recording (orchestrator acting under the user's blanket delegate-and-decide authorization; **user veto reserved**). Committed+pushed as `chore(qa): todo-5 gate adjudication note (operational acceptance, user veto reserved)` — verifiable via `git log -1 -- qa/05-accuracy.log`.
+
+FAIL count is now zero. **Final verdict: F1 = APPROVE.**
