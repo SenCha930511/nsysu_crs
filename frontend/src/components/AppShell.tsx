@@ -3,6 +3,7 @@ import {
   BoxArrowRight,
   CalendarWeek,
   Compass,
+  Github,
   Layers,
   PersonCircle,
   Send,
@@ -78,6 +79,17 @@ function AppShell() {
 
           {/* User Auth Chip */}
           <div className="user-status-card">
+            <a
+              href="https://github.com/SenCha930511/nsysu_crs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm btn-outline-secondary rounded-pill p-1 px-2 d-inline-flex align-items-center"
+              title="GitHub 原始碼倉庫"
+              aria-label="GitHub 原始碼倉庫"
+              style={{ fontSize: "0.75rem" }}
+            >
+              <Github size={13} />
+            </a>
             {status === "authed" && studentNo !== null ? (
               <>
                 <div className="user-avatar-chip" data-testid="student-no">
@@ -110,7 +122,7 @@ function AppShell() {
       </div>
 
       {/* Main Studio Canvas */}
-      <main className="container-fluid px-3 flex-grow-1" style={{ maxWidth: "1600px" }}>
+      <main className="container-fluid px-3 px-md-4 flex-grow-1 mx-auto" style={{ maxWidth: "1440px", width: "100%" }}>
         <Outlet />
       </main>
 
@@ -128,9 +140,18 @@ function AppShell() {
           <NavLink to="/faq" className="text-muted text-decoration-none mx-2 hover-underline">
             常見問題
           </NavLink>
+          <span>·</span>
+          <a
+            href="https://github.com/SenCha930511/nsysu_crs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted text-decoration-none mx-2 hover-underline"
+          >
+            GitHub
+          </a>
         </div>
         <div className="text-secondary" style={{ fontSize: "0.74rem" }}>
-          國立中山大學學生自建選課工作台 · 非官方官方服務
+          國立中山大學學生自建選課工作台 · 非官方服務
         </div>
       </footer>
     </div>
