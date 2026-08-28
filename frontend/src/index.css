@@ -1831,10 +1831,30 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #fda4af !important;
 }
 
-/* --- Gap Utility Fallbacks --- */
+/* --- Spacing & Gap Utility Fallbacks --- */
 .gap-0-5, .gap-0\.5 { gap: 0.25rem !important; }
 .gap-1-5, .gap-1\.5 { gap: 0.5rem !important; }
 .gap-2-5, .gap-2\.5 { gap: 0.75rem !important; }
 .gap-3-5, .gap-3\.5 { gap: 1.25rem !important; }
+
+.pt-1-5, .pt-1\.5 { padding-top: 0.45rem !important; }
+.pt-2-5, .pt-2\.5 { padding-top: 0.75rem !important; }
+.pt-3-5, .pt-3\.5 { padding-top: 1.25rem !important; }
+.pb-1-5, .pb-1\.5 { padding-bottom: 0.45rem !important; }
+.pb-2-5, .pb-2\.5 { padding-bottom: 0.75rem !important; }
+.pb-3-5, .pb-3\.5 { padding-bottom: 1.25rem !important; }
+.py-1-5, .py-1\.5 { padding-top: 0.45rem !important; padding-bottom: 0.45rem !important; }
+.py-2-5, .py-2\.5 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+.py-3-5, .py-3\.5 { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
+.px-1-5, .px-1\.5 { padding-left: 0.45rem !important; padding-right: 0.45rem !important; }
+.px-2-5, .px-2\.5 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+.px-3-5, .px-3\.5 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+
+.mt-1-5, .mt-1\.5 { margin-top: 0.45rem !important; }
+.mt-2-5, .mt-2\.5 { margin-top: 0.75rem !important; }
+.mt-3-5, .mt-3\.5 { margin-top: 1.25rem !important; }
+.mb-1-5, .mb-1\.5 { margin-bottom: 0.45rem !important; }
+.mb-2-5, .mb-2\.5 { margin-bottom: 0.75rem !important; }
+.mb-3-5, .mb-3\.5 { margin-bottom: 1.25rem !important; }
 
 

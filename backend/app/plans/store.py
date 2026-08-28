@@ -146,6 +146,33 @@ async def replace_items(
     return await list_items(session, plan.id)
 
 
+async def clone_plan(
+    session: AsyncSession, plan: StudentPlan, *, name_max: int
+) -> StudentPlan:
+    """Duplicated one plan with all items into a new non-primary plan.
+
+    Naming: ``{原稱} 副本``, truncated from the front of the original name so
+    the suffix always survives the length budget. Never primary: the exact-one
+    -primary invariant holds untouched.
+    """
+    suffix = " 副本"
+    base = plan.name[: max(1, name_max - len(suffix))]
+    clone = StudentPlan(
+        student_id=plan.student_id,
+        name=f"{base}{suffix}",
+        is_primary=False,
+    )
+    session.add(clone)
+    await session.flush()
+    for item in await list_items(session, plan.id):
+        session.add(
+            PlanItem(plan_id=clone.id, course_id=item.course_id, priority=item.priority)
+        )
+    await session.commit()
+    await session.refresh(clone)
+    return clone
+
+
 async def attach_courses(
     session: AsyncSession, items: list[PlanItem]
 ) -> dict[str, Course]:

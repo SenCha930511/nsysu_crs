@@ -207,6 +207,15 @@ async def delete_plan(plan_id: uuid.UUID, student: CurrentStudent, db: DbSession
     }
 
 
+@router.post("/api/plans/{plan_id}/clone", response_model=PlanOut, status_code=status.HTTP_201_CREATED)
+async def clone_plan(plan_id: uuid.UUID, student: CurrentStudent, db: DbSession) -> PlanOut:
+    """Duplicate a plan (items included) as '<原稱> 副本'; never primary."""
+    student_id = await _student_id(db, student)
+    plan = await _owned(db, student_id, plan_id)
+    clone = await store.clone_plan(db, plan, name_max=_NAME_MAX)
+    return _plan_out(clone, len(await store.list_items(db, clone.id)))
+
+
 @router.get("/api/plans/{plan_id}/items", response_model=list[ItemOut])
 async def get_items(plan_id: uuid.UUID, student: CurrentStudent, db: DbSession):
     student_id = await _student_id(db, student)

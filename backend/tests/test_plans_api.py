@@ -140,6 +140,7 @@ def test_all_routes_require_a_site_session(harness):
         harness.client.put(f"/api/plans/{pid}/items", json={"items": []}).status_code
         == 401
     )
+    assert harness.client.post(f"/api/plans/{pid}/clone").status_code == 401
 
 
 # ---------- CRUD + primary invariant ----------
@@ -153,6 +154,43 @@ def test_first_plan_is_auto_primary_second_is_not(harness):
     plans = harness.client.get("/api/plans", cookies=harness.auth()).json()
     assert [p["name"] for p in plans] == ["志願A", "志願B"]
     assert sum(1 for p in plans if p["is_primary"]) == 1
+
+
+def test_clone_copies_items_and_stays_non_primary(harness):
+    base = harness.create_plan("BASE")
+    second = harness.create_plan("OTHER")
+    put = harness.client.put(
+        f"/api/plans/{base['id']}/items",
+        json={"items": [{"course_id": str(harness.course_id), "priority": 1}]},
+        cookies=harness.auth(),
+    )
+    assert put.status_code == 200, put.text
+
+    cloned = harness.client.post(
+        f"/api/plans/{base['id']}/clone", cookies=harness.auth()
+    )
+    assert cloned.status_code == 201, cloned.text
+    copy = cloned.json()
+    assert copy["name"] == "BASE 副本"
+    assert copy["is_primary"] is False
+    assert copy["item_count"] == 1
+    items = harness.client.get(
+        f"/api/plans/{copy['id']}/items", cookies=harness.auth()
+    ).json()
+    assert [(i["course_id"], i["priority"]) for i in items] == [(str(harness.course_id), 1)]
+
+    again = harness.client.post(
+        f"/api/plans/{second['id']}/clone", cookies=harness.auth()
+    ).json()
+    assert again["is_primary"] is False and again["item_count"] == 0
+
+
+def test_clone_of_foreign_plan_is_a_flat_404(harness):
+    foreign = harness.create_plan("MINE")
+    other_cookies = harness.auth(student_no=OTHER)
+    response = harness.client.post(f"/api/plans/{foreign['id']}/clone", cookies=other_cookies)
+    assert response.status_code == 404
+    assert response.json()["detail"] == "plan_not_found"
 
 
 def test_rename_and_set_primary_are_individual_patches(harness):

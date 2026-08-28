@@ -347,7 +347,15 @@ function RecordsPage() {
         </div>
 
         {summary !== null && (
-          <div className="d-flex align-items-center flex-wrap mt-4 pt-3.5 border-top" style={{ gap: "0.85rem" }}>
+          <div
+            className="d-flex align-items-center flex-wrap"
+            style={{
+              gap: "0.85rem",
+              marginTop: "1.5rem",
+              paddingTop: "1.35rem",
+              borderTop: "1px solid #e2e8f0",
+            }}
+          >
             <div className="record-stat-chip">
               <SendCheck size={15} className="text-teal-600" />
               <span>{tx(`總送單 ${summary.totalJobs} 批次`, `Total ${summary.totalJobs} batches`)}</span>

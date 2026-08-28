@@ -28,6 +28,7 @@ import {
 import type { ReactNode } from "react";
 
 import {
+  clonePlan,
   createPlan,
   deletePlan,
   fetchPlanItems,
@@ -101,6 +102,8 @@ export interface PlansSyncContextValue {
   rename: (planId: string, name: string) => Promise<void>;
   remove: (planId: string) => Promise<void>;
   setPrimary: (planId: string) => Promise<void>;
+  /** Duplicate the plan (items included) and switch into the fresh copy. */
+  clone: (planId: string) => Promise<void>;
   /** Drag-drop result: full new display order -> priorities 1..N / null. */
   applyDragOrder: (orderedIds: string[]) => void;
   /** Manual priority edit; resolves with the rule outcome. */
@@ -347,6 +350,18 @@ export function PlansSyncProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "primarySet", planId });
   }, []);
 
+  const clone = useCallback(
+    async (planId: string) => {
+      const copy = await clonePlan(planId);
+      writeSeq.current += 1;
+      dispatch({ type: "created", plan: copy });
+      storeActivePlan(copy.id);
+      setHydrated(false);
+      await hydratePlan(copy.id, writeSeq.current);
+    },
+    [hydratePlan],
+  );
+
   // ---------- priority editing ----------
 
   const applyDragOrder = useCallback(
@@ -413,6 +428,7 @@ export function PlansSyncProvider({ children }: { children: ReactNode }) {
       rename,
       remove: removePlan,
       setPrimary,
+      clone,
       applyDragOrder,
       editPriority,
     }),
@@ -428,6 +444,7 @@ export function PlansSyncProvider({ children }: { children: ReactNode }) {
       rename,
       removePlan,
       setPrimary,
+      clone,
       applyDragOrder,
       editPriority,
     ],

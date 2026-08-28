@@ -314,6 +314,10 @@ export function createPlan(name: string): Promise<PlanOut> {
   return request("/api/plans", { method: "POST", body: { name } });
 }
 
+export function clonePlan(planId: string): Promise<PlanOut> {
+  return request(`/api/plans/${planId}/clone`, { method: "POST" });
+}
+
 export function patchPlan(
   planId: string,
   patch: { name?: string; is_primary?: boolean },

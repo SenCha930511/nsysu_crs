@@ -20,6 +20,8 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   ArrowRepeat,
   Calendar3,
+  CardList,
+  Copy,
   Download,
   GripVertical,
   Layers,
@@ -33,6 +35,7 @@ import {
 import type { CourseOut } from "../lib/api";
 import { ApiError } from "../lib/api";
 import { downloadGridPng, downloadPlanIcs, icsErrorMessage } from "../lib/export";
+import PlanCompare from "../components/PlanCompare";
 import { useI18n } from "../lib/i18n";
 import ScheduleTable from "../components/ScheduleTable";
 import type { PlanListItem, PlansSyncContextValue } from "../state/plansSync";
@@ -106,6 +109,7 @@ function SortablePriorityRow({
 
 function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
   const { tx } = useI18n();
+  const [showCompare, setShowCompare] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -155,10 +159,22 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
       <div className="card-body p-4">
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
           <div>
-            <h2 className="h5 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
-              <Layers className="text-teal-600" size={18} />
-              <span>{tx("課表組合甲板 (Plan Deck)", "Plan Deck")}</span>
-            </h2>
+            <div className="d-flex align-items-center gap-2">
+              <h2 className="h5 fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                <Layers className="text-teal-600" size={18} />
+                <span>{tx("課表組合甲板 (Plan Deck)", "Plan Deck")}</span>
+              </h2>
+              <button
+                type="button"
+                className={`btn btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1 ${showCompare ? "btn-brand shadow-sm" : "btn-outline-secondary"}`}
+                style={{ fontSize: "0.78rem" }}
+                onClick={() => setShowCompare((v) => !v)}
+                aria-pressed={showCompare}
+              >
+                <CardList size={12} />
+                <span>{tx("方案對比", "Compare")}</span>
+              </button>
+            </div>
             <p className="text-muted small mb-0">
               {tx("建立多組不同選課方案（例如：衝堂備案、必修加選），自由切換測試。", "Create multiple course plans (e.g. clash backups, must-takes) and switch between them freely.")}
             </p>
@@ -184,6 +200,15 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
         {actionError !== null && (
           <div className="alert alert-danger py-1.5 px-3 small rounded-3 mb-3" role="alert">
             {actionError}
+          </div>
+        )}
+
+        {showCompare && sync.plans.length >= 2 && (
+          <PlanCompare plans={sync.plans} defaultA={sync.activePlanId} />
+        )}
+        {showCompare && sync.plans.length < 2 && (
+          <div className="text-center p-3 mb-3 bg-light rounded-4 text-muted small">
+            {tx("對比需要至少兩組方案；先用「複製」快速生一組副本試試。", "Comparison needs at least two plans — try duplicating one with the copy button to get going.")}
           </div>
         )}
 
@@ -287,6 +312,19 @@ function PlanDeckOverview({ sync }: { sync: PlansSyncContextValue }) {
                       >
                         <Calendar3 size={12} className="me-1" />
                         <span style={{ fontSize: "0.74rem" }}>{icsBusyId === plan.id ? "…" : "ICS"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary p-1 px-2 rounded-2"
+                        title={tx("複製方案為副本", "Duplicate plan")}
+                        aria-label={tx(`複製 ${plan.name}`, `Duplicate ${plan.name}`)}
+                        onClick={() => {
+                          sync.clone(plan.id).catch((err: unknown) => {
+                            setActionError(err instanceof Error ? err.message : String(err));
+                          });
+                        }}
+                      >
+                        <Copy size={12} />
                       </button>
                       <button
                         type="button"
