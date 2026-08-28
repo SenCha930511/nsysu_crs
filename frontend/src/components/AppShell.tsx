@@ -50,7 +50,7 @@ function AppShell() {
             </NavLink>
             <span className="semester-pill ms-1">115-1</span>
 
-            {activePlan !== null && (
+            {status === "authed" && activePlan !== null && (
               <span className="badge text-bg-light border text-muted d-none d-xl-inline-flex align-items-center gap-1 font-monospace" style={{ fontSize: "0.8rem", padding: "0.32rem 0.65rem" }}>
                 <span>{tx("方案：", "Plan:")}</span>
                 <strong className="text-teal-700">{activePlan.name}</strong>
@@ -58,25 +58,27 @@ function AppShell() {
             )}
           </div>
 
-          {/* Center: Prominent Navigation Tabs */}
-          <nav className="studio-nav-pills mx-auto" aria-label={tx("主要選單", "Primary navigation")}>
-            {NAV_LINKS.map((link) => {
-              const Icon = link.icon;
-              return (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.end}
-                  className={({ isActive }) =>
-                    `studio-nav-link${isActive ? " studio-nav-link-active" : ""}`
-                  }
-                >
-                  <Icon size={16} />
-                  <span>{link.label}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
+          {/* Center: Prominent Navigation Tabs (signed-in only) */}
+          {status === "authed" && (
+            <nav className="studio-nav-pills mx-auto" aria-label={tx("主要選單", "Primary navigation")}>
+              {NAV_LINKS.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.end}
+                    className={({ isActive }) =>
+                      `studio-nav-link${isActive ? " studio-nav-link-active" : ""}`
+                    }
+                  >
+                    <Icon size={16} />
+                    <span>{link.label}</span>
+                  </NavLink>
+                );
+              })}
+            </nav>
+          )}
 
           {/* Right: GitHub & User Auth */}
           <div className="d-flex align-items-center justify-content-end gap-2.5 flex-shrink-0">

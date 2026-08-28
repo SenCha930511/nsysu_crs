@@ -22,7 +22,7 @@ import {
   Send,
   XCircleFill,
 } from "react-bootstrap-icons";
-import { Link } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 import CourseBrowser from "../components/CourseBrowser";
 import CourseDetailModal from "../components/CourseDetailModal";
@@ -475,20 +475,18 @@ function HomePage() {
   );
 
   // ============================== RENDER ==============================
-  if (!authed) {
+  if (status === "loading") {
     return (
       <div className="row justify-content-center py-5">
-        <div className="col-12 col-md-8 col-lg-5 text-center">
-          <div className="card shadow-sm border-0 rounded-4">
-            <div className="card-body p-4">
-              <h2 className="h5 fw-bold text-dark">{tx("選課主控台", "Course-selection Console")}</h2>
-              <p className="text-muted small mb-3">{tx("登入後才能檢視你的真實課表、暫存加退選操作並送出選課。", "Sign in to see your real timetable, stage add/drop operations, and submit them.")}</p>
-              <Link to="/login" className="btn btn-brand rounded-pill px-4">{tx("前往登入", "Go to sign-in")}</Link>
-            </div>
-          </div>
+        <div className="col-12 col-md-6 col-lg-4 text-center text-muted small p-5">
+          <span className="spinner-border spinner-border-sm me-2" aria-hidden />
+          {tx("驗證身分中…", "Verifying session…")}
         </div>
       </div>
     );
+  }
+  if (!authed) {
+    return <Navigate to="/login" replace />;
   }
 
   return (

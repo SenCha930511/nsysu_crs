@@ -1,7 +1,7 @@
 /**
  * /write → 送單紀錄 (records): owner-scoped job history, newest first.
  * Redesigned with Next-Gen NSYSU Studio design language, clean card structures,
- * sanitized error messages, and formatted timestamps.
+ * sanitized error messages, high-contrast badges, and formatted timestamps.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -76,51 +76,73 @@ function formatDuration(startIso: string, endIso: string | null): string | null 
 function JobCard({ job }: { job: JobView }) {
   const { tx } = useI18n();
 
+  const allSuccess = job.ops.length > 0 && job.ops.every((op) => op.outcome === "success");
+  const hasFailedOps = job.ops.some((op) => op.outcome !== "success");
+  const allFailed = job.ops.length > 0 && job.ops.every((op) => op.outcome !== "success");
+
   const statusInfo = (() => {
-    switch (job.status) {
-      case "done":
-        return {
-          label: tx("已完成", "Finished"),
-          badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-          icon: CheckCircleFill,
-        };
-      case "failed":
-        return {
-          label: tx("執行失敗", "Failed"),
-          badgeClass: "bg-rose-50 text-rose-700 border border-rose-200",
-          icon: XCircleFill,
-        };
-      case "cancelled":
-        return {
-          label: tx("已取消", "Cancelled"),
-          badgeClass: "bg-slate-100 text-slate-700 border border-slate-200",
-          icon: ExclamationCircleFill,
-        };
-      case "queued":
-        return {
-          label: tx("排隊中", "Queued"),
-          badgeClass: "bg-amber-50 text-amber-700 border border-amber-200",
-          icon: HourglassSplit,
-        };
-      case "running":
-        return {
-          label: tx("執行中", "Running"),
-          badgeClass: "bg-teal-50 text-teal-700 border border-teal-200",
-          icon: ArrowRepeat,
-        };
-      case "session_superseded":
-        return {
-          label: tx("已被新登入覆蓋", "Session superseded"),
-          badgeClass: "bg-rose-50 text-rose-700 border border-rose-200",
-          icon: ExclamationTriangleFill,
-        };
-      default:
-        return {
-          label: job.status,
-          badgeClass: "bg-slate-100 text-slate-700 border border-slate-200",
-          icon: Clock,
-        };
+    if (job.status === "running") {
+      return {
+        label: tx("執行中", "Running"),
+        cardClass: "status-info",
+        badgeClass: "studio-badge-info",
+        icon: ArrowRepeat,
+      };
     }
+    if (job.status === "queued") {
+      return {
+        label: tx("排隊中", "Queued"),
+        cardClass: "status-warning",
+        badgeClass: "studio-badge-warning",
+        icon: HourglassSplit,
+      };
+    }
+    if (job.status === "cancelled") {
+      return {
+        label: tx("已取消", "Cancelled"),
+        cardClass: "status-secondary",
+        badgeClass: "studio-badge-secondary",
+        icon: ExclamationCircleFill,
+      };
+    }
+    if (job.status === "session_superseded") {
+      return {
+        label: tx("已被新登入覆蓋", "Session superseded"),
+        cardClass: "status-danger",
+        badgeClass: "studio-badge-danger",
+        icon: ExclamationTriangleFill,
+      };
+    }
+    if (job.status === "failed" || allFailed) {
+      return {
+        label: tx("執行失敗", "Failed"),
+        cardClass: "status-danger",
+        badgeClass: "studio-badge-danger",
+        icon: XCircleFill,
+      };
+    }
+    if (hasFailedOps) {
+      return {
+        label: tx("部分失敗", "Partial Failed"),
+        cardClass: "status-danger",
+        badgeClass: "studio-badge-danger",
+        icon: ExclamationCircleFill,
+      };
+    }
+    if (allSuccess) {
+      return {
+        label: tx("已完成", "Finished"),
+        cardClass: "status-success",
+        badgeClass: "studio-badge-success",
+        icon: CheckCircleFill,
+      };
+    }
+    return {
+      label: tx("已完成", "Done"),
+      cardClass: "status-success",
+      badgeClass: "studio-badge-success",
+      icon: CheckCircleFill,
+    };
   })();
 
   const StatusIcon = statusInfo.icon;
@@ -129,39 +151,39 @@ function JobCard({ job }: { job: JobView }) {
   const dropCount = job.ops.filter((op) => op.action === "-").length;
 
   return (
-    <article className={`record-job-card status-${job.status}`}>
+    <article className={`record-job-card ${statusInfo.cardClass}`}>
       <div className="record-job-header">
-        <div className="d-flex align-items-center gap-2.5 flex-wrap">
-          <span className={`badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5 fw-bold ${statusInfo.badgeClass}`}>
-            <StatusIcon size={13} />
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <span className={`studio-badge ${statusInfo.badgeClass}`}>
+            <StatusIcon size={13} className={job.status === "running" ? "spin" : ""} />
             <span>{statusInfo.label}</span>
           </span>
 
           {job.reconcile !== null && (
-            <span className="badge bg-amber-100 text-amber-900 border border-amber-300 rounded-pill px-2.5 py-1 fw-bold">
+            <span className="studio-badge studio-badge-warning">
               {tx("需重新對帳", "Reconcile needed")}
             </span>
           )}
 
-          <span className="badge text-bg-light border text-muted font-monospace" style={{ fontSize: "0.75rem" }}>
+          <span className="studio-badge studio-badge-secondary font-monospace" style={{ fontSize: "0.76rem" }}>
             #{job.job_id.slice(0, 8)}
           </span>
         </div>
 
-        <div className="d-flex align-items-center gap-3 text-muted flex-wrap" style={{ fontSize: "0.82rem" }}>
+        <div className="d-flex align-items-center gap-3 text-muted flex-wrap" style={{ fontSize: "0.84rem" }}>
           {job.ops.length > 0 && (
-            <span className="fw-semibold text-slate-600">
+            <span className="fw-bold text-slate-700">
               {addCount > 0 && <span>＋{addCount} {tx("加選", "add")} </span>}
               {addCount > 0 && dropCount > 0 && <span className="text-slate-300 mx-1">·</span>}
               {dropCount > 0 && <span>−{dropCount} {tx("退選", "drop")}</span>}
             </span>
           )}
-          <div className="d-flex align-items-center gap-1.5">
-            <Clock size={13} className="text-secondary" />
-            <span className="fw-semibold">{formatTimestamp(job.created_at)}</span>
+          <div className="d-flex align-items-center gap-1.5 text-slate-600">
+            <Clock size={13} className="text-slate-400" />
+            <span className="fw-semibold font-monospace">{formatTimestamp(job.created_at)}</span>
           </div>
           {duration !== null && (
-            <span className="badge bg-slate-100 text-slate-600 border border-slate-200 rounded-pill px-2.5 py-1">
+            <span className="studio-badge studio-badge-secondary" style={{ fontSize: "0.74rem", padding: "0.2rem 0.55rem" }}>
               {tx(`耗時 ${duration}`, `took ${duration}`)}
             </span>
           )}
@@ -175,7 +197,7 @@ function JobCard({ job }: { job: JobView }) {
           </div>
         )}
 
-        <div className="d-flex flex-column gap-2">
+        <div className="d-flex flex-column gap-2.5">
           {job.ops.map((op, index) => {
             const copy = outcomeCopy(op.outcome);
             const isSuccess = copy.tone === "success";
@@ -183,43 +205,41 @@ function JobCard({ job }: { job: JobView }) {
             const isWarning = copy.tone === "warning";
             const sanitizedReason = cleanSchoolMessage(op.school_msg);
 
+            const outcomeBadgeClass = isSuccess
+              ? "studio-badge-success"
+              : isDanger
+                ? "studio-badge-danger"
+                : isWarning
+                  ? "studio-badge-warning"
+                  : "studio-badge-secondary";
+
             return (
               <div key={`${op.code}-${index}`} className="record-op-row">
                 <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
                   <div className="d-flex align-items-center gap-2.5 flex-wrap">
                     {op.action === "+" ? (
-                      <span className="badge bg-teal-100 text-teal-800 border border-teal-300 rounded-pill px-2.5 py-1 fw-bold">
+                      <span className="studio-badge studio-badge-add">
                         {tx("加選", "Add")}
                       </span>
                     ) : (
-                      <span className="badge bg-rose-100 text-rose-800 border border-rose-300 rounded-pill px-2.5 py-1 fw-bold">
+                      <span className="studio-badge studio-badge-drop">
                         {tx("退選", "Drop")}
                       </span>
                     )}
 
                     {op.priority !== null && (
-                      <span className="badge bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-pill px-2 py-1 font-monospace fw-bold" style={{ fontSize: "0.76rem" }}>
+                      <span className="studio-badge studio-badge-indigo font-monospace" style={{ fontSize: "0.76rem" }}>
                         {tx(`志願 ${op.priority}`, `P${op.priority}`)}
                       </span>
                     )}
 
-                    <span className="font-monospace fw-bold text-dark px-1" style={{ fontSize: "0.95rem" }}>
+                    <span className="font-monospace fw-bold text-dark px-1" style={{ fontSize: "0.98rem" }}>
                       {op.code}
                     </span>
                   </div>
 
                   <div className="d-flex align-items-center gap-1.5">
-                    <span
-                      className={`badge rounded-pill px-3 py-1.5 fw-bold ${
-                        isSuccess
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
-                          : isDanger
-                            ? "bg-rose-50 text-rose-700 border border-rose-300"
-                            : isWarning
-                              ? "bg-amber-50 text-amber-800 border border-amber-300"
-                              : "bg-slate-100 text-slate-700 border border-slate-300"
-                      }`}
-                    >
+                    <span className={`studio-badge ${outcomeBadgeClass}`}>
                       {copy.label}
                     </span>
                   </div>
@@ -228,10 +248,10 @@ function JobCard({ job }: { job: JobView }) {
                 {sanitizedReason !== "" && op.outcome !== "success" && (
                   <div className="record-reason-box">
                     <div className="d-flex align-items-start gap-2">
-                      <ExclamationCircleFill size={14} className="flex-shrink-0 mt-0.5 text-rose-600" />
+                      <ExclamationCircleFill size={15} className="flex-shrink-0 mt-0.5 text-rose-600" />
                       <div>
-                        <strong className="text-rose-900">{tx("學校回報原因：", "School rejection reason: ")}</strong>
-                        <span className="text-rose-800">{sanitizedReason}</span>
+                        <strong className="text-rose-950 me-1">{tx("學校回報原因：", "School rejection reason: ")}</strong>
+                        <span>{sanitizedReason}</span>
                       </div>
                     </div>
                   </div>
@@ -276,7 +296,7 @@ function RecordsPage() {
   const summary = useMemo(() => {
     if (!jobs || jobs.length === 0) return null;
     const totalJobs = jobs.length;
-    const successfulJobs = jobs.filter((j) => j.status === "done").length;
+    const successfulJobs = jobs.filter((j) => j.status === "done" && j.ops.every((op) => op.outcome === "success")).length;
     const lastJobTime = formatTimestamp(jobs[0]?.created_at ?? null);
     return { totalJobs, successfulJobs, lastJobTime };
   }, [jobs]);
