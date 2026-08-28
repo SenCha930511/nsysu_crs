@@ -81,7 +81,17 @@ class Harness:
         )
 
 
-def _make_harness(monkeypatch, script: SchoolScript, **settings_overrides) -> Harness:
+def _cookie_flags(set_cookie_header: str) -> list[str]:
+    return [part.strip() for part in set_cookie_header.split(";")]
+
+
+def _make_harness(
+    monkeypatch,
+    script: SchoolScript,
+    *,
+    base_url: str = "http://testserver",
+    **settings_overrides,
+) -> Harness:
     settings = Settings(app_secret="qa08-test-secret", **settings_overrides)
     app = create_app(settings)
     school = StubSchool(script)
@@ -93,7 +103,7 @@ def _make_harness(monkeypatch, script: SchoolScript, **settings_overrides) -> Ha
 
     monkeypatch.setattr("app.api.auth.login_sso2", school)
     monkeypatch.setattr("app.api.auth.record_successful_login", stub_record_successful_login)
-    client = TestClient(app)
+    client = TestClient(app, base_url=base_url)
     client.__enter__()
     harness = Harness(client=client, redis=FakeRedis(), school=school, db_logins=db_logins)
     client.app.state.redis = harness.redis
@@ -132,8 +142,12 @@ def test_login_success_issues_flagged_cookie_and_parks_selcrs_in_redis(harness_f
     # its set/rotate/flags semantics live in test_write_csrf.py.
     assert body["csrf_token"]
     cookie = response.headers["set-cookie"]
-    for flag in ("session_id=", "HttpOnly", "Secure", "SameSite=lax", "Path=/"):
+    # Transport rule (2026-08-28 Safari-over-http incident): `Secure` is
+    # emitted only on HTTPS transports; HttpOnly/SameSite=lax/Path hold on
+    # both. Default TestClient runs on http, so Secure must be absent here.
+    for flag in ("session_id=", "HttpOnly", "SameSite=lax", "Path=/"):
         assert flag in cookie, cookie
+    assert "Secure" not in _cookie_flags(cookie), cookie
     # adapter saw the RAW password exactly once, in memory only
     assert harness.school.calls == [("M153000024", TEST_PASSWORD)]
 
@@ -143,6 +157,32 @@ def test_login_success_issues_flagged_cookie_and_parks_selcrs_in_redis(harness_f
     assert harness.redis.remaining_ttl(f"selcrs_hard:{sid}") == 7200
     assert TEST_COOKIE_VALUE in (harness.redis.peek(f"selcrs:{sid}") or "")
     assert harness.db_logins == ["M153000024"]  # upsert + supersede ran
+
+
+def test_https_transport_pins_secure_on_login_and_logout_cookies(harness_factory):
+    harness = harness_factory(_succeed, base_url="https://testserver")
+    response = harness.login()
+    assert response.status_code == 200
+    for header in response.headers.get_list("set-cookie"):
+        assert "Secure" in _cookie_flags(header), header
+    sid = harness.session_id(response)
+
+    out = harness.client.post("/api/auth/logout", cookies={"session_id": sid})
+    assert out.status_code == 200
+    for header in out.headers.get_list("set-cookie"):
+        assert "Secure" in _cookie_flags(header), header
+
+
+def test_http_transport_omits_secure_but_keeps_httponly_lax_on_logout(harness_factory):
+    harness = harness_factory(_succeed)
+    sid = harness.session_id(harness.login())
+
+    out = harness.client.post("/api/auth/logout", cookies={"session_id": sid})
+    assert out.status_code == 200
+    for header in out.headers.get_list("set-cookie"):
+        flags = _cookie_flags(header)
+        assert "Secure" not in flags, header
+        assert "HttpOnly" in flags and "SameSite=lax" in flags, header
 
 
 def test_me_roundtrip_and_logout_clears_everything(harness_factory):

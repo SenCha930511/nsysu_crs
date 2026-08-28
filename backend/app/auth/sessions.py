@@ -1,8 +1,9 @@
 """Site sessions and the Redis-only selcrs credential store (plan todo 8).
 
-Site session: opaque random id in an httpOnly+Secure+SameSite=Lax cookie;
-the row lives as ``site_session:{session_id} -> student_no`` with a 7-day
-SLIDING TTL refreshed on every authenticated touch.
+Site session: opaque random id in an httpOnly+SameSite=Lax cookie (``Secure``
+only when served over HTTPS, see ``cookie_secure``); the row lives as
+``site_session:{session_id} -> student_no`` with a 7-day SLIDING TTL
+refreshed on every authenticated touch.
 
 selcrs store: the school's session jar is a credential and lives ONLY here:
 
@@ -20,12 +21,27 @@ paths stay available (a failed write raises; nothing here swallows it).
 import uuid
 from typing import Final
 
+from fastapi import Request
+
 from app.auth.redis_iface import AuthRedis
 
 #: Site session sliding TTL: 7 days, plan-pinned (not env-driven).
 SITE_SESSION_TTL_SECONDS: Final = 7 * 24 * 3600
 
 SESSION_COOKIE_NAME: Final = "session_id"
+
+
+def cookie_secure(request: Request) -> bool:
+    """Transport-derived ``Secure`` flag for session/CSRF cookies.
+
+    Emitted only when the request arrived over HTTPS. Declaring it flat-out
+    on plain HTTP breaks Safari/WebKit, which (strict RFC 6265 §4.1.2.5)
+    silently REFUSES to store a ``Secure`` cookie from ``http://localhost``;
+    Chromium grants a localhost exemption, which is how every Brave-driven
+    QA pass stayed green while Safari users looped login-200 → next-401 →
+    /login?reason=expired (app logs 2026-08-28 12:41:58/12:42:12).
+    """
+    return request.url.scheme == "https"
 
 
 def _site_key(session_id: str) -> str:

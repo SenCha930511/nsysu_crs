@@ -143,3 +143,12 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml run
 | `BREAKER_FAILURE_THRESHOLD` | `5` | Consecutive SelcrsUnavailable-class failures → breaker opens site-wide read-only. |
 | `BREAKER_RECOVERY_AFTER` | `300` | Wait (s) before half-open probing starts; coherent probe closes. |
 | `CATALOG_DB_DESTRUCTIVE` | unset | TEST-ONLY opt-in for full-table-wipe tests (see §8). Never set in any runtime env file. |
+
+**Cookie `Secure` derives from the transport (2026-08-28 Safari incident):** session/CSRF
+cookies emit `Secure` only when the request arrives over HTTPS. Safari/WebKit strictly
+refuses `Secure` cookies from `http://localhost` (Chromium grants a localhost
+exemption), and the old unconditional `Secure` looped Safari users login-200 → next-401
+→ `/login?reason=expired`. For a real HTTPS deployment later: Caddy already sends
+`X-Forwarded-Proto`, but uvicorn's CMD must also gain `--proxy-headers` so the scheme
+propagates — otherwise cookies stay non-Secure on real HTTPS (works, but softens the
+posture).

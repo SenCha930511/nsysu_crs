@@ -1,10 +1,11 @@
 """CSRF double-submit tests (plan todo 14; QA qa/14-csrf.log part).
 
-Cookie ``csrf_{session_id}`` (httpOnly+Secure+SameSite=Lax, TTL 900) minted
-at login and echoed in the body (the cookie is httpOnly by spec, so the SPA
-learns the value from that same-origin body channel); every /api/write/*
-call must repeat it as ``X-CSRF-Token`` else 403 csrf_failed; fresh login
-rotates; logout deletes; success re-sets it with a fresh 900s (sliding).
+Cookie ``csrf_{session_id}`` (httpOnly+SameSite=Lax, Secure on HTTPS
+transports, TTL 900) minted at login and echoed in the body (the cookie is
+httpOnly by spec, so the SPA learns the value from that same-origin body
+channel); every /api/write/* call must repeat it as ``X-CSRF-Token`` else
+403 csrf_failed; fresh login rotates; logout deletes; success re-sets it
+with a fresh 900s (sliding).
 """
 
 import json
@@ -72,10 +73,10 @@ class Rig:
         )
 
 
-def _make_rig(monkeypatch) -> Rig:
+def _make_rig(monkeypatch, base_url: str = "http://testserver") -> Rig:
     settings = Settings(app_secret="qa14-csrf-secret")
     app = create_app(settings)
-    rig = Rig(client=TestClient(app), redis=FakeRedis())
+    rig = Rig(client=TestClient(app, base_url=base_url), redis=FakeRedis())
 
     async def stub_record(factory, student_no: str) -> LoginDbResult:
         return LoginDbResult(student_id=uuid.uuid4(), superseded_jobs=0)
@@ -96,8 +97,8 @@ def _make_rig(monkeypatch) -> Rig:
 def rig_factory(monkeypatch):
     built: list[Rig] = []
 
-    def factory() -> Rig:
-        rig = _make_rig(monkeypatch)
+    def factory(base_url: str = "http://testserver") -> Rig:
+        rig = _make_rig(monkeypatch, base_url)
         built.append(rig)
         return rig
 
@@ -133,12 +134,28 @@ def test_login_sets_flagged_csrf_cookie_and_echoes_body_token(rig_factory):
     cookies = response.headers.get_list("set-cookie")
     sid = _session_id(cookies)
     cookie = _csrf_cookie(cookies, sid)
-    for flag in ("HttpOnly", "Secure", "SameSite=lax", "Max-Age=900", "Path=/"):
+    # Default rig is http transport: Secure must be absent (transport rule,
+    # 2026-08-28 Safari-over-http incident); the pinned variant below
+    # asserts its presence on https.
+    for flag in ("HttpOnly", "SameSite=lax", "Max-Age=900", "Path=/"):
         assert flag in cookie, cookie
+    assert "Secure" not in [part.strip() for part in cookie.split(";")], cookie
     # httpOnly by spec -> the SPA learns the value from the login body,
     # and the two MUST be the same opaque token.
     token = response.json()["csrf_token"]
     assert token and cookie.split("; ")[0] == f"{csrf_cookie_name(sid)}={token}"
+
+
+def test_login_sets_secure_flagged_csrf_cookie_on_https(rig_factory):
+    rig = rig_factory(base_url="https://testserver")
+    response = rig.login()
+    assert response.status_code == 200
+
+    cookies = response.headers.get_list("set-cookie")
+    sid = _session_id(cookies)
+    cookie = _csrf_cookie(cookies, sid)
+    for flag in ("HttpOnly", "Secure", "SameSite=lax", "Max-Age=900", "Path=/"):
+        assert flag in cookie, cookie
 
 
 def test_fresh_login_rotates_the_token(rig_factory):

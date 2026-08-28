@@ -2,10 +2,10 @@
 
 Contract (plan todo 14 References, verbatim):
 
-- Cookie ``csrf_{session_id}``, httpOnly + Secure + SameSite=Lax, TTL
-  CSRF_TOKEN_TTL (900s default), set at login and rotated on every fresh
-  login (a new site session means a new cookie NAME and a new random value);
-  removed at logout.
+- Cookie ``csrf_{session_id}``, httpOnly + SameSite=Lax (``Secure`` on HTTPS
+  transports), TTL CSRF_TOKEN_TTL (900s default), set at login and rotated
+  on every fresh login (a new site session means a new cookie NAME and a new
+  random value); removed at logout.
 - Every ``/api/write/*`` request must repeat the cookie's value in the
   ``X-CSRF-Token`` header; missing/mismatch -> flat 403 ``csrf_failed``.
 - Success re-sets the cookie with a fresh 900s TTL (sliding refresh - the
@@ -38,7 +38,7 @@ from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.auth.sessions import SESSION_COOKIE_NAME
+from app.auth.sessions import SESSION_COOKIE_NAME, cookie_secure
 
 CSRF_HEADER: Final = "X-CSRF-Token"
 ERR_CSRF: Final = "csrf_failed"
@@ -54,14 +54,21 @@ def mint_csrf_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def set_csrf_cookie(response: Response, session_id: str, token: str, *, ttl: int) -> None:
+def set_csrf_cookie(
+    response: Response,
+    session_id: str,
+    token: str,
+    *,
+    ttl: int,
+    secure: bool,
+) -> None:
     """The one place the CSRF cookie's flags are set (login/set + slide)."""
     response.set_cookie(
         csrf_cookie_name(session_id),
         token,
         path="/",
         max_age=ttl,
-        secure=True,
+        secure=secure,
         httponly=True,
         samesite="lax",
     )
@@ -98,5 +105,6 @@ class CsrfMiddleware(BaseHTTPMiddleware):
             session_id,
             expected,
             ttl=request.app.state.settings.csrf_token_ttl,
+            secure=cookie_secure(request),
         )
         return response

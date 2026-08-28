@@ -38,6 +38,7 @@ from app.auth.lockout import FailureLog, IpLimiter
 from app.auth.redis_iface import AuthRedis
 from app.auth.sessions import (
     SESSION_COOKIE_NAME,
+    cookie_secure,
     create_site_session,
     delete_site_session,
     store_selcrs,
@@ -156,11 +157,17 @@ async def post_login(
         SESSION_COOKIE_NAME,
         session_id,
         path="/",
-        secure=True,
+        secure=cookie_secure(request),
         httponly=True,
         samesite="lax",
     )
-    set_csrf_cookie(response, session_id, csrf_token, ttl=settings.csrf_token_ttl)
+    set_csrf_cookie(
+        response,
+        session_id,
+        csrf_token,
+        ttl=settings.csrf_token_ttl,
+        secure=cookie_secure(request),
+    )
     return response
 
 
@@ -172,14 +179,15 @@ async def post_logout(
     if session_id is not None:
         await delete_site_session(redis, session_id)
     response = JSONResponse(status_code=status.HTTP_200_OK, content={"ok": True})
+    secure = cookie_secure(request)
     response.delete_cookie(
-        SESSION_COOKIE_NAME, path="/", secure=True, httponly=True, samesite="lax"
+        SESSION_COOKIE_NAME, path="/", secure=secure, httponly=True, samesite="lax"
     )
     if session_id is not None:
         response.delete_cookie(
             csrf_cookie_name(session_id),
             path="/",
-            secure=True,
+            secure=secure,
             httponly=True,
             samesite="lax",
         )
