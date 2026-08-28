@@ -153,6 +153,18 @@ function HomePage() {
       .finally(() => setSyncing(false));
   }, [syncing, authed]);
 
+  // Auto-load on fresh login: when authed and no snapshot exists yet (fresh
+  // session => synced_at is null), pull the school truth once automatically.
+  // The ref blocks the React-strict-mode double-effect and repeat mounts.
+  const autoSyncedRef = useRef(false);
+  useEffect(() => {
+    if (!authed || loading || syncing || autoSyncedRef.current || syncedAt !== null) {
+      return;
+    }
+    autoSyncedRef.current = true;
+    onSync();
+  }, [authed, loading, syncing, syncedAt, onSync]);
+
   // ---- grid derivation ----
   const { courses: selectedCourses, unplaced } = useMemo(
     () => buildSelectionGridCourses(items),

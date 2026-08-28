@@ -102,8 +102,23 @@ function ScheduleTable({
         </div>
       )}
 
-      {/* Weekday toggle bar */}
-      <div className="d-flex justify-content-end mb-1 px-1">
+      {/* Top Bar: Category Legend & Weekday toggle */}
+      <div className="d-flex align-items-center justify-content-between mb-1.5 px-1 flex-wrap gap-2">
+        <div className="d-flex align-items-center gap-2.5" style={{ fontSize: "0.74rem" }}>
+          <span className="d-inline-flex align-items-center gap-1.5">
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#0284c7" }} />
+            <span className="text-secondary fw-semibold">必修</span>
+          </span>
+          <span className="d-inline-flex align-items-center gap-1.5">
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#16a34a" }} />
+            <span className="text-secondary fw-semibold">選修</span>
+          </span>
+          <span className="d-inline-flex align-items-center gap-1.5">
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#9333ea" }} />
+            <span className="text-secondary fw-semibold">通識/其他</span>
+          </span>
+        </div>
+
         <div className="schedule-view-toggler">
           <button
             type="button"

@@ -12,7 +12,7 @@ export type AuthStatus = "loading" | "authed" | "anon";
 export const LOGIN_REASON_REQUIRED = "required";
 export const LOGIN_REASON_EXPIRED = "expired";
 
-const PROTECTED_PREFIXES = ["/plans", "/selected", "/write"];
+const PROTECTED_PREFIXES = ["/plans", "/write"];
 
 export interface GuardDecision {
   allow: boolean;

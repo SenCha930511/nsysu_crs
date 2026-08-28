@@ -2,7 +2,11 @@ import { Trash3 } from "react-bootstrap-icons";
 
 import type { CourseOut } from "../lib/api";
 
+export type CourseCategory = "compulsory" | "elective" | "general" | "other";
+
 export interface CoursePalette {
+  category: CourseCategory;
+  categoryLabel: string;
   bg: string;
   border: string;
   text: string;
@@ -10,44 +14,84 @@ export interface CoursePalette {
   stripe: string;
 }
 
-export const COURSE_PALETTES: CoursePalette[] = [
-  // 1. Ocean Teal
-  { bg: "#f0fdfa", border: "#99f6e4", text: "#0f766e", roomText: "#115e59", stripe: "#0d9488" },
-  // 2. Sky Blue
-  { bg: "#f0f9ff", border: "#bae6fd", text: "#0369a1", roomText: "#0284c7", stripe: "#0284c7" },
-  // 3. Indigo
-  { bg: "#eef2ff", border: "#c7d2fe", text: "#4338ca", roomText: "#4f46e5", stripe: "#6366f1" },
-  // 4. Purple / Lavender
-  { bg: "#faf5ff", border: "#e9d5ff", text: "#6b21a8", roomText: "#7e22ce", stripe: "#9333ea" },
-  // 5. Emerald / Mint
-  { bg: "#ecfdf5", border: "#a7f3d0", text: "#047857", roomText: "#059669", stripe: "#10b981" },
-  // 6. Amber / Honey
-  { bg: "#fffbeb", border: "#fde68a", text: "#b45309", roomText: "#d97706", stripe: "#f59e0b" },
-  // 7. Rose / Berry
-  { bg: "#fff1f2", border: "#fecdd3", text: "#be123c", roomText: "#e11d48", stripe: "#f43f5e" },
-  // 8. Cyan / Aqua
-  { bg: "#ecfeff", border: "#a5f3fc", text: "#0e7490", roomText: "#0891b2", stripe: "#06b6d4" },
-  // 9. Coral / Sunset
-  { bg: "#fff7ed", border: "#fed7aa", text: "#c2410c", roomText: "#ea580c", stripe: "#ea580c" },
-  // 10. Fuchsia / Blossom
-  { bg: "#fdf4ff", border: "#f5d0fe", text: "#a21caf", roomText: "#c026d3", stripe: "#d946ef" },
-  // 11. Slate Blue
-  { bg: "#f8fafc", border: "#cbd5e1", text: "#334155", roomText: "#475569", stripe: "#64748b" },
-  // 12. Lime / Leaf
-  { bg: "#f7fee7", border: "#d9f99d", text: "#4d7c0f", roomText: "#65a30d", stripe: "#84cc16" },
-];
+export const CATEGORY_PALETTES: Record<CourseCategory, CoursePalette> = {
+  // 1. 必修 (Compulsory): Sky / Ocean Blue
+  compulsory: {
+    category: "compulsory",
+    categoryLabel: "必修",
+    bg: "#f0f9ff",
+    border: "#bae6fd",
+    text: "#0369a1",
+    roomText: "#0284c7",
+    stripe: "#0284c7",
+  },
+  // 2. 選修 (Elective): Fresh Mint / Emerald Green
+  elective: {
+    category: "elective",
+    categoryLabel: "選修",
+    bg: "#f0fdf4",
+    border: "#bbf7d0",
+    text: "#166534",
+    roomText: "#15803d",
+    stripe: "#16a34a",
+  },
+  // 3. 通識 / 共同 / EMI (General / Other): Lavender / Purple
+  general: {
+    category: "general",
+    categoryLabel: "通識",
+    bg: "#faf5ff",
+    border: "#e9d5ff",
+    text: "#6b21a8",
+    roomText: "#7e22ce",
+    stripe: "#9333ea",
+  },
+  // 4. 其他 (Other): Soft Warm Slate
+  other: {
+    category: "other",
+    categoryLabel: "其他",
+    bg: "#f8fafc",
+    border: "#cbd5e1",
+    text: "#334155",
+    roomText: "#475569",
+    stripe: "#64748b",
+  },
+};
 
-export function getCoursePalette(input: string): CoursePalette {
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    hash = input.charCodeAt(i) + ((hash << 5) - hash);
+export function getCourseCategory(course: CourseOut): CourseCategory {
+  const dept = course.dept ?? "";
+  const name = course.name_zh ?? "";
+  
+  if (
+    dept.includes("通識") ||
+    dept.includes("博雅") ||
+    name.includes("通識") ||
+    name.includes("體育") ||
+    name.includes("國文") ||
+    name.includes("英文") ||
+    name.includes("跨領域") ||
+    course.english === true
+  ) {
+    return "general";
   }
-  const index = Math.abs(hash) % COURSE_PALETTES.length;
-  return COURSE_PALETTES[index] ?? COURSE_PALETTES[0]!;
+  if (course.compulsory === true) {
+    return "compulsory";
+  }
+  if (course.compulsory === false) {
+    return "elective";
+  }
+  return "other";
 }
 
-export function hashLightColor(input: string): string {
-  return getCoursePalette(input).bg;
+export function getCoursePalette(courseOrInput: CourseOut | string): CoursePalette {
+  if (typeof courseOrInput === "object" && courseOrInput !== null) {
+    const cat = getCourseCategory(courseOrInput);
+    return CATEGORY_PALETTES[cat];
+  }
+  return CATEGORY_PALETTES.compulsory;
+}
+
+export function hashLightColor(_input: string): string {
+  return CATEGORY_PALETTES.compulsory.bg;
 }
 
 export interface CourseBlockProps {
@@ -73,7 +117,7 @@ function CourseBlock({
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  const palette = getCoursePalette(course.id + (course.name_zh ?? ""));
+  const palette = getCoursePalette(course);
   const lit = hovered && !readOnly;
 
   const style: React.CSSProperties = {
@@ -86,7 +130,12 @@ function CourseBlock({
       : "0 1px 3px rgba(0, 0, 0, 0.04)",
   };
 
-  const title = [course.name_zh, course.teacher, course.room]
+  const title = [
+    course.name_zh,
+    palette.categoryLabel,
+    course.teacher,
+    course.room,
+  ]
     .filter((part) => part !== null && part !== "")
     .join(" / ");
 

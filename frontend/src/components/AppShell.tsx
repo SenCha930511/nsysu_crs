@@ -1,5 +1,4 @@
 import {
-  BookmarkCheck,
   BoxArrowRight,
   CalendarWeek,
   Compass,
@@ -17,8 +16,7 @@ import { usePlansSync } from "../state/plansSync";
 const NAV_LINKS = [
   { to: "/", label: "查課・課表", icon: CalendarWeek, end: true },
   { to: "/plans", label: "方案實驗室", icon: Layers, end: false },
-  { to: "/selected", label: "已選狀態", icon: BookmarkCheck, end: false },
-  { to: "/write", label: "送單中心", icon: Send, end: false },
+  { to: "/write", label: "紀錄", icon: Send, end: false },
 ];
 
 function AppShell() {

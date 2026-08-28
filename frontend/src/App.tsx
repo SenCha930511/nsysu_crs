@@ -1,7 +1,7 @@
 /**
- * Routed app (todo 11/16/17): the todo-10 read-only core at "/", plus /login,
- * guarded /plans (multi-plan + 志願序), /selected (real selections),
- * /write (送單中心) and the public legal pages /privacy, /tos, /faq.
+ * Routed app: the unified console at "/" (browse+selections+write), /login,
+ * guarded /plans (multi-plan + 志願序), /write (送單紀錄) and the public
+ * legal pages /privacy, /tos, /faq.
  * Provider nesting: Router > Auth > Selection > PlansSync - plans sync
  * consumes both the auth status (boot/reset seams) and the selection seam
  * (hydrate silently, write back on change).
@@ -16,9 +16,8 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import PlansPage from "./pages/PlansPage";
 import PrivacyPage from "./pages/PrivacyPage";
-import SelectedPage from "./pages/SelectedPage";
+import RecordsPage from "./pages/RecordsPage";
 import TermsPage from "./pages/TermsPage";
-import WritePage from "./pages/WritePage";
 import { AuthProvider } from "./state/auth";
 import { PlansSyncProvider } from "./state/plansSync";
 import { SelectionProvider } from "./state/selection";
@@ -45,18 +44,10 @@ function App() {
                   }
                 />
                 <Route
-                  path="selected"
-                  element={
-                    <RequireAuth>
-                      <SelectedPage />
-                    </RequireAuth>
-                  }
-                />
-                <Route
                   path="write"
                   element={
                     <RequireAuth>
-                      <WritePage />
+                      <RecordsPage />
                     </RequireAuth>
                   }
                 />

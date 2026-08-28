@@ -198,12 +198,49 @@ async def load_job_for_owner(
     ).scalar_one_or_none()
 
 
+async def load_jobs_for_owner(
+    session: AsyncSession, student_id: uuid.UUID, *, limit: int
+) -> list[WriteJob]:
+    """Newest-first job rows for the records page (owner scope, stable ties)."""
+    return list(
+        (
+            await session.execute(
+                select(WriteJob)
+                .where(WriteJob.student_id == student_id)
+                .order_by(WriteJob.created_at.desc(), WriteJob.id.desc())
+                .limit(limit)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
 async def load_audits(session: AsyncSession, job_id: uuid.UUID) -> list[WriteAudit]:
     return list(
         (
             await session.execute(
                 select(WriteAudit)
                 .where(WriteAudit.job_id == job_id)
+                .order_by(WriteAudit.created_at, WriteAudit.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+
+async def load_audits_for_jobs(
+    session: AsyncSession, job_ids: list[uuid.UUID]
+) -> list[WriteAudit]:
+    """Audit rows for a batch of job ids (empty fast-path stays empty)."""
+    if not job_ids:
+        return []
+    return list(
+        (
+            await session.execute(
+                select(WriteAudit)
+                .where(WriteAudit.job_id.in_(job_ids))
                 .order_by(WriteAudit.created_at, WriteAudit.id)
             )
         )

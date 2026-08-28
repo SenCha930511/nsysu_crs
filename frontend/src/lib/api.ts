@@ -452,3 +452,13 @@ export function fetchWriteJob(
     ...(signal !== undefined ? { signal } : {}),
   });
 }
+
+export interface JobsListResponse {
+  jobs: JobView[];
+}
+
+export function fetchWriteJobs(csrfToken: string, limit = 30): Promise<JobView[]> {
+  return request<JobsListResponse>(`/api/write/jobs?limit=${limit}`, { csrfToken }).then(
+    (body) => body.jobs,
+  );
+}

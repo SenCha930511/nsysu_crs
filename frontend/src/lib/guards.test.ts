@@ -8,7 +8,7 @@ import {
 } from "./guards";
 
 describe("decideGuard", () => {
-  it.each(["/plans", "/selected", "/write"])(
+  it.each(["/plans", "/write"])(
     "redirects anonymous visitors of %s to /login?reason=required",
     (path) => {
       expect(decideGuard("anon", path)).toEqual({
@@ -23,7 +23,7 @@ describe("decideGuard", () => {
       allow: false,
       redirectTo: "/login?reason=expired",
     });
-    expect(decideGuard("anon", "/selected", true).redirectTo).toBe(
+    expect(decideGuard("anon", "/write", true).redirectTo).toBe(
       "/login?reason=expired",
     );
   });
@@ -33,7 +33,7 @@ describe("decideGuard", () => {
       allow: true,
       redirectTo: null,
     });
-    expect(decideGuard("authed", "/selected")).toEqual({
+    expect(decideGuard("authed", "/write")).toEqual({
       allow: true,
       redirectTo: null,
     });

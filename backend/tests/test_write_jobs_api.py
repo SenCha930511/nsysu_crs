@@ -212,6 +212,51 @@ def test_unknown_or_foreign_job_is_a_flat_404(harness):
     assert harness.get_job("not-a-uuid").status_code == 404
 
 
+def test_jobs_list_is_newest_first_and_owner_scoped(harness):
+    harness.login(ME)
+    older = _run(
+        lambda factory: _seed_terminal_job(
+            factory, student=ME, status="done", audits=[("ZZAAA111", "+", "success", None)]
+        )
+    )
+    newer = _run(
+        lambda factory: _seed_terminal_job(
+            factory, student=ME, status="failed", audits=[("ZZBBB222", "-", "failed", "x")]
+        )
+    )
+    foreign = _run(
+        lambda factory: _seed_terminal_job(
+            factory, student=FOREIGN, status="failed", audits=[("ZZCCC333", "-", "failed", "y")]
+        )
+    )
+
+    response = harness.client.get("/api/write/jobs", headers={"X-CSRF-Token": harness.csrf})
+    assert response.status_code == 200, response.text
+    ids = [job["job_id"] for job in response.json()["jobs"]]
+    assert ids[0] == newer and ids[1] == older  # newest first (desc)
+    assert foreign not in ids  # foreign records never leave their owner
+
+    mine = next(j for j in response.json()["jobs"] if j["job_id"] == newer)
+    assert mine["status"] == "failed"
+    assert mine["message"]  # terminal message rides the card
+    assert mine["ops"] == [
+        {"code": "ZZBBB222", "action": "-", "priority": None, "outcome": "failed", "school_msg": "x"}
+    ]
+
+
+def test_jobs_list_honours_limit_bound(harness):
+    harness.login(ME)
+    for _ in range(2):
+        _run(
+            lambda factory: _seed_terminal_job(
+                factory, student=ME, status="done", audits=[("ZZZZZ999", "+", "success", None)]
+            )
+        )
+    response = harness.client.get("/api/write/jobs?limit=1", headers={"X-CSRF-Token": harness.csrf})
+    assert response.status_code == 200
+    assert len(response.json()["jobs"]) == 1
+
+
 def test_owner_view_surfaces_audit_outcomes_in_canonical_order(harness):
     csrf = harness.login(ME)
     job_id = _run(

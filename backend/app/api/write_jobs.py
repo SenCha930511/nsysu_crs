@@ -13,13 +13,14 @@ dead/superseded or the reconcile query itself failed).
 import uuid
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_student, get_session
+from app.models.write import WriteAudit, WriteJob
 from app.write import jobs
 from app.write.outcomes import OUTCOME_UNKNOWN_RECONCILED
 
@@ -65,6 +66,71 @@ def _iso(moment: object) -> str:
     return iso() if callable(iso) else str(moment)
 
 
+def _compose_view(job: WriteJob, audits: list[WriteAudit]) -> JobView:
+    """Job row + per-op audit outcomes -> the UI-facing JobView (latest wins)."""
+    by_pair: dict[tuple[str, str], tuple[str, str | None]] = {}
+    for audit in audits:
+        # Latest pending->outcome row wins per (course, action).
+        by_pair[(audit.course_id, audit.action)] = (audit.outcome, audit.school_msg)
+    ops_out: list[JobOpOut] = []
+    for op in job.ops:
+        outcome, school_msg = by_pair.get(
+            (str(op.get("code")), str(op.get("action"))), (None, None)
+        )
+        priority = op.get("priority")
+        ops_out.append(
+            JobOpOut(
+                code=str(op.get("code")),
+                action=str(op.get("action")),
+                priority=priority if isinstance(priority, int) else None,
+                outcome=outcome,
+                school_msg=school_msg,
+            )
+        )
+    reconcile = (
+        _RECONCILE_MANUAL
+        if any(op.outcome == OUTCOME_UNKNOWN_RECONCILED for op in ops_out)
+        else None
+    )
+    return JobView(
+        job_id=str(job.id),
+        status=job.status,
+        created_at=_iso(job.created_at),
+        started_at=_iso(job.started_at) if job.started_at is not None else None,
+        finished_at=_iso(job.finished_at) if job.finished_at is not None else None,
+        ops=ops_out,
+        message=_STATUS_MESSAGES.get(job.status),
+        reconcile=reconcile,
+    )
+
+
+@router.get("/api/write/jobs", response_model=None)
+async def list_write_jobs(
+    student_no: Annotated[str, Depends(get_current_student)],
+    db: Annotated[AsyncSession, Depends(get_session)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 30,
+) -> JSONResponse:
+    """Newest-first owner-scoped job list (the records page)."""
+    student_id = await jobs.find_student_id(db, student_no)
+    rows = (
+        await jobs.load_jobs_for_owner(db, student_id, limit=limit)
+        if student_id is not None
+        else []
+    )
+    audits = await jobs.load_audits_for_jobs(db, [row.id for row in rows])
+    by_job: dict[uuid.UUID, list[WriteAudit]] = {}
+    for audit in audits:
+        by_job.setdefault(audit.job_id, []).append(audit)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "jobs": [
+                _compose_view(row, by_job.get(row.id, [])).model_dump() for row in rows
+            ]
+        },
+    )
+
+
 @router.get("/api/write/jobs/{job_id}", response_model=None)
 async def get_write_job(
     job_id: str,
@@ -89,41 +155,7 @@ async def get_write_job(
         )
 
     audits = await jobs.load_audits(db, job.id)
-    by_pair: dict[tuple[str, str], tuple[str, str | None]] = {}
-    for audit in audits:
-        # Latest pending->outcome row wins per (course, action); rows are
-        # ordered by created_at so a later write-back overwrites the pending.
-        by_pair[(audit.course_id, audit.action)] = (audit.outcome, audit.school_msg)
-    ops_out: list[JobOpOut] = []
-    for op in job.ops:
-        outcome, school_msg = by_pair.get(
-            (str(op.get("code")), str(op.get("action"))), (None, None)
-        )
-        priority = op.get("priority")
-        ops_out.append(
-            JobOpOut(
-                code=str(op.get("code")),
-                action=str(op.get("action")),
-                priority=priority if isinstance(priority, int) else None,
-                outcome=outcome,
-                school_msg=school_msg,
-            )
-        )
-    reconcile = (
-        _RECONCILE_MANUAL
-        if any(op.outcome == OUTCOME_UNKNOWN_RECONCILED for op in ops_out)
-        else None
-    )
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=JobView(
-            job_id=str(job.id),
-            status=job.status,
-            created_at=_iso(job.created_at),
-            started_at=_iso(job.started_at) if job.started_at is not None else None,
-            finished_at=_iso(job.finished_at) if job.finished_at is not None else None,
-            ops=ops_out,
-            message=_STATUS_MESSAGES.get(job.status),
-            reconcile=reconcile,
-        ).model_dump(),
+        content=_compose_view(job, audits).model_dump(),
     )
