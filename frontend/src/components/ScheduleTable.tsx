@@ -24,6 +24,9 @@ export interface ScheduleTableProps {
   hoveredCourseId: string | null;
   onCourseHover: (courseId: string | null) => void;
   onCourseRemove: (course: CourseOut) => void;
+  /** Static render (todo 12 export preview): blocks show no hover visuals
+   * and no delete buttons; hover/remove callbacks are never invoked. */
+  readOnly?: boolean;
 }
 
 interface GridModel {
@@ -66,6 +69,7 @@ function ScheduleTable({
   hoveredCourseId,
   onCourseHover,
   onCourseRemove,
+  readOnly = false,
 }: ScheduleTableProps) {
   const { cells, invalid } = useMemo(
     () => buildGrid(selectedCourses),
@@ -119,6 +123,7 @@ function ScheduleTable({
                         hovered={hoveredCourseId === course.id}
                         onHover={onCourseHover}
                         onRemove={onCourseRemove}
+                        readOnly={readOnly}
                       />
                     ))}
                   </td>

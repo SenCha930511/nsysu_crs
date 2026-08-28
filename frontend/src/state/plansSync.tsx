@@ -177,14 +177,18 @@ export function PlansSyncProvider({ children }: { children: ReactNode }) {
   const boot = useCallback(async () => {
     try {
       const plans = await fetchPlans();
-      dispatch({ type: "loaded", plans });
       const stored = readStoredActivePlan();
       const active =
         plans.find((p) => p.id === stored)?.id ??
         plans.find((p) => p.is_primary)?.id ??
         plans[0]?.id ??
         null;
+      dispatch({ type: "loaded", plans });
       if (active !== null) {
+        // "loaded" alone would re-pick the primary whenever the stored
+        // choice differs; activeSelected lands the reducer on the plan we
+        // actually hydrate, so sidebar + write-back + export all agree.
+        dispatch({ type: "activeSelected", planId: active });
         if (stored !== active) storeActivePlan(active);
         await hydratePlan(active, writeSeq.current);
       } else {

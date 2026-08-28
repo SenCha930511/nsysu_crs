@@ -16,6 +16,7 @@ dependencies = [
     "ddddocr==1.6.1",
     "beautifulsoup4>=4.15.0",
     "croniter>=6.2.4",
+    "icalendar>=6.0",
 ]
 
 [dependency-groups]

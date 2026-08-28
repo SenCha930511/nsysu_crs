@@ -1,4 +1,4 @@
-# DESIGN.md — NSYSU Course Wrapper frontend (todo 10 + 11 + 16 scope)
+# DESIGN.md — NSYSU Course Wrapper frontend (todo 10 + 11 + 12 + 16 scope)
 
 Read-only core UI: course browser + weekly timetable. This document is the
 token contract for the components under `src/`; later todos (11/12/16) extend
@@ -20,9 +20,10 @@ Bootstrap does not provide are CSS custom properties in `src/index.css`
 
 | Token | Value | Use |
 |---|---|---|
-| `--crs-brand` | `#009e96` | Header bar, hover accent (grid blocks, row hover rail) — from upstream `WEBSITE_COLOR.mainColor` |
+| `--crs-brand` | `#009e96` | Header bar, hover accent (grid blocks, row hover rail), form focus border, `.btn-brand` fill — from upstream `WEBSITE_COLOR.mainColor` |
+| `--crs-brand-dark` | `#00877f` | `.btn-brand` hover/active fill (todo 12 review fix) |
 | `--crs-brand-light` | `#b2e2df` | Delete button on course blocks, header subtitle |
-| `--crs-brand-glow` | `rgba(0,158,150,.25)` | Hover glow ring on course blocks |
+| `--crs-brand-glow` | `rgba(0,158,150,.25)` | Hover glow ring on course blocks; form focus ring (todo 12 review fix) |
 | `--crs-weekend-bg` | `#e9ebef` | Weekend grid columns |
 | `--crs-conflict-bg` | `var(--bs-warning-bg-subtle)` | Conflict-tinted list rows |
 | `--crs-row-hover-bg` | `#f3f8f8` | Hovered list row background |
@@ -152,3 +153,41 @@ Bootstrap tokens for everything else: spacing (`g-2`, `mb-1`, `py-*`),
 - **One new CSS custom property** (`--crs-modal-backdrop`); everything else
   traces to existing `--crs-*`, reuse of `.priority-input`, or Bootstrap 5
   table/alert/badge variants.
+
+## 8. Todo 12 additions (export surfaces)
+
+- **Export buttons** — plain Bootstrap `btn btn-sm btn-outline-primary` with
+  the `Download` react-bootstrap-icons icon and a Chinese label
+  （下載 ICS / 下載課表 PNG）; the per-plan ICS affordance in the plans
+  sidebar is a `btn-outline-secondary`「ICS」chip sitting in the existing
+  改名/刪除 button group. No new tokens, no custom button styling.
+- **Export preview card (/plans)** — a `card mt-3` under the priority
+  editor titled 「<plan>」課表預覽・匯出， body renders the exact grid being
+  exported via **ScheduleTable `readOnly`** (blocks keep their deterministic
+  hash colors; hover accent and delete buttons are suppressed). The preview
+  and the ICS document encode the same course set (known catalog courses
+  with non-empty class_time only) — what you see is what you download.
+- **Export errors** — inline `alert alert-warning py-1 px-2 small` bars
+  inside the card / above the home grid, carrying friendly Chinese copy
+  (empty-grid guard, server 409 detail-object codes). Export failure never
+  produces a file.
+- **No new CSS custom properties**; PNG capture wraps the existing grid in a
+  plain ref div with a white background set at capture time.
+
+## 9. Todo 12 design-review fixes (gemma-4 critique adjudicated)
+
+- **Mobile header wrap** (H fix) — below the `md` breakpoint the single flex
+  row collapsed into character-per-line CJK stacking. The header now wraps:
+  brand + auth corner on row 1 (`white-space: nowrap`), the pill nav on a
+  horizontally scrollable row 2 (`overflow-x: auto`, hidden scrollbar, links
+  `flex: none`). Deliberately no hamburger JS — all four destinations stay
+  visible and reachable in one tap.
+- **Brand form chrome** (M fix) — form controls' `:focus` state now uses
+  `--crs-brand` border + `--crs-brand-glow` ring instead of Bootstrap default
+  blue; the login submit is `.btn-brand` (teal fill on `--crs-brand`, darker
+  `--crs-brand-dark` hover). **One new token** (`--crs-brand-dark`).
+- Critique items rejected after pixel verification: "mobile quota badges
+  broken" (they render as a neat 2-col set), "preview table clipped on
+  mobile" (the existing `.table-responsive` already handles it), "home
+  gutter loose" (`row g-3` was in place), "priority-input gap" (matches the
+  row vocabulary everywhere else).

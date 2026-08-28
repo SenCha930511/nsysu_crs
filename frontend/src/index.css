@@ -8,6 +8,7 @@
 
 :root {
   --crs-brand: #009e96;
+  --crs-brand-dark: #00877f;
   --crs-brand-light: #b2e2df;
   --crs-brand-glow: rgba(0, 158, 150, 0.25);
   --crs-weekend-bg: #e9ebef;
@@ -26,6 +27,39 @@ body {
   gap: 0.75rem;
   padding: 0.6rem 1rem;
   background-color: var(--crs-brand);
+}
+
+/* Mobile (design-review H fix): the single-row flex header squeezed every
+ * CJK string character-per-line on narrow screens. Two rows instead:
+ * brand + auth corner on row 1 (both kept unwrapped), the pill nav on a
+ * horizontally scrollable row 2 - no hamburger JS, all affordances visible. */
+@media (max-width: 767.98px) {
+  .app-header {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.35rem;
+    column-gap: 0.6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .app-header h1 {
+    font-size: 1.05rem;
+    white-space: nowrap;
+  }
+  .app-nav {
+    order: 3;
+    flex-basis: 100%;
+    margin-left: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .app-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .app-nav-link {
+    flex: none;
+    white-space: nowrap;
+  }
 }
 
 .app-header-sub {
@@ -210,6 +244,33 @@ body {
 
 .login-card {
   box-shadow: var(--bs-box-shadow-sm);
+}
+
+/* Brand-consistent form chrome (design-review M fix): Bootstrap's default
+ * blue focus ring / primary CTA clashed with the teal brand surface; the
+ * focus ring now reuses the existing brand accent/hover glow tokens. */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--crs-brand);
+  box-shadow: 0 0 0 0.25rem var(--crs-brand-glow);
+}
+
+.btn-brand {
+  background-color: var(--crs-brand);
+  border-color: var(--crs-brand);
+  color: #fff;
+}
+
+.btn-brand:hover,
+.btn-brand:focus,
+.btn-brand:active {
+  background-color: var(--crs-brand-dark);
+  border-color: var(--crs-brand-dark);
+  color: #fff;
+}
+
+.btn-brand:focus-visible {
+  box-shadow: 0 0 0 0.25rem var(--crs-brand-glow);
 }
 
 /* ---- Plans page ---- */

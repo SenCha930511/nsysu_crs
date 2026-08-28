@@ -1,0 +1,6 @@
+# qa/12-empty.log - empty plan -> friendly 409 JSON, never an empty/corrupt file
+# stack: live compose (Caddy http://localhost), plan 空白課表QA (0 items)
+# date: 2026-08-28 08:15:00 CST
+{"detail":{"code":"plan_empty_no_events","message":"此課表沒有可匯出的課程時間（尚無課程，或課程皆無上課時段資料）。"}}
+HTTP 409 | content-type=application/json | size=151 bytes
+# assertion: HTTP 409 + application/json detail.code=plan_empty_no_events, no file written

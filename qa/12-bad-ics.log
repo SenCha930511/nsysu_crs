@@ -1,0 +1,25 @@
+# qa/12-bad-ics.log - unknown period code -> explicit loud failure (never silent skip)
+# date: 2026-08-28 08:26 CST
+
+# PART A - LIVE stack: course QAEXPBAD class_time=["1Z",...], plan 壞時間QA
+## curl -b session_id http://localhost/api/plans/<bad-plan>/export.ics
+{"detail":{"code":"bad_period_code","message":"課程「壞時間課QA（QAEXPBAD）」的時間資料含有不支援的節次代碼（週1 '1Z'），無法匯出 ICS。","course":"壞時間課QA（QAEXPBAD）","day_index":0,"slot":"1Z"}}
+HTTP 409 | content-type=application/json
+# assertion: HTTP 409 + detail.code=bad_period_code naming course/day/slot; NO file; 1Z NOT silently skipped
+
+# PART B - backend pytest: builder raises IcsBuildError; API returns 409
+## DATABASE_URL=... uv run pytest tests/test_ics_export.py -v -k "loudly or unknown_period_code"
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 12 items / 10 deselected / 2 selected
+
+tests/test_ics_export.py ..                                              [100%]
+
+tests/test_ics_export.py::test_export_unknown_period_code_is_friendly_409
+tests/test_ics_export.py::test_export_unknown_period_code_is_friendly_409
+tests/test_ics_export.py::test_export_unknown_period_code_is_friendly_409
+
+================= 2 passed, 10 deselected, 3 warnings in 0.45s =================

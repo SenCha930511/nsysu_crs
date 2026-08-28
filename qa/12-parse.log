@@ -1,0 +1,30 @@
+# qa/12-parse.log - todo 12 ICS parse + assertions
+# PART 1: parse of qa/12-ics.ics (REAL file from the live compose stack via Caddy,
+#         seeded plan 匯出QA測試: QAEXP001 Mon12+Wed34, QAEXP002 Wed56+SatE;
+#         SEMESTER 1151 = 2026-09-01..2027-01-16, TZ Asia/Taipei)
+# date: 2026-08-28 08:20 CST
+[OK] CRLF line endings only, all lines <= 75 octets
+[OK] VTIMEZONE present: Asia/Taipei, STANDARD only, +08:00, no DST rules
+[OK] event count == Σ(per-course weekday blocks) == 4 (got 4)
+[OK] all DTSTART/DTEND carry TZID=Asia/Taipei
+[OK] all RRULE UNTIL values are UTC DATE-TIME (20270116T155959Z)
+[OK] all DTSTAMPs are the deterministic 20260831T160000Z (never now)
+[OK] all UIDs are sha1(40 hex)@nsysu-course-wrapper
+[OK] UIDs distinct per (course, weekday, period-block); SUMMARY=name（teacher）; LOCATION=room
+[OK] two live generations byte-identical (cmp clean)
+ALL LIVE-PARSE ASSERTIONS PASSED
+
+# PART 2: backend pytest suite (tests/test_ics_export.py, REAL compose Postgres)
+## DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nsysu_crs uv run pytest tests/test_ics_export.py -v
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/timmy/Code/nsysu_crs/backend
+configfile: pyproject.toml
+plugins: anyio-4.14.2
+collected 12 items
+
+tests/test_ics_export.py ............                                    [100%]
+
+tests/test_ics_export.py: 15 warnings
+
+======================= 12 passed, 15 warnings in 0.74s ========================

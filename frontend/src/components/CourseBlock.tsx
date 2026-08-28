@@ -35,21 +35,31 @@ export interface CourseBlockProps {
   hovered: boolean;
   onHover: (courseId: string | null) => void;
   onRemove: (course: CourseOut) => void;
+  /** Static preview mode (todo 12 export card): no hover effects, no delete
+   * button - the block is a pure visual rendering of the course. */
+  readOnly?: boolean;
 }
 
-function CourseBlock({ course, hovered, onHover, onRemove }: CourseBlockProps) {
+function CourseBlock({
+  course,
+  hovered,
+  onHover,
+  onRemove,
+  readOnly = false,
+}: CourseBlockProps) {
   const name = course.name_zh ?? course.name_en ?? course.code ?? course.id;
   const roomLines = (course.room ?? "")
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
+  const lit = hovered && !readOnly;
   const style = {
-    backgroundColor: hovered
+    backgroundColor: lit
       ? "var(--crs-brand)"
       : hashLightColor(course.id + (course.name_zh ?? "")),
-    color: hovered ? "#fff" : "initial",
-    boxShadow: hovered ? "0 0 0 0.25rem var(--crs-brand-glow)" : "none",
+    color: lit ? "#fff" : "initial",
+    boxShadow: lit ? "0 0 0 0.25rem var(--crs-brand-glow)" : "none",
   };
 
   const title = [course.name_zh, course.teacher, course.room]
@@ -61,8 +71,12 @@ function CourseBlock({ course, hovered, onHover, onRemove }: CourseBlockProps) {
       className="course-block"
       style={style}
       title={title}
-      onMouseEnter={() => onHover(course.id)}
-      onMouseLeave={() => onHover(null)}
+      {...(readOnly
+        ? {}
+        : {
+            onMouseEnter: () => onHover(course.id),
+            onMouseLeave: () => onHover(null),
+          })}
     >
       <span className="d-block fw-bold">{name}</span>
       {roomLines.map((room, index) => (
@@ -70,17 +84,19 @@ function CourseBlock({ course, hovered, onHover, onRemove }: CourseBlockProps) {
           {room}
         </span>
       ))}
-      <button
-        type="button"
-        className="course-block-delete"
-        aria-label={`移除 ${name}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          onRemove(course);
-        }}
-      >
-        <Trash3 size={9} />
-      </button>
+      {!readOnly && (
+        <button
+          type="button"
+          className="course-block-delete"
+          aria-label={`移除 ${name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRemove(course);
+          }}
+        >
+          <Trash3 size={9} />
+        </button>
+      )}
     </div>
   );
 }

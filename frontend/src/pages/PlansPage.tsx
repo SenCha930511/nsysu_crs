@@ -9,7 +9,7 @@
  * All edits autosave (replace-all PUT) via the plans-sync provider.
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import {
   DndContext,
@@ -28,8 +28,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Star, StarFill, Trash3 } from "react-bootstrap-icons";
+import { Download, GripVertical, Star, StarFill, Trash3 } from "react-bootstrap-icons";
 
+import type { CourseOut } from "../lib/api";
+import { ApiError } from "../lib/api";
+import { downloadGridPng, downloadPlanIcs, icsErrorMessage } from "../lib/export";
+import ScheduleTable from "../components/ScheduleTable";
 import type { PlanListItem, PlansSyncContextValue } from "../state/plansSync";
 import { usePlansSync } from "../state/plansSync";
 import { useSelection } from "../state/selection";
@@ -104,6 +108,20 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [icsBusyId, setIcsBusyId] = useState<string | null>(null);
+
+  const onIcs = (planId: string) => {
+    if (icsBusyId !== null) return;
+    setIcsBusyId(planId);
+    setActionError(null);
+    downloadPlanIcs(planId)
+      .catch((err: unknown) =>
+        setActionError(
+          err instanceof ApiError ? icsErrorMessage(err) : String(err),
+        ),
+      )
+      .finally(() => setIcsBusyId(null));
+  };
 
   const onCreate = (event: FormEvent) => {
     event.preventDefault();
@@ -223,6 +241,15 @@ function PlanListSidebar({ sync }: { sync: PlansSyncContextValue }) {
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary"
+                    title="下載 ICS（匯入 Google 日曆等）"
+                    disabled={icsBusyId !== null}
+                    onClick={() => onIcs(plan.id)}
+                  >
+                    {icsBusyId === plan.id ? "…" : "ICS"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
                     onClick={() => {
                       setRenamingId(plan.id);
                       setRenameValue(plan.name);
@@ -336,6 +363,123 @@ function ActivePlanEditor({ sync }: { sync: PlansSyncContextValue }) {
   );
 }
 
+/**
+ * 課表預覽・匯出 (todo 12): a read-only rendering of the ACTIVE plan's grid
+ * (exactly the courses that carry time data - the same visual the ICS
+ * document encodes) plus the two export affordances:
+ *  - 下載 ICS: server-built RFC5545 file for the active plan (409 detail
+ *    codes phrased via icsErrorMessage; empty plan -> friendly inline copy,
+ *    never a corrupt download).
+ *  - 下載 PNG: html-to-image capture of this preview grid at 2x; the
+ *    empty-grid guard shows the friendly EmptyGridExportError copy instead
+ *    of producing a blank file.
+ */
+function PlanExportCard({ sync }: { sync: PlansSyncContextValue }) {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"ics" | "png" | null>(null);
+
+  const activePlan =
+    sync.plans.find((p) => p.id === sync.activePlanId) ?? null;
+  const visualCourses: CourseOut[] = sync.orderedItems
+    .map((item) => item.course)
+    .filter(
+      (course): course is CourseOut =>
+        course !== null &&
+        course.class_time !== null &&
+        course.class_time.some((slot) => slot !== ""),
+    );
+
+  const onIcs = () => {
+    if (activePlan === null || busy !== null) return;
+    setBusy("ics");
+    setExportError(null);
+    downloadPlanIcs(activePlan.id)
+      .catch((err: unknown) =>
+        setExportError(
+          err instanceof ApiError ? icsErrorMessage(err) : String(err),
+        ),
+      )
+      .finally(() => setBusy(null));
+  };
+
+  const onPng = () => {
+    const node = gridRef.current;
+    if (activePlan === null || busy !== null) return;
+    setExportError(null);
+    if (node === null || visualCourses.length === 0) {
+      setExportError("課表是空的——先去「查課·課表」加入有時段的課程，再下載 PNG。");
+      return;
+    }
+    setBusy("png");
+    downloadGridPng(node, activePlan.name, visualCourses.length)
+      .catch((err: unknown) =>
+        setExportError(err instanceof Error ? err.message : String(err)),
+      )
+      .finally(() => setBusy(null));
+  };
+
+  return (
+    <div className="card mt-3">
+      <div className="card-body">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <h2 className="h6 fw-bold mb-0">
+            {activePlan !== null
+              ? `「${activePlan.name}」課表預覽・匯出`
+              : "課表預覽・匯出"}
+          </h2>
+          {activePlan !== null && (
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                disabled={busy !== null}
+                onClick={onIcs}
+              >
+                <Download className="me-1" aria-hidden />
+                {busy === "ics" ? "匯出中…" : "下載 ICS"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                disabled={busy !== null}
+                onClick={onPng}
+              >
+                <Download className="me-1" aria-hidden />
+                {busy === "png" ? "匯出中…" : "下載課表 PNG"}
+              </button>
+            </div>
+          )}
+        </div>
+        {exportError !== null && (
+          <div className="alert alert-warning py-1 px-2 small mt-2 mb-0" role="alert">
+            {exportError}
+          </div>
+        )}
+        {activePlan === null ? (
+          <p className="text-muted small mt-2 mb-0">
+            先在左側建立或選擇一組課表。
+          </p>
+        ) : visualCourses.length === 0 ? (
+          <p className="text-muted small mt-2 mb-0">
+            此課表沒有帶上課時段的課程——匯出的課表圖與 ICS 需要至少一門有時段的課。
+          </p>
+        ) : (
+          <div ref={gridRef} className="mt-2" data-testid="plan-export-grid">
+            <ScheduleTable
+              selectedCourses={visualCourses}
+              hoveredCourseId={null}
+              onCourseHover={() => undefined}
+              onCourseRemove={() => undefined}
+              readOnly
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PlansPage() {
   const sync = usePlansSync();
   return (
@@ -345,6 +489,7 @@ function PlansPage() {
       </div>
       <div className="col-12 col-lg-8">
         <ActivePlanEditor sync={sync} />
+        <PlanExportCard sync={sync} />
       </div>
     </div>
   );

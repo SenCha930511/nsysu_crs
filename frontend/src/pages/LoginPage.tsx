@@ -128,7 +128,7 @@ function LoginPage() {
               </div>
               <button
                 type="submit"
-                className="btn btn-primary w-100"
+                className="btn btn-brand w-100"
                 disabled={pending}
               >
                 {pending ? "登入中…" : "登入"}

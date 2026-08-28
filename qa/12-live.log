@@ -1,0 +1,51 @@
+# qa/12-live.log - todo 12 live QA: real compose stack through Caddy (http://localhost)
+# flow: injected seeded QA session (synthetic QA12SEED01, no real credentials anywhere,
+#       session id never logged) -> /plans create plan with 2 courses via UI ->
+#       download ICS (content-type + first lines + event math) + 下載課表 PNG
+#       (size>0 + IHDR dims + filename rule) -> delete plan -> clean
+# driver: /tmp/qa12/live_export.mjs (playwright-core 1.62.1 from npx cache; system
+#         Brave headless; throwaway, not committed); frontend rebuilt into caddy first
+# date: 2026-08-28 08:45 CST
+
+[OK] step 0: no stale QA12驗證課表 plans remain
+[OK] step 1: plan created through UI
+[OK] step 1b: plan explicitly selected (export card targets it)
+       PUT http://localhost/api/plans/182f91d7-9950-4153-8ba3-b65f3b752c19/items body={"items":[{"course_id":"fb7af013-91e1-47fb-9d0b-684cc9f65c23","priority":null}]}
+       PUT http://localhost/api/plans/182f91d7-9950-4153-8ba3-b65f3b752c19/items body={"items":[{"course_id":"fb7af013-91e1-47fb-9d0b-684cc9f65c23","priority":null},{"course_id":"e1a6f053-3553-4c4b-aa49-ff8
+[OK] step 2: 2 courses added; autosave PUT observed on each
+[OK] step 2: server confirms 2 items (priorities ,)
+       plan 匯出QA測試 -> 2 items
+       plan 空白課表QA -> 0 items
+       plan QA12驗證課表 -> 2 items
+[OK] step 3: export preview grid rendered for the selected plan
+[OK] step 4: ICS downloaded via UI button :: nsysu-crs-QA12驗證課表.ics
+[OK] step 4: ICS content-type :: text/calendar; charset=utf-8
+[OK] step 4: ICS first lines ::
+       BEGIN:VCALENDAR
+       VERSION:2.0
+       PRODID:-//nsysu-course-wrapper//NSYSU Course Wrapper//ZH-TW
+       CALSCALE:GREGORIAN
+       METHOD:PUBLISH
+       X-WR-CALNAME:NSYSU 課表 - QA12驗證課表
+[OK] step 4: VEVENT count == 4 == Σ(per-course weekday blocks)
+[OK] step 4: VTIMEZONE present
+[OK] step 4: RRULE UNTIL=20270116T155959Z (UTC)
+[OK] step 4: UI download is byte-identical to the API response
+[OK] step 5: PNG downloaded :: nsysu-crs-QA12驗證課表-20260828.png size=179781B dims=1798x1602
+[OK] step 5: filename carries plan name + yyyymmdd date
+[OK] step 5: size well above blank-file floor (colored 2x grid)
+[OK] step 6: QA plan deleted via UI; seeded plans left intact
+[warn] console.error: Failed to load resource: the server responded with a status of 500 (Internal Server Error)
+LIVE QA PASSED
+
+# NOTE on the single [warn] 500: one transient GET /api/catalog/meta 500 appeared in the
+# app log mid-flow (asyncpg InterfaceError "connection is closed" on a recycled idle pool
+# connection after Postgres had been recreated during QA setup); every subsequent request,
+# including all export paths, returned 2xx. Pre-existing pool behavior with no
+# pool_pre_ping - belongs to todo 17 ops hardening (out of scope for todo 12); all
+# export requests in this log were served 200 after that event.
+
+# stealth check: no session_id value, no student_no, no password in this log (gawk):
+session id occurrences: 0
+student no occurrences: 0
+password mentions: 0
