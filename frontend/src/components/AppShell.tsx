@@ -1,7 +1,6 @@
 import {
   BoxArrowRight,
   CalendarWeek,
-  Compass,
   Github,
   Layers,
   PersonCircle,
@@ -39,8 +38,8 @@ function AppShell() {
           {/* Brand & Semester */}
           <div className="d-flex align-items-center gap-2">
             <NavLink to="/" className="brand-badge-logo">
-              <div className="brand-icon-box">
-                <Compass size={16} />
+              <div className="brand-icon-box p-0 overflow-hidden">
+                <img src="/logo.png" alt="中山選課 Studio logo" className="brand-logo-img" />
               </div>
               <span className="d-none d-sm-inline">中山選課 Studio</span>
               <span className="d-sm-none">選課 Studio</span>
@@ -68,7 +67,7 @@ function AppShell() {
                     `studio-nav-link${isActive ? " studio-nav-link-active" : ""}`
                   }
                 >
-                  <Icon size={14} />
+                  <Icon size={16} />
                   <span>{link.label}</span>
                 </NavLink>
               );

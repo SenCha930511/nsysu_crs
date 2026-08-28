@@ -202,6 +202,14 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
 }
 
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  display: block;
+}
+
 .semester-pill {
   font-size: 0.7rem;
   font-weight: 700;
@@ -232,7 +240,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 0.35rem;
   padding: 0.32rem 0.75rem;
   border-radius: var(--radius-full);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--studio-text-secondary);
   text-decoration: none;
@@ -1252,7 +1260,7 @@ h1, h2, h3, h4, h5, h6 {
   }
   .studio-nav-link {
     padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+    font-size: 0.9rem;
   }
   .floating-stats-dock {
     position: fixed;
