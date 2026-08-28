@@ -178,7 +178,7 @@ function JobCard({ job }: { job: JobView }) {
               {dropCount > 0 && <span>−{dropCount} {tx("退選", "drop")}</span>}
             </span>
           )}
-          <div className="d-flex align-items-center gap-1.5 text-slate-600">
+          <div className="d-flex align-items-center text-slate-600" style={{ gap: "0.45rem" }}>
             <Clock size={13} className="text-slate-400" />
             <span className="fw-semibold font-monospace">{formatTimestamp(job.created_at)}</span>
           </div>
@@ -197,7 +197,7 @@ function JobCard({ job }: { job: JobView }) {
           </div>
         )}
 
-        <div className="d-flex flex-column gap-2.5">
+        <div className="d-flex flex-column" style={{ gap: "0.75rem" }}>
           {job.ops.map((op, index) => {
             const copy = outcomeCopy(op.outcome);
             const isSuccess = copy.tone === "success";
@@ -215,8 +215,8 @@ function JobCard({ job }: { job: JobView }) {
 
             return (
               <div key={`${op.code}-${index}`} className="record-op-row">
-                <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
-                  <div className="d-flex align-items-center gap-2.5 flex-wrap">
+                <div className="d-flex align-items-center justify-content-between flex-wrap w-100" style={{ gap: "0.75rem" }}>
+                  <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
                     {op.action === "+" ? (
                       <span className="studio-badge studio-badge-add">
                         {tx("加選", "Add")}
@@ -228,17 +228,17 @@ function JobCard({ job }: { job: JobView }) {
                     )}
 
                     {op.priority !== null && (
-                      <span className="studio-badge studio-badge-indigo font-monospace" style={{ fontSize: "0.76rem" }}>
+                      <span className="studio-badge studio-badge-indigo font-monospace" style={{ fontSize: "0.78rem" }}>
                         {tx(`志願 ${op.priority}`, `P${op.priority}`)}
                       </span>
                     )}
 
-                    <span className="font-monospace fw-bold text-dark px-1" style={{ fontSize: "0.98rem" }}>
+                    <span className="font-monospace fw-bold text-dark" style={{ fontSize: "1rem", letterSpacing: "0.02em" }}>
                       {op.code}
                     </span>
                   </div>
 
-                  <div className="d-flex align-items-center gap-1.5">
+                  <div className="d-flex align-items-center" style={{ gap: "0.5rem" }}>
                     <span className={`studio-badge ${outcomeBadgeClass}`}>
                       {copy.label}
                     </span>
@@ -316,15 +316,15 @@ function RecordsPage() {
     <div className="py-3" style={{ maxWidth: "1080px", margin: "0 auto" }}>
       {/* Hero Header Card */}
       <div className="records-hero-card">
-        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div className="d-flex align-items-center justify-content-between flex-wrap" style={{ gap: "1.25rem" }}>
           <div>
-            <h1 className="h4 fw-bold mb-1.5 text-dark d-flex align-items-center gap-2.5">
-              <div className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center">
+            <h1 className="h4 fw-bold mb-2 text-dark d-flex align-items-center" style={{ gap: "0.85rem" }}>
+              <div className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center" style={{ width: "42px", height: "42px" }}>
                 <ClockHistory size={22} />
               </div>
               <span>{tx("送單紀錄", "Submission History")}</span>
             </h1>
-            <p className="text-muted mb-0" style={{ fontSize: "0.88rem" }}>
+            <p className="text-muted mb-0" style={{ fontSize: "0.9rem", lineHeight: 1.6 }}>
               {tx(
                 "檢視您所有選課志願單的送出歷程、執行狀態與校方系統回傳結果。",
                 "Review your submitted batch histories, execution status, and verbatim school responses.",
@@ -332,32 +332,32 @@ function RecordsPage() {
             </p>
           </div>
 
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center" style={{ gap: "0.75rem" }}>
             <button
               type="button"
-              className="btn btn-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5 shadow-sm fw-semibold"
-              style={{ fontSize: "0.88rem" }}
+              className="btn btn-brand rounded-pill px-4 py-2 d-inline-flex align-items-center shadow-sm fw-semibold"
+              style={{ fontSize: "0.88rem", gap: "0.6rem" }}
               onClick={load}
               disabled={loading}
             >
-              <ArrowRepeat size={14} className={loading ? "spin" : ""} />
+              <ArrowRepeat size={15} className={loading ? "spin" : ""} />
               <span>{loading ? tx("更新中…", "Refreshing…") : tx("更新紀錄", "Refresh")}</span>
             </button>
           </div>
         </div>
 
         {summary !== null && (
-          <div className="d-flex align-items-center flex-wrap gap-2.5 mt-3 pt-3 border-top">
+          <div className="d-flex align-items-center flex-wrap mt-4 pt-3.5 border-top" style={{ gap: "0.85rem" }}>
             <div className="record-stat-chip">
-              <SendCheck size={14} className="text-teal-600" />
+              <SendCheck size={15} className="text-teal-600" />
               <span>{tx(`總送單 ${summary.totalJobs} 批次`, `Total ${summary.totalJobs} batches`)}</span>
             </div>
             <div className="record-stat-chip">
-              <CheckCircleFill size={14} className="text-emerald-600" />
+              <CheckCircleFill size={15} className="text-emerald-600" />
               <span>{tx(`完全成功 ${summary.successfulJobs} 批次`, `Finished ${summary.successfulJobs} batches`)}</span>
             </div>
             <div className="record-stat-chip">
-              <Clock size={14} className="text-secondary" />
+              <Clock size={15} className="text-slate-400" />
               <span>{tx(`最新送單：${summary.lastJobTime}`, `Latest: ${summary.lastJobTime}`)}</span>
             </div>
           </div>

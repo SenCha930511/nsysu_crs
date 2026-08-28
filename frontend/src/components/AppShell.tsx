@@ -58,30 +58,28 @@ function AppShell() {
             )}
           </div>
 
-          {/* Center: Prominent Navigation Tabs (signed-in only) */}
-          {status === "authed" && (
-            <nav className="studio-nav-pills mx-auto" aria-label={tx("主要選單", "Primary navigation")}>
-              {NAV_LINKS.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <NavLink
-                    key={link.to}
-                    to={link.to}
-                    end={link.end}
-                    className={({ isActive }) =>
-                      `studio-nav-link${isActive ? " studio-nav-link-active" : ""}`
-                    }
-                  >
-                    <Icon size={16} />
-                    <span>{link.label}</span>
-                  </NavLink>
-                );
-              })}
-            </nav>
-          )}
+          {/* Center: Prominent Navigation Tabs */}
+          <nav className="studio-nav-pills mx-auto" aria-label={tx("主要選單", "Primary navigation")}>
+            {NAV_LINKS.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) =>
+                    `studio-nav-link${isActive ? " studio-nav-link-active" : ""}`
+                  }
+                >
+                  <Icon size={16} />
+                  <span>{link.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
 
           {/* Right: GitHub & User Auth */}
-          <div className="d-flex align-items-center justify-content-end gap-2.5 flex-shrink-0">
+          <div className="d-flex align-items-center justify-content-end flex-shrink-0" style={{ gap: "0.75rem" }}>
             <div className="user-status-card">
               <a
                 href="https://github.com/SenCha930511/nsysu_crs"

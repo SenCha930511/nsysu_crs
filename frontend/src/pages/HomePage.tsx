@@ -22,7 +22,7 @@ import {
   Send,
   XCircleFill,
 } from "react-bootstrap-icons";
-import { Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import CourseBrowser from "../components/CourseBrowser";
 import ScheduleTable from "../components/ScheduleTable";
@@ -55,6 +55,7 @@ import { buildSelectionGridCourses } from "../lib/selectionGrid";
 import { totalCreditsAndHours } from "../lib/totals";
 import { outcomeCopy } from "../lib/writeOps";
 import { useAuth } from "../state/auth";
+import { useSelection } from "../state/selection";
 
 type Tab = "browse" | "selections";
 type SendPhase = "idle" | "previewing" | "confirm" | "job";
@@ -83,6 +84,7 @@ function formatSyncedTime(isoStr: string | null): string {
 function HomePage() {
   const { lang, tx } = useI18n();
   const { status, csrfToken } = useAuth();
+  const { selected, remove } = useSelection();
   const authed = status === "authed" && csrfToken !== null;
 
   // ---- real selections (school truth) ----
@@ -227,6 +229,10 @@ function HomePage() {
     () => totalCreditsAndHours(gridCourses),
     [gridCourses],
   );
+  const guestTotals = useMemo(() => totalCreditsAndHours(selected), [selected]);
+  const guestVisualCount = selected.filter(
+    (c) => c.class_time !== null && c.class_time.some((slot) => slot !== ""),
+  ).length;
 
   // ---- browse integration ----
   const pickStateOf = useCallback(
@@ -326,7 +332,7 @@ function HomePage() {
     if (node === null || pngState === "busy") return;
     setPngError(null);
     setPngState("busy");
-    downloadGridPng(node, null, visualCount)
+    downloadGridPng(node, null, authed ? visualCount : guestVisualCount)
       .catch((err: unknown) =>
         setPngError(err instanceof Error ? err.message : String(err)),
       )
@@ -488,7 +494,77 @@ function HomePage() {
     );
   }
   if (!authed) {
-    return <Navigate to="/login" replace />;
+    return (
+      <div className="row g-3">
+        <div className="col-12 col-xl-7">
+          <div className="schedule-canvas-pane">
+            <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap py-2.5 px-3.5" style={{ gap: "1rem" }}>
+              <div className="d-flex align-items-center flex-wrap" style={{ gap: "1rem" }}>
+                <div className="schedule-canvas-title" style={{ gap: "0.55rem" }}>
+                  <CalendarCheck size={18} className="text-teal-600" />
+                  <span>{tx("查課・課表（未登入模式）", "Courses • Timetable (guest)")}</span>
+                </div>
+                <div className="d-inline-flex align-items-center px-3 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.82rem", gap: "0.6rem" }}>
+                  <span>{tx(`已選 ${guestTotals.courseCount} 門`, `${guestTotals.courseCount} courses`)}</span>
+                  <span className="text-slate-400">·</span>
+                  <span>{tx(`${guestTotals.totalCredits} 學分`, `${guestTotals.totalCredits} cr`)}</span>
+                  <span className="text-slate-400">·</span>
+                  <span>{tx(`${guestTotals.totalHours} 節`, `${guestTotals.totalHours} hrs`)}</span>
+                </div>
+              </div>
+              <Link to="/login" className="btn btn-sm btn-brand rounded-pill px-3 py-1.5 fw-semibold">
+                <span>{tx("前往登入", "Sign in")}</span>
+              </Link>
+            </div>
+            {pngError !== null && (
+              <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{pngError}</div>
+            )}
+            <div className="schedule-grid-scroll-container">
+              <div ref={gridRef} className="w-100">
+                <ScheduleTable
+                  selectedCourses={selected}
+                  hoveredCourseId={hoveredCourseId}
+                  onCourseHover={setHoveredCourseId}
+                  onCourseRemove={(course) => remove(course.id)}
+                  previewCourse={previewCourse}
+                />
+              </div>
+            </div>
+            <p className="text-muted small px-3 pt-2 pb-2 mb-0">
+              {tx(
+                "未登入：只提供查課與課表試排（保存在本機這台瀏覽器）。登入後可同步你的真實已選、暫存加退選並送出。",
+                "Guest mode: catalog browsing and timetable sketching only (stored locally in this browser). Sign in to sync your real selections, stage add/drop, and submit.",
+              )}
+            </p>
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-2.5 border-top">
+              <span className="text-muted small mb-0">
+                {tx(
+                  "本頁試排只保存在你這台瀏覽器。",
+                  "This sketch stays in this browser only.",
+                )}
+              </span>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
+                style={{ fontSize: "0.84rem", gap: "0.55rem" }}
+                onClick={onPng}
+                disabled={pngState === "busy" || guestVisualCount === 0}
+              >
+                <Download size={14} />
+                <span>{pngState === "busy" ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-xl-5">
+          <CourseBrowser
+            hoveredCourseId={hoveredCourseId}
+            onCourseHover={setHoveredCourseId}
+            onCoursePreview={setPreviewCourse}
+          />
+        </div>
+      </div>
+    );
   }
 
   return (

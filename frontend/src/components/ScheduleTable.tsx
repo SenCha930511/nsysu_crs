@@ -194,15 +194,15 @@ function ScheduleTable({
       {/* Top Bar: Category Legend & Weekday toggle */}
       <div className="d-flex align-items-center justify-content-between mb-2 px-1 flex-wrap gap-2">
         <div className="d-flex align-items-center gap-3" style={{ fontSize: "0.84rem" }}>
-          <span className="d-inline-flex align-items-center gap-1.5">
+          <span className="d-inline-flex align-items-center" style={{ gap: "0.45rem" }}>
             <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#0284c7" }} />
             <span className="text-secondary fw-semibold">{tx("必修", "Required")}</span>
           </span>
-          <span className="d-inline-flex align-items-center gap-1.5">
+          <span className="d-inline-flex align-items-center" style={{ gap: "0.45rem" }}>
             <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#16a34a" }} />
             <span className="text-secondary fw-semibold">{tx("選修", "Elective")}</span>
           </span>
-          <span className="d-inline-flex align-items-center gap-1.5">
+          <span className="d-inline-flex align-items-center" style={{ gap: "0.45rem" }}>
             <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#9333ea" }} />
             <span className="text-secondary fw-semibold">{tx("通識/其他", "GE/Other")}</span>
           </span>

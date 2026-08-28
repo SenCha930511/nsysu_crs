@@ -31,7 +31,7 @@ function LoginPage() {
 
   const notice = loginNoticeText(searchParams.get("reason"), lang);
   const redirectTo =
-    (location.state as { from?: string } | null)?.from ?? "/plans";
+    (location.state as { from?: string } | null)?.from ?? "/";
 
   useEffect(() => {
     if (auth.status === "authed") {
