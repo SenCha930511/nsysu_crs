@@ -56,7 +56,7 @@ function course(partial: Partial<CourseOut>): CourseOut {
 function selection(partial: Partial<SelectionItem>): SelectionItem {
   return {
     code: "M3046243",
-    course_no: "CSE515",
+    course_no: null,
     state: "選上",
     dept: "資工系",
     name: "計算機結構",
@@ -167,9 +167,9 @@ describe("composer reducer: priority edits", () => {
 
 describe("composer reducer: drop typed-code gating", () => {
   it("is not includable while typed is empty or mismatched", () => {
-    expect(dropIncludable({ typed: "", code: "M3046243" })).toBe(false);
-    expect(dropIncludable({ typed: "M304624X", code: "M3046243" })).toBe(false);
-    expect(dropIncludable({ typed: "m3046243", code: "M3046243" })).toBe(false);
+  expect(dropIncludable({ typed: "", confirmCode: "M3046243" })).toBe(false);
+  expect(dropIncludable({ typed: "M304624X", confirmCode: "M3046243" })).toBe(false);
+  expect(dropIncludable({ typed: "m3046243", confirmCode: "M3046243" })).toBe(false);
   });
 
   it("becomes includable on the exact 8-char code and enters preview ops", () => {
@@ -281,8 +281,8 @@ describe("verdict-block logic", () => {
 });
 
 describe("confirm modal asserts", () => {
-  const matched = [{ key: "M3046243", code: "M3046243", typed: "M3046243" }];
-  const mismatched = [{ key: "M3046243", code: "M3046243", typed: "" }];
+const matched = [{ key: "M3046243", confirmCode: "M3046243", typed: "M3046243" }];
+const mismatched = [{ key: "M3046243", confirmCode: "M3046243", typed: "" }];
 
   it("password is required", () => {
     const check = checkConfirmForm("", matched);

@@ -26,6 +26,12 @@ export interface CourseBrowserProps {
   hoveredCourseId: string | null;
   onCourseHover: (courseId: string | null) => void;
   onCoursePreview?: (course: CourseOut | null) => void;
+  /** Console mode: picked/clash semantics come from these, not the plan. */
+  baseCourses?: readonly CourseOut[];
+  /** Console mode: row picked-state override (matched against grid courses). */
+  isCoursePicked?: (course: CourseOut) => boolean;
+  /** Console mode: add/remove routes here instead of the plan selection. */
+  onToggleCourse?: (course: CourseOut) => void;
 }
 
 interface Filters {
@@ -120,8 +126,15 @@ export default function CourseBrowser({
   hoveredCourseId,
   onCourseHover,
   onCoursePreview,
+  baseCourses,
+  isCoursePicked,
+  onToggleCourse,
 }: CourseBrowserProps) {
   const { selected, isSelected, toggle } = useSelection();
+  const effBase = baseCourses ?? selected;
+  const effIsPicked =
+    isCoursePicked ?? ((course: CourseOut) => isSelected(course.id));
+  const effToggle = onToggleCourse ?? toggle;
 
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -249,8 +262,8 @@ export default function CourseBrowser({
   const clashByCourse = useMemo(() => {
     const map = new Map<string, string>();
     for (const course of items) {
-      if (isSelected(course.id)) continue;
-      const clashes = findClashes(course, selected);
+      if (effIsPicked(course)) continue;
+      const clashes = findClashes(course, effBase);
       if (clashes.length > 0) {
         const detail = clashes
           .map(
@@ -262,11 +275,11 @@ export default function CourseBrowser({
       }
     }
     return map;
-  }, [items, selected, isSelected]);
+  }, [items, effBase, effIsPicked]);
 
   const renderRow = useCallback(
     (_index: number, course: CourseOut) => {
-      const picked = isSelected(course.id);
+      const picked = effIsPicked(course);
       const hovered = hoveredCourseId === course.id;
       const clashTip = clashByCourse.get(course.id);
       const { tags, invalid } = timeTags(course);
@@ -369,7 +382,7 @@ export default function CourseBrowser({
               data-action={picked ? "remove" : "add"}
               onClick={(e) => {
                 e.stopPropagation();
-                toggle(course);
+                effToggle(course);
               }}
             >
               {picked ? <Check2 size={13} /> : <PlusLg size={11} />}
@@ -379,7 +392,7 @@ export default function CourseBrowser({
         </div>
       );
     },
-    [isSelected, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview, toggle],
+    [effIsPicked, effToggle, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview],
   );
 
   const ListFooter = useCallback(

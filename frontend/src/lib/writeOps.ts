@@ -36,8 +36,10 @@ export interface DropDraft {
   key: string;
   /** Catalog UUID when the selection joined one, else null. */
   courseId: string | null;
-  /** Exact 8-char school code the user must type to include the row. */
+  /** Long 課程代碼 (display only; never sent as identity). */
   code: string;
+  /** Identity the user types and the backend compares: 課別代號 (course_no ?? code). */
+  confirmCode: string;
   name: string;
   state: string;
   typed: string;
@@ -90,17 +92,19 @@ export function initComposer(
     course: item.course,
   }));
   const drops: DropDraft[] = selectionItems
-    .filter((item) => item.code !== null && isHeldState(item.state))
+    .filter((item) => (item.code ?? item.course_no) !== null && isHeldState(item.state))
     .map((item) => {
-      const code = item.code as string;
+      const key = (item.code ?? item.course_no) as string;
+      const confirmCode = (item.course_no ?? item.code) as string;
       return {
         kind: "drop",
-        key: code,
+        key,
         courseId: item.course_id,
-        code,
+        code: item.code ?? confirmCode,
+        confirmCode,
         name: item.name,
         state: item.state,
-        typed: typedByKey.get(code) ?? "",
+        typed: typedByKey.get(key) ?? "",
       };
     });
   return { adds, drops, priorityError: null, priorityErrorHolder: null };
@@ -182,8 +186,8 @@ export function composerReducer(
 // ---------- composer -> preview ops ----------
 
 /** A drop row may enter the batch only when the typed code matches exactly. */
-export function dropIncludable(drop: Pick<DropDraft, "typed" | "code">): boolean {
-  return drop.typed === drop.code;
+export function dropIncludable(drop: Pick<DropDraft, "typed" | "confirmCode">): boolean {
+  return drop.typed === drop.confirmCode;
 }
 
 /**
@@ -202,7 +206,7 @@ export function buildPreviewOps(state: ComposerState): WriteOpIn[] {
     if (!dropIncludable(drop)) continue;
     ops.push({
       action: "-",
-      course_id: drop.courseId ?? drop.code,
+      course_id: drop.courseId ?? drop.confirmCode,
       drop_confirm_text: drop.typed,
     });
   }
@@ -306,7 +310,7 @@ export interface ConfirmFormCheck {
  */
 export function checkConfirmForm(
   password: string,
-  drops: readonly Pick<DropDraft, "key" | "code" | "typed">[],
+  drops: readonly Pick<DropDraft, "key" | "confirmCode" | "typed">[],
 ): ConfirmFormCheck {
   if (password.length === 0) {
     return { ok: false, error: "password_required", mismatchKey: null };

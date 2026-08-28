@@ -356,8 +356,8 @@ function ComposerSection({
                           className={`form-control form-control-sm${
                             drop.typed !== "" && !matched ? " is-invalid" : ""
                           }`}
-                          aria-label={`確認退選課號：${drop.code}`}
-                          placeholder={drop.code}
+                          aria-label={`確認退選課號：${drop.confirmCode}`}
+                          placeholder={drop.confirmCode}
                           value={drop.typed}
                           onChange={(event) =>
                             dispatch({
@@ -546,7 +546,7 @@ function ConfirmModal({
                     className="d-flex align-items-center gap-2 small mb-1"
                     data-testid={`confirm-drop-${drop.key}`}
                   >
-                    <span className="font-monospace fw-bold">{drop.code}</span>
+                    <span className="font-monospace fw-bold">{drop.confirmCode}</span>
                     <span>{drop.name}</span>
                     {dropIncludable(drop) ? (
                       <span className="badge text-bg-success">課號一致</span>
