@@ -50,6 +50,7 @@ import {
 import type { StagedAdd } from "../lib/consoleOps";
 import { downloadGridPng } from "../lib/export";
 import { buildSelectionGridCourses } from "../lib/selectionGrid";
+import { outcomeCopy } from "../lib/writeOps";
 import { useAuth } from "../state/auth";
 
 type Tab = "browse" | "selections";
@@ -511,14 +512,29 @@ function HomePage() {
                   </div>
                   {job !== null && (
                     <ul className="small mb-0 ps-3">
-                      {job.ops.map((op, i) => (
-                        <li key={`${op.code}-${i}`}>
-                          <span className="font-monospace">{op.code}</span>
-                          {" "}{op.action === "+" ? "加選" : "退選"}：
-                          {op.outcome ?? "處理中"}
-                          {op.school_msg !== null && job.status !== "done" ? `（${op.school_msg}）` : ""}
-                        </li>
-                      ))}
+                      {job.ops.map((op, i) => {
+                        const copy = outcomeCopy(op.outcome);
+                        const toneClass =
+                          copy.tone === "success"
+                            ? "text-success"
+                            : copy.tone === "danger"
+                              ? "text-danger"
+                              : copy.tone === "warning"
+                                ? "text-warning-emphasis"
+                                : "text-secondary";
+                        return (
+                          <li key={`${op.code}-${i}`}>
+                            <span className="font-monospace">{op.code}</span>
+                            {" "}{op.action === "+" ? "加選" : "退選"}：
+                            <span className={`fw-semibold ${toneClass}`}>{copy.label}</span>
+                            {op.school_msg !== null && op.outcome !== "success" ? (
+                              <span className="text-muted d-block" style={{ whiteSpace: "pre-wrap" }}>
+                                原因：{op.school_msg}
+                              </span>
+                            ) : null}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                   {jobNote !== null && <p className="text-muted small mb-0 mt-1">{jobNote}</p>}

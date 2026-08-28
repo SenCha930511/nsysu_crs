@@ -6,12 +6,13 @@ is a status-SNAPSHOT page, NOT a per-course verdict table. It carries the
 student header (姓名/學號), the CURRENT selections table under
 【目前選課紀錄】 (post-submit school state), and — when the school rejected
 (any of) the batch — an ``<hr>``-separated failure section headed by the
-school's own words 【加退選失敗課程清單】. On the bogus-code capture the
-section carries NO itemized rows at all (the school never echoes a code it
-does not know); whether real validation failures (額滿/衝堂/必修...) are
-itemized per course code there is unverified, so per-code rows are
-classified when found and everything else falls back to the batch-level
-statement.
+school's own words 【加退選失敗課程清單】. Per-op verdicts inside the
+section are now LIVE-VERIFIED twice: bogus codes never appear there
+(batch-level rejection, 10:32 probe), while rule-based rejections DO
+carry per-op rows with the full reason (2026-08-28 14:45 real job:
+AI50015 違反限修條件, multi-line policy text with zero failure-marker
+vocabulary - hence section membership, not keywords, is the verdict
+signal). Every stored school_msg is student-number masked before storage.
 
 The older synthetic fixtures (``*_provisional``) keep their marker: their
 row-table shape is the archaeological expectation, not live-verified. They
@@ -24,15 +25,13 @@ Classification contract:
 
 1. Login bounce -> ``SelcrsSessionExpired`` (session died mid-flight).
 2. Failure section present: a batch code itemized inside the section is
-   classified from its own fragment (unrecognized wording -> parse_failed,
-   never guessed). A batch code NOT itemized inherits the school's
-   batch-level rejection: outcome ``failed`` with the section text as
-   school_msg (the school's only statement about the op; the bogus-code
-   live capture proves this is how the school rejects, and duplicate_like
-   stays False so the engine never mistakes it for a retry collision).
-   Multi-op caveat: if a future live capture shows itemized rows coexisting
-   with unlisted ops, this wholesale branch must be revisited - it is the
-   honest reading of a page that lists failures without acquitting anyone.
+   **failed by section membership** — section presence is itself the
+   verdict (the 14:45 rule-based row carries multi-line reason text with
+   zero failure-marker vocabulary; keywords would drop it to parse_failed,
+   which is why markers only seed the duplicate_like hint). school_msg =
+   that op's own reason fragment, student numbers masked. A batch code NOT
+   itemized inherits the batch-level rejection (outcome ``failed`` with
+   the section header as school_msg; duplicate_like stays False).
 3. No failure section: the PROVISIONAL whole-page fragment search runs
    (keyed by course code, never by row position). Absent codes and
    markerless fragments degrade to parse_failed with the raw excerpt.
@@ -54,7 +53,9 @@ from app.write.outcomes import (
 )
 
 #: School-message excerpt cap stored on write_audit.school_msg (原文摘錄).
-EXCERPT_LIMIT: Final = 160
+#: 500 chars keeps a full limitation-policy sentence readable (the real
+#: AI50015 違反限修條件 reply of 2026-08-28 runs past the old 160 cap).
+EXCERPT_LIMIT: Final = 500
 
 #: Dead-session bounce (same markers as the Studfun/slt_result parsers).
 SESSION_BOUNCE_MARKERS: Final = ("請先登錄", "請先登入", "SPassword", "Studcheck_sso2")
@@ -118,6 +119,23 @@ def _fold(text: str) -> str:
     return re.sub(r"\s+", "", unicodedata.normalize("NFKC", text))
 
 
+#: Live student numbers the school echoes into its reply pages (one uppercase
+#: letter + 8-10 digits, e.g. M153040024). Anything school_msg stores MUST be
+#: masked first (repo-wide rule：帳密不落地、學號遮罩 M153****24; the 14:45
+#: 2026-08-28 audit row proved raw ids leak through unparsed replies).
+_STUDENT_NO_RE: Final = re.compile(r"\b([A-Z]\d{8,10})\b")
+
+
+def mask_student_no(text: str) -> str:
+    """Every live student number in the text -> M153****24 shape."""
+
+    def _mask(match: re.Match[str]) -> str:
+        token = match.group(1)
+        return f"{token[:4]}****{token[-2:]}"
+
+    return _STUDENT_NO_RE.sub(_mask, text)
+
+
 def _clean_cell_text(fragment_html: str) -> str:
     """Fragment -> readable text (tags flattened, entities collapsed)."""
     return re.sub(r"\s+", " ", _TAG_RE.sub(" ", fragment_html)).strip()
@@ -149,7 +167,8 @@ def _fragment_for_code(html: str, code: str) -> str | None:
 
 
 def _excerpt(text: str) -> str:
-    return text[:EXCERPT_LIMIT] if len(text) > EXCERPT_LIMIT else text
+    capped = text[:EXCERPT_LIMIT] if len(text) > EXCERPT_LIMIT else text
+    return mask_student_no(capped)
 
 
 def _failure_section(html: str) -> str | None:
@@ -194,19 +213,24 @@ def parse_submit_response(html: str, batch_codes: list[str]) -> dict[str, Parsed
     section = _failure_section(html)
     outcomes: dict[str, ParsedOp] = {}
     for code in batch_codes:
-        fragment = _fragment_for_code(section, code) if section is not None else None
-        if fragment is None and section is None:
-            fragment = _fragment_for_code(html, code)
+        if section is not None:
+            fragment = _fragment_for_code(section, code)
+            if fragment is None:
+                # Batch-level rejection (live-proven for unknown codes); the
+                # header belongs to the op, never another op's itemized row.
+                outcomes[code] = ParsedOp(OUTCOME_FAILED, FAILURE_SECTION_HEADER)
+                continue
+            # Section-listed ops are failed by membership; the fragment IS
+            # the per-op reason (masked on the way out).
+            plain = _clean_cell_text(fragment)
+            duplicate_like = any(
+                marker in _fold(plain) for marker in _DUPLICATE_LIKE_MARKERS
+            )
+            outcomes[code] = ParsedOp(OUTCOME_FAILED, _excerpt(plain), duplicate_like)
+            continue
+        fragment = _fragment_for_code(html, code)
         if fragment is not None:
             outcomes[code] = classify_fragment(fragment)
-        elif section is not None:
-            # The school's only statement about this op is the batch-level
-            # rejection (live-proven for unknown codes; see module docstring
-            # for the multi-op caveat). The message is the section HEADER
-            # only - itemized rows belong to their own ops, never to an
-            # unlisted one. Never duplicate_like: no per-op duplicate
-            # wording exists on the page.
-            outcomes[code] = ParsedOp(OUTCOME_FAILED, FAILURE_SECTION_HEADER)
         else:
             outcomes[code] = ParsedOp(OUTCOME_PARSE_FAILED, page_excerpt)
     return outcomes

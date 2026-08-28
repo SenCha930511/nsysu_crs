@@ -167,3 +167,41 @@ def test_duplicate_wording_without_failure_marker_still_fails_duplicate_like():
     parsed = parse_submit_response(html, ["GEAE2526"])
     assert parsed["GEAE2526"].outcome == OUTCOME_FAILED
     assert parsed["GEAE2526"].duplicate_like is True
+
+
+# ---------- rule-based per-op rows (synthetic-from-live-audit, 2026-08-28) ----------
+
+
+def test_rule_failure_is_failed_by_section_membership_with_full_reason():
+    # Section membership IS the verdict: the real AI50015 row carries the
+    # multi-line reason with zero failure-marker vocabulary.
+    parsed = parse_submit_response(
+        _load("ssprs_resp_limitation_fail_synth_1151.html"), ["AI50015"]
+    )
+    verdict = parsed["AI50015"]
+    assert verdict.outcome == OUTCOME_FAILED
+    assert "違反限修條件" in (verdict.school_msg or "")
+    assert "prerequisites" in (verdict.school_msg or "")
+
+
+def test_raw_student_no_is_masked_in_every_stored_school_msg():
+    # The fixture id echoes raw on the school's page; storage must mask it.
+    parsed = parse_submit_response(
+        _load("ssprs_resp_limitation_fail_synth_1151.html"), ["AI50015"]
+    )
+    msg = parsed["AI50015"].school_msg or ""
+    assert "M153000024" not in msg
+    assert "M153****24" in msg
+
+
+def test_excerpt_cap_keeps_full_policy_sentence_bounded_at_500():
+    assert EXCERPT_LIMIT == 500
+    html = (
+        "<html><body>【加退選失敗課程清單】<p>GEAE2526 "
+        + "。違反限修條件X" * 200
+        + '</p><a href="ssform.asp">回加退選課程</a></body></html>'
+    )
+    parsed = parse_submit_response(html, ["GEAE2526"])
+    msg = parsed["GEAE2526"].school_msg or ""
+    assert len(msg) <= EXCERPT_LIMIT
+    assert parsed["GEAE2526"].outcome == OUTCOME_FAILED
