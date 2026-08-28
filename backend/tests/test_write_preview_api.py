@@ -77,10 +77,16 @@ DEFAULT_CATALOG = {
 }
 
 
-def _item(code: str | None, *, times: str | None = None, course_id: str | None = None) -> SelectionItem:
+def _item(
+    code: str | None,
+    *,
+    times: str | None = None,
+    course_id: str | None = None,
+    course_no: str | None = None,
+) -> SelectionItem:
     return SelectionItem(
         code=code,
-        course_no="CSE515",
+        course_no=course_no if course_no is not None else (code or "CSE515"),
         state="選上",
         dept="資工碩",
         name="高等電腦網路",
@@ -283,6 +289,25 @@ async def test_happy_two_adds_one_typed_drop_payload_deep_equal_and_token(harnes
     assert body["warnings"] == ["quota_snapshot"]
     assert body["quota_as_of"] == "2026-08-28T03:10:00+08:00"
     assert [op["code"] for op in body["ops"]] == ["GEAE2526", "MEME101B", "M3046243"]
+
+
+@pytest.mark.anyio
+async def test_drop_of_catalog_missing_selection_resolves_via_own_selections(harness_factory):
+    # Given: a selected course the stub catalog does NOT know (no GEAE9999 row)
+    harness = harness_factory(_open_ssform, _ssform, dict(DEFAULT_CATALOG))
+    sid = await harness.seed_session()
+    await harness.seed_selections(sid, [_item("GEAE9999")])
+
+    # When: dropping it
+    response = harness.preview(sid, [_drop("GEAE9999", "GEAE9999")])
+
+    # Then: the student's own selections supply the identity; op passes and the
+    # payload carries the 課別代號 verbatim in the C slot
+    assert response.status_code == 200
+    body = response.json()
+    assert body["writable"] is True
+    assert [op["verdict"] for op in body["ops"]] == ["ok"]
+    assert body["payload"]["C1"] == "GEAE9999"
 
 
 @pytest.mark.anyio

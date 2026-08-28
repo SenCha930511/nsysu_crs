@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CHAR, Boolean, DateTime, Integer, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,7 +26,7 @@ class Course(Base):  # noqa: MUTABLE_OK  (SQLAlchemy ORM rows are mutable by des
         primary_key=True, server_default=func.gen_random_uuid()
     )
     year_sem: Mapped[str] = mapped_column(Text)
-    code: Mapped[str | None] = mapped_column(CHAR(8))
+    code: Mapped[str | None] = mapped_column(String(20))
     dept: Mapped[str | None] = mapped_column(Text)
     grade: Mapped[str | None] = mapped_column(Text)
     class_: Mapped[str | None] = mapped_column("class", Text)

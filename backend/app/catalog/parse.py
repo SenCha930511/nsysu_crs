@@ -70,6 +70,11 @@ _CODE_8_RE: Final = re.compile(r"^[A-Za-z0-9]{8}$")
 _INT_RE: Final = re.compile(r"^-?\d+$")
 _ROOM_PARENS_RE: Final = re.compile(r"\(([^()]*)\)")
 
+#: 課別代號 (CSE515/STP101...) inside every catalog row's showoutline link:
+#: live-verified (dply_page_live_1151.html + the 2026-08-28 write-probe that
+#: CSE515 resolves at chk_crsno_desc.asp while the 8-char 課程代碼 does not).
+_CRSDAT_RE: Final = re.compile(r"[?&]CrsDat=([^&]*)")
+
 _CHANGE_MARKERS: Final = frozenset({"", "異動", "新增"})
 _TERM_MARKERS: Final = frozenset({"年", "期"})
 _COMP_MARKERS: Final = frozenset({"必", "選"})
@@ -236,13 +241,21 @@ def _parse_code(texts: list[str]) -> str | None:
     return candidate if _CODE_8_RE.match(candidate) else None
 
 
+def _derive_code_from_url(url: str | None) -> str | None:
+    """課別代號 from the row's own showoutline link (the write-form identifier)."""
+    if url is None:
+        return None
+    match = _CRSDAT_RE.search(url)
+    return match.group(1) if match is not None else None
+
+
 def _parse_row(cells: list[Tag], texts: list[str], *, year_sem: str) -> CatalogRow:
     description, tags, english = _parse_description(cells[24])
     name_zh, name_en, url = _parse_name_and_url(cells[7])
     class_time = tuple(texts[17 : 17 + WEEKDAY_SLOTS])
     return CatalogRow(
         year_sem=year_sem,
-        code=_parse_code(texts),
+        code=_parse_code(texts) or _derive_code_from_url(url),
         dept=texts[3] or None,
         grade=texts[5] or None,
         class_=texts[6] or None,

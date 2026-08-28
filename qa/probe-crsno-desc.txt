@@ -1,0 +1,4 @@
+== CSE515 == status=200 len=112
+{"data":[{"T_NAME":"林俊宏","CRS_DESC":"高等電腦網路","CRS_ENAME":"ADVANCED COMPUTER NETWORKS","ENAME":"Chun-Hung Lin"}]}
+== M3046243 == status=200 len=23
+{"RESULT" : "NODATA!!"}

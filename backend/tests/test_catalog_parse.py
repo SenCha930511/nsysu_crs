@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from app.catalog.parse import (
+    _derive_code_from_url,
     _parse_room,
     extract_page_link,
     parse_catalog_page,
@@ -71,6 +72,10 @@ def test_provisional_page_fields():
     assert third.remaining == 0
     assert third.class_time == ("34", "", "", "56", "", "", "")
 
+    # 2026-08-28 identifier unification: every row's code derives from its own
+    # showoutline CrsDat= (the write-form identifier), even with no 8-char column.
+    assert first.code == "CSE101"
+
 
 def test_empty_page_is_zero_rows_without_pagination():
     # Given: a page with no candidate rows and no page marker
@@ -88,6 +93,14 @@ def test_pagination_english_variant():
     pagination = parse_pagination(html)
     assert pagination is not None
     assert (pagination.current, pagination.total, pagination.variant) == (2, 17, "en")
+
+
+def test_code_derivation_from_showoutline_url():
+    # Given/When/Then: the 課別代號 is lifted from CrsDat= query param only
+    assert _derive_code_from_url("showoutline.asp?SYEAR=115&SEM=1&CrsDat=CSE515&Crsname=X") == "CSE515"
+    assert _derive_code_from_url("../menu5/showoutline.asp?SYEAR=115&CrsDat=STP101&Crsname=Y") == "STP101"
+    assert _derive_code_from_url("showoutline.asp?SYEAR=115&SEM=1&Crsname=X") is None
+    assert _derive_code_from_url(None) is None
 
 
 def test_room_extraction_from_fused_time_cell():
@@ -152,6 +165,11 @@ def test_live_fixture_rows_and_charset():
         # Live room cells are fused TIME+ROOM ("三3,4(社SS 2006)"); the
         # stored room is the extracted parens token, never the fused string.
         assert row.room is None or "(" not in row.room
+        # Live 課程式代號: every catalog row's code equals its own CrsDat=
+        # (STP101/STP104/STP105/STP110 lead this live page).
+        assert row.code is not None and len(row.code) >= 5
+    # And the first four rows' codes are exactly their recorded links' CrsDat
+    assert [row.code for row in page.rows[:4]] == ["STP101", "STP104", "STP105", "STP110"]
     # And: the paging link for page 2 is extractable from the live footer
     link = extract_page_link(html, 2)
     assert link is not None and link.endswith("page=2") and "a=" in link

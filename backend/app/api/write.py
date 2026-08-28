@@ -37,7 +37,7 @@ from app.write.canonical import (
     confirm_token,
     payload_hash,
 )
-from app.write.catalog import resolve_course, resolve_courses_by_ids
+from app.write.catalog import CourseInfo, resolve_course, resolve_courses_by_ids
 from app.write.confirm import ConfirmRecord, store_confirm
 from app.write.payload import (
     SEND_NAME,
@@ -144,7 +144,11 @@ async def _selection_targets(
         if days is None:
             continue
         targets.append(ClashTarget(label=item.code or item_identity(item), days=tuple(days)))
-    selected_codes = frozenset(item.code for item in items if item.code is not None)
+    # Membership set compares against 課別代號 (catalog.code since 2026-08-28);
+    # the selections' long 課程代碼 is never accepted at chk_crsno_desc (probed).
+    selected_codes = frozenset(
+        key for item in items if (key := (item.course_no or item.code)) is not None
+    )
     return targets, selected_codes
 
 
@@ -206,11 +210,23 @@ async def post_write_preview(
 
     _validate_ops(body.ops, limit=MAX_OPS_BY_VARIANT[variant])
 
+    targets, selected_codes = await _selection_targets(
+        db, year_sem=settings.semester_year_sem, redis=redis, session_id=session_id
+    )
+
     resolved: list[ResolvedOp] = []
     for index, op_in in enumerate(body.ops):
         course = await resolve_course(
             db, year_sem=settings.semester_year_sem, ident=op_in.course_id
         )
+        if op_in.action == "-" and course.code is None:
+            # Drops identify THROUGH the student's own selections (authoritative
+            # identity since 2026-08-28: the school form accepts 課別代號, and a
+            # selected course can be absent from this semester's catalog) - the
+            # catalog is enrichment-only for '-' ops.
+            ident_short = op_in.course_id.strip()
+            if ident_short in selected_codes:
+                course = CourseInfo(course_id=None, code=ident_short)
         # Check 9 (typed confirmation) is only meaningful with a resolved
         # code; an unresolvable drop op already carries the 無課號 verdict.
         if op_in.action == "-" and course.code is not None and op_in.drop_confirm_text != course.code:
@@ -219,9 +235,6 @@ async def post_write_preview(
             ResolvedOp(index, op_in.action, op_in.course_id, op_in.priority, course)
         )
 
-    targets, selected_codes = await _selection_targets(
-        db, year_sem=settings.semester_year_sem, redis=redis, session_id=session_id
-    )
     verdicts = evaluate_ops(resolved, selected_codes=selected_codes, selection_targets=targets)
 
     quota_dates = sorted(
