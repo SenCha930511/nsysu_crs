@@ -41,13 +41,17 @@ end
 
 
 class RedisLockClient(Protocol):
-    """The redis.asyncio subset the lock needs (tests substitute a fake)."""
+    """The redis.asyncio subset the lock needs (tests substitute a fake).
 
-    async def set(
+    Plain ``def``s returning ``Awaitable`` (not ``async def``) so the real
+    ``redis.asyncio.Redis`` — stubbed as returning ``Awaitable`` — satisfies
+    the protocol (async-def fakes return ``Coroutine``, a subtype)."""
+
+    def set(
         self, name: str, value: str, *, nx: bool = False, ex: int | None = None
-    ) -> object: ...
+    ) -> Awaitable[object]: ...
 
-    async def eval(self, script: str, numkeys: int, *args: object) -> object: ...
+    def eval(self, script: str, numkeys: int, *args: object) -> Awaitable[object]: ...
 
 
 def parse_peak_date_ranges(spec: str) -> tuple[tuple[date, date], ...]:

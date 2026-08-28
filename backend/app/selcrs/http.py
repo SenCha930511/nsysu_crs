@@ -139,7 +139,7 @@ async def _request_with_backoff(
     url: str,
     *,
     data: dict[str, str] | None,
-    params: dict[str, str | int],
+    params: dict[str, str | int] | None,
     headers: dict[str, str] | None,
     content: str | bytes | None,
 ) -> httpx.Response:
@@ -165,8 +165,8 @@ async def _request_with_backoff(
 __all__ = [
     "BACKOFF_SECONDS",
     "MAX_ATTEMPTS",
+    "_sleep",  # test seam (monkeypatch target)
     "build_client",
     "build_school_ssl_context",
     "request_school",
-    "_sleep",  # test seam (monkeypatch target)
 ]

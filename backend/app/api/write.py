@@ -102,7 +102,7 @@ def _validate_ops(ops: list[OpIn], *, limit: int) -> None:
 def _verdict_out(verdict: OpVerdict) -> OpVerdictOut:
     course = verdict.course
     quota = None
-    if course.course_id is not None:
+    if course is not None and course.course_id is not None:
         quota = QuotaOut(
             restrict=course.restrict,
             select_n=course.select_n,
@@ -225,20 +225,29 @@ async def post_write_preview(
     verdicts = evaluate_ops(resolved, selected_codes=selected_codes, selection_targets=targets)
 
     quota_dates = sorted(
-        {iso for verdict in verdicts if (iso := verdict.course.ingested_at) is not None}
+        {
+            iso
+            for verdict in verdicts
+            if verdict.course is not None
+            and (iso := verdict.course.ingested_at) is not None
+        }
     )
-    base = {
-        "stage": detection.stage,
-        "variant": variant,
-        "form_url": form_url,
-        "ops": [_verdict_out(verdict) for verdict in verdicts],
-        "warnings": [WARN_QUOTA_SNAPSHOT] if quota_dates else [],
-        "quota_as_of": quota_dates[-1] if quota_dates else None,
-    }
+    ops_out = [_verdict_out(verdict) for verdict in verdicts]
+    warnings = [WARN_QUOTA_SNAPSHOT] if quota_dates else []
+    quota_as_of = quota_dates[-1] if quota_dates else None
     if not all(verdict.writable for verdict in verdicts):
         return PreviewResponse(
-            **base, writable=False, payload=None, confirm_token=None,
-            payload_hash=None, canonical_ops=None,
+            stage=detection.stage,
+            variant=variant,
+            form_url=form_url,
+            writable=False,
+            ops=ops_out,
+            warnings=warnings,
+            quota_as_of=quota_as_of,
+            payload=None,
+            confirm_token=None,
+            payload_hash=None,
+            canonical_ops=None,
         )
 
     canonical = canonical_ops(
@@ -278,6 +287,15 @@ async def post_write_preview(
         ttl=settings.confirm_token_ttl,
     )
     return PreviewResponse(
-        **base, writable=True, payload=payload, confirm_token=token,
-        payload_hash=payload_hash(student_no, canonical), canonical_ops=segments,
+        stage=detection.stage,
+        variant=variant,
+        form_url=form_url,
+        writable=True,
+        ops=ops_out,
+        warnings=warnings,
+        quota_as_of=quota_as_of,
+        payload=payload,
+        confirm_token=token,
+        payload_hash=payload_hash(student_no, canonical),
+        canonical_ops=segments,
     )

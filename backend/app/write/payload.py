@@ -70,7 +70,13 @@ def parse_form_hidden_inputs(html: str) -> dict[str, str]:
         if not isinstance(name, str) or not name or name in hidden:
             continue
         value = tag.get("value", "")
-        hidden[name] = value if isinstance(value, str) else " ".join(str(v) for v in value)
+        if isinstance(value, str):
+            hidden[name] = value
+        elif value is None:
+            hidden[name] = ""
+        else:
+            # Multi-valued attribute list (typeshed union) -> join like bs4 renders.
+            hidden[name] = " ".join(str(v) for v in value)
     return hidden
 
 

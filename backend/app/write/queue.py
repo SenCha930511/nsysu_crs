@@ -13,6 +13,7 @@ carries a password, cookie value, CSRF token, or jar payload, and the
 round-trip test asserts the key set verbatim.
 """
 
+from collections.abc import Awaitable
 from typing import Final, Protocol
 
 from pydantic import BaseModel, ConfigDict
@@ -22,13 +23,13 @@ WRITE_QUEUE_KEY: Final = "writeq:jobs"
 
 
 class QueueRedis(Protocol):
-    """The list subset the write queue needs (real client satisfies it)."""
+    """Exactly what ``enqueue_ticket`` needs: the producer side of the FIFO.
 
-    async def rpush(self, name: str, *values: str) -> int: ...
+    Plain ``def`` returning ``Awaitable`` so both ``AuthRedis`` (the API
+    boundary dependency) and the real ``redis.asyncio.Redis`` satisfy it
+    (redis-py stubs type aio methods as returning ``Awaitable``)."""
 
-    async def lrange(self, name: str, start: int, end: int) -> list[str]: ...
-
-    async def brpop(self, keys: list[str], timeout: int = 0) -> list[str] | tuple | None: ...
+    def rpush(self, name: str, *values: str) -> Awaitable[int]: ...
 
 
 class QueueTicket(BaseModel):

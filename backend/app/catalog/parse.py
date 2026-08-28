@@ -200,13 +200,14 @@ def _parse_name_and_url(cell: Tag) -> tuple[str | None, str | None, str | None]:
     """
     link = cell.select_one('a[href*="showoutline"]')
     url = str(link["href"]) if link is not None else None
-    owner = link.find_parent("small") if link is not None else None
-    if owner is not None:
-        font = owner.find("font")
-        if font is not None:
-            zh = link.get_text(strip=True)
-            en = font.get_text(strip=True)
-            return zh or None, en or None, url
+    if link is not None:
+        owner = link.find_parent("small")
+        if owner is not None:
+            font = owner.find("font")
+            if font is not None:
+                zh = link.get_text(strip=True)
+                en = font.get_text(strip=True)
+                return zh or None, en or None, url
     for badge in cell.find_all("small"):
         badge.extract()
     zh, _, en = _cell_text(cell).partition("\n")

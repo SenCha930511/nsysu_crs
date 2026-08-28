@@ -28,7 +28,9 @@ from app.write.csrf import CsrfMiddleware
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     """Build the app. Tests inject a constructed Settings; prod parses env."""
-    resolved = settings if settings is not None else Settings()
+    # pydantic-settings fills (required) app_secret from env at construction;
+    # mypy cannot see env, hence the scoped ignore.
+    resolved = settings if settings is not None else Settings()  # type: ignore[call-arg]
     configure_access_log()
 
     @asynccontextmanager

@@ -35,8 +35,9 @@ router: Final = APIRouter()
 
 ADMIN_HEADER: Final = "X-App-Secret"
 
-_BreakerState: Final = Literal["closed", "open", "half-open"]
-_Mode: Final = Literal["normal", "read-only"]
+# PEP 695 type aliases (mypy rejects a Final VALUE used as an annotation).
+type _BreakerState = Literal["closed", "open", "half-open"]
+type _Mode = Literal["normal", "read-only"]
 
 
 class BreakerStateOut(BaseModel):
