@@ -40,6 +40,8 @@ export interface CourseBrowserProps {
   onToggleCourse?: (course: CourseOut) => void;
   /** Fires when the user wants the course's detail sheet (name click). */
   onViewCourse?: (course: CourseOut) => void;
+  /** Optional top header slot (e.g. segmented tabs) */
+  headerTopSlot?: React.ReactNode;
 }
 
 interface Filters {
@@ -153,6 +155,7 @@ export default function CourseBrowser({
   pickState,
   onToggleCourse,
   onViewCourse,
+  headerTopSlot,
 }: CourseBrowserProps) {
   const { lang, tx } = useI18n();
   const { selected, isSelected, toggle } = useSelection();
@@ -498,6 +501,9 @@ export default function CourseBrowser({
     <section className="course-discovery-pane" aria-label={tx("課程探索中心", "Course discovery")}>
       {/* Header & Search */}
       <div className="discovery-search-header">
+        {headerTopSlot && (
+          <div className="discovery-header-top-slot pb-2">{headerTopSlot}</div>
+        )}
         <div className="studio-search-bar">
           <Search className="studio-search-icon" />
           <input

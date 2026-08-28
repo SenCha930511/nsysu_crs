@@ -67,6 +67,20 @@ function shortName(course: CourseOut | SelectionItem): string {
   return "name" in course ? course.name : (course.name_zh ?? course.name_en ?? course.id);
 }
 
+function formatSyncedTime(isoStr: string | null): string {
+  if (!isoStr) return "";
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) {
+      const timePart = isoStr.split("T")[1]?.split("+")[0]?.split(".")[0];
+      return timePart || isoStr;
+    }
+    return d.toLocaleTimeString("zh-TW", { hour12: false });
+  } catch {
+    return isoStr;
+  }
+}
+
 function HomePage() {
   const { lang, tx } = useI18n();
   const { status, csrfToken } = useAuth();
@@ -82,8 +96,7 @@ function HomePage() {
   // ---- staging ----
   const [stagedAdds, setStagedAdds] = useState<StagedAdd[]>([]);
   const [stagedDrops, setStagedDrops] = useState<SelectionItem[]>([]);
-  // Short codes whose last submission failed per-op; rows show 送出失敗
-  // instead of pretending the course is on the timetable.
+  const [failedAdds, setFailedAdds] = useState<CourseOut[]>([]);
   const [failedCodes, setFailedCodes] = useState<Set<string>>(new Set());
 
   // ---- tabs / browse ----
@@ -261,6 +274,28 @@ function HomePage() {
     [stagedAdds, items],
   );
 
+  const restageFailed = (course: CourseOut) => {
+    setStagedAdds((prev) => reprioritize([...prev, { course, priority: prev.length + 1 }]));
+    setFailedAdds((prev) => prev.filter((c) => c.id !== course.id));
+    setFailedCodes((prev) => {
+      if (course.code === null) return prev;
+      const next = new Set(prev);
+      next.delete(course.code);
+      return next;
+    });
+    setPreview(null);
+  };
+
+  const dismissFailed = (course: CourseOut) => {
+    setFailedAdds((prev) => prev.filter((c) => c.id !== course.id));
+    setFailedCodes((prev) => {
+      if (course.code === null) return prev;
+      const next = new Set(prev);
+      next.delete(course.code);
+      return next;
+    });
+  };
+
   const toggleDrop = useCallback(
     (item: SelectionItem) => {
       const key = selectionGridKey(item);
@@ -277,6 +312,7 @@ function HomePage() {
   const clearStaging = useCallback(() => {
     setStagedAdds([]);
     setStagedDrops([]);
+    setFailedAdds([]);
     setFailedCodes(new Set());
     setPreview(null);
     setPreviewError(null);
@@ -348,6 +384,7 @@ function HomePage() {
       .then((body) => {
         setJob(null);
         setPhase("job");
+        setFailedAdds([]);
         setFailedCodes(new Set());
         const jobId = body.job_id;
         const poll = (): void => {
@@ -356,17 +393,25 @@ function HomePage() {
               setJob(view);
               if (JOB_TERMINAL.has(view.status)) {
                 setSubmitting(false);
-                // Selective settle: successful adds leave staging (school truth
-                // now carries them); failed adds stay staged BUT get flagged so
-                // the browse list shows 送出失敗 instead of 已在課表.
                 const successAdd = new Set(
                   view.ops.filter((o) => o.action === "+" && o.outcome === "success").map((o) => o.code),
                 );
                 const failed = new Set(
                   view.ops.filter((o) => o.outcome === "failed" || o.outcome === "parse_failed").map((o) => o.code),
                 );
+                setFailedAdds(
+                  stagedAdds
+                    .filter((a) => a.course.code !== null && failed.has(a.course.code))
+                    .map((a) => a.course),
+                );
                 setStagedAdds((prev) =>
-                  reprioritize(prev.filter((a) => a.course.code === null || !successAdd.has(a.course.code))),
+                  reprioritize(
+                    prev.filter(
+                      (a) =>
+                        a.course.code === null ||
+                        (!successAdd.has(a.course.code) && !failed.has(a.course.code)),
+                    ),
+                  ),
                 );
                 setStagedDrops((prev) =>
                   prev.filter((d) => {
@@ -403,6 +448,32 @@ function HomePage() {
 
   const dropConfirmReady = preview?.confirm_token != null && password !== "";
 
+  const segmentedTabs = (
+    <div className="studio-segmented-tabs" role="tablist" aria-label={tx("右側功能切換", "Right panel view switch")}>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "browse"}
+        className={`segmented-tab-btn ${tab === "browse" ? "active" : ""}`}
+        onClick={() => setTab("browse")}
+      >
+        <Search size={13} className="me-1.5" />
+        <span>{tx("查課探索", "Find Courses")}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === "selections"}
+        className={`segmented-tab-btn ${tab === "selections" ? "active" : ""}`}
+        onClick={() => setTab("selections")}
+      >
+        <BookmarkCheck size={13} className="me-1.5" />
+        <span>{tx("已選課程", "My Selections")}</span>
+        {items.length > 0 && <span className="tab-count-pill ms-1.5">{items.length}</span>}
+      </button>
+    </div>
+  );
+
   // ============================== RENDER ==============================
   if (!authed) {
     return (
@@ -425,46 +496,46 @@ function HomePage() {
       {/* LEFT: unified timetable canvas + send bar */}
       <div className="col-12 col-xl-7">
         <div className="schedule-canvas-pane">
-          <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3">
-            <div className="d-flex align-items-center gap-2 flex-wrap">
+          <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap gap-3 py-2.5 px-3.5">
+            <div className="d-flex align-items-center gap-3 flex-wrap">
               <div className="schedule-canvas-title">
-                <CalendarCheck size={17} className="text-teal-600" />
+                <CalendarCheck size={18} className="text-teal-600" />
                 <span>{tx("目前課表", "Current Timetable")}</span>
               </div>
-              <div className="d-inline-flex align-items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.78rem" }}>
+              <div className="d-inline-flex align-items-center gap-2 px-3 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.82rem" }}>
                 <span>{tx(`已選 ${totals.courseCount} 門`, `${totals.courseCount} courses`)}</span>
-                <span className="text-slate-300">·</span>
+                <span className="text-slate-400">·</span>
                 <span>{tx(`${totals.totalCredits} 學分`, `${totals.totalCredits} cr`)}</span>
-                <span className="text-slate-300">·</span>
+                <span className="text-slate-400">·</span>
                 <span>{tx(`${totals.totalHours} 節`, `${totals.totalHours} hrs`)}</span>
               </div>
             </div>
 
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex align-items-center gap-3.5 flex-wrap">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-brand rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs"
-                style={{ fontSize: "0.8rem" }}
+                className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs"
+                style={{ fontSize: "0.84rem" }}
                 onClick={onPng}
                 disabled={pngState === "busy" || visualCount === 0}
               >
-                <Download size={13} />
+                <Download size={14} />
                 <span>{pngState === "busy" ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}</span>
               </button>
 
-              <div className="d-flex align-items-center gap-1.5">
-                <span className="text-muted d-none d-xxl-inline" style={{ fontSize: "0.74rem" }} role="status">
-                  {syncedAt === null ? tx("尚未同步", "Not synced") : tx(`同步：${syncedAt}`, `Synced: ${syncedAt}`)}
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-muted d-none d-sm-inline" style={{ fontSize: "0.78rem" }} role="status">
+                  {syncedAt === null ? tx("尚未同步", "Not synced") : tx(`同步：${formatSyncedTime(syncedAt)}`, `Synced: ${formatSyncedTime(syncedAt)}`)}
                 </span>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1"
-                  style={{ fontSize: "0.8rem" }}
+                  className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold"
+                  style={{ fontSize: "0.84rem" }}
                   onClick={onSync}
                   disabled={syncing}
                   title={syncedAt ? `上次同步：${syncedAt}` : undefined}
                 >
-                  <ArrowRepeat size={12} className={syncing ? "spin" : ""} />
+                  <ArrowRepeat size={13} className={syncing ? "spin" : ""} />
                   <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步", "Sync")}</span>
                 </button>
               </div>
@@ -510,6 +581,45 @@ function HomePage() {
                   <span className="text-decoration-line-through">{shortName(item)}</span>
                   <span className="font-monospace">{selectionShortCode(item) ?? ""}</span>
                 </button>
+              ))}
+            </div>
+          )}
+
+          {/* failed adds from the last batch (not on your timetable; retry or drop) */}
+          {failedAdds.length > 0 && (
+            <div className="d-flex flex-wrap align-items-center gap-2 px-3 pb-2" data-testid="failed-adds-strip">
+              <span className="badge bg-red-100 text-red-800 border border-red-300 rounded-pill">
+                {tx("送出失敗", "Submit failed")} {failedAdds.length}
+              </span>
+              {failedAdds.map((course) => (
+                <span
+                  key={course.id}
+                  className="btn btn-sm btn-outline-danger rounded-pill py-0 px-2 d-inline-flex align-items-center gap-1"
+                  style={{ fontSize: "0.74rem" }}
+                >
+                  <span>{shortName(course)}</span>
+                  <span className="font-monospace">{course.code ?? ""}</span>
+                  <button
+                    type="button"
+                    className="btn btn-link p-0 border-0 text-success fw-bold text-decoration-none ms-1"
+                    style={{ fontSize: "0.72rem" }}
+                    title={tx("放回暫存重試", "Stage again to retry")}
+                    aria-label={tx(`放回 ${shortName(course)} 至暫存`, `Restage ${shortName(course)}`)}
+                    onClick={() => restageFailed(course)}
+                  >
+                    {tx("放回", "Retry")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-link p-0 border-0 text-danger fw-bold text-decoration-none"
+                    style={{ fontSize: "0.72rem" }}
+                    title={tx("移除", "Dismiss")}
+                    aria-label={tx(`移除 ${shortName(course)}`, `Dismiss ${shortName(course)}`)}
+                    onClick={() => dismissFailed(course)}
+                  >
+                    {tx("移除", "Dismiss")}
+                  </button>
+                </span>
               ))}
             </div>
           )}
@@ -656,33 +766,6 @@ function HomePage() {
 
       {/* RIGHT: two-tab side panel */}
       <div className="col-12 col-xl-5">
-        <div className="d-flex align-items-center justify-content-between mb-2">
-          {/* Segmented Tab Switcher for Right Panel */}
-          <div className="studio-segmented-tabs" role="tablist" aria-label={tx("右側功能切換", "Right panel view switch")}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "browse"}
-              className={`segmented-tab-btn ${tab === "browse" ? "active" : ""}`}
-              onClick={() => setTab("browse")}
-            >
-              <Search size={13} className="me-1.5" />
-              <span>{tx("查課探索", "Find Courses")}</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "selections"}
-              className={`segmented-tab-btn ${tab === "selections" ? "active" : ""}`}
-              onClick={() => setTab("selections")}
-            >
-              <BookmarkCheck size={13} className="me-1.5" />
-              <span>{tx("已選課程", "My Selections")}</span>
-              {items.length > 0 && <span className="tab-count-pill ms-1.5">{items.length}</span>}
-            </button>
-          </div>
-        </div>
-
         {tab === "browse" ? (
           <CourseBrowser
             hoveredCourseId={hoveredCourseId}
@@ -692,23 +775,27 @@ function HomePage() {
             pickState={pickStateOf}
             onToggleCourse={onToggleCourse}
             onViewCourse={setDetailCourse}
+            headerTopSlot={segmentedTabs}
           />
         ) : (
-          <section className="card shadow-sm border-0 rounded-4" aria-label={tx("我的已選課程", "My selections")}>
-            <div className="card-body p-3">
-              <div className="d-flex align-items-center justify-content-between mb-2">
+          <section className="selections-pane-container" aria-label={tx("我的已選課程", "My selections")}>
+            <div className="discovery-search-header">
+              <div className="pb-2">{segmentedTabs}</div>
+              <div className="d-flex align-items-center justify-content-between pt-1">
                 <span className="fw-bold text-dark small">{tx("已選課程（同步自學校）", "Selections (synced from the school)")}</span>
                 <button
                   type="button"
-                  className="btn btn-sm btn-brand d-inline-flex align-items-center gap-1 rounded-pill"
+                  className="btn btn-sm btn-brand d-inline-flex align-items-center gap-1 rounded-pill px-3"
                   onClick={onSync}
                   disabled={syncing}
                 >
-                  <ArrowRepeat size={12} />
+                  <ArrowRepeat size={12} className={syncing ? "spin" : ""} />
                   <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步我的已選", "Sync my selections")}</span>
                 </button>
               </div>
+            </div>
 
+            <div className="p-3 overflow-y-auto flex-grow-1">
               {loading ? (
                 <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">{tx("讀取中…", "Loading…")}</p>
               ) : syncedAt === null ? (

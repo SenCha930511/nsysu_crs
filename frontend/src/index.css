@@ -332,14 +332,16 @@ h1, h2, h3, h4, h5, h6 {
    3. Course Discovery Hub (Left Pane)
    ========================================================================== */
 
-.course-discovery-pane {
+.course-discovery-pane,
+.selections-pane-container {
   background: var(--studio-surface);
   border: 1px solid var(--studio-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--studio-shadow-sm);
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 6.5rem);
+  height: calc(100vh - 6.8rem);
+  min-height: 640px;
   overflow: hidden;
 }
 
@@ -622,7 +624,8 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--studio-shadow-sm);
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 6.5rem);
+  height: calc(100vh - 6.8rem);
+  min-height: 640px;
   position: relative;
   overflow: hidden;
 }
@@ -631,18 +634,19 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 1rem;
+  padding: 0.85rem 1.25rem;
   background: #ffffff;
   border-bottom: 1px solid var(--studio-border);
   flex-shrink: 0;
+  min-height: 56px;
 }
 
 .schedule-canvas-title {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.92rem;
-  font-weight: 700;
+  gap: 0.55rem;
+  font-size: 1rem;
+  font-weight: 800;
   color: #0f172a;
 }
 
@@ -1531,6 +1535,70 @@ h1, h2, h3, h4, h5, h6 {
   .discovery-virtuoso-list {
     min-height: 24rem;
     height: 30rem;
+  }
+}
+
+/* Course detail modal: school-style outline table + bounded scrolling */
+.course-detail-card {
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.course-detail-head {
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+.course-detail-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.syll-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+.syll-table th,
+.syll-table td {
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  padding: 0.45rem 0.7rem;
+  vertical-align: top;
+  text-align: left;
+}
+.syll-table thead th {
+  background: var(--crs-brand-lightest, #e8f6f5);
+  color: var(--crs-brand-dark, #0d5f57);
+  font-weight: 800;
+  text-align: center;
+}
+.syll-table .syll-label {
+  width: 22%;
+  background: rgba(241, 245, 249, 0.85);
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+.syll-table .syll-label small {
+  display: block;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+.syll-table .syll-section th {
+  background: rgba(232, 246, 245, 0.85);
+  color: var(--crs-brand-dark, #0d5f57);
+  font-weight: 800;
+}
+.syll-table .syll-content {
+  white-space: pre-wrap;
+  line-height: 1.75;
+  color: #1e293b;
+}
+@media (max-width: 767.98px) {
+  .syll-table .syll-label {
+    width: 32%;
   }
 }
 
