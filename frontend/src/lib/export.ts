@@ -73,22 +73,7 @@ export async function captureGridPng(
     (node.classList.contains("schedule-table-wrapper") ? node : null) ??
     node;
 
-  // Clone node into an off-screen unconstrained staging container
   const clone = tableWrapper.cloneNode(true) as HTMLElement;
-
-  // Unset all responsive scrollbars, scroll limitations and sticky positioning in clone
-  clone.querySelectorAll("*").forEach((el) => {
-    const htmlEl = el as HTMLElement;
-    if (htmlEl.style) {
-      if (htmlEl.classList.contains("table-responsive")) {
-        htmlEl.style.overflow = "visible";
-        htmlEl.style.display = "block";
-      }
-      if (htmlEl.style.position === "sticky") {
-        htmlEl.style.position = "static";
-      }
-    }
-  });
 
   const container = document.createElement("div");
   container.style.position = "fixed";
@@ -103,6 +88,23 @@ export async function captureGridPng(
   container.appendChild(clone);
   document.body.appendChild(container);
 
+  // Computed-style sweep AFTER mount: sticky / scroll containers / max-height
+  // are class-driven in this design system, so inline-at-clone checks miss
+  // them; they must be neutralised through computed styles or the capture
+  // slips out of place (cropped thead, clipped rows).
+  container.querySelectorAll<HTMLElement>("*").forEach((el) => {
+    const cs = getComputedStyle(el);
+    if (cs.position === "sticky" || cs.position === "fixed") {
+      el.style.position = "static";
+    }
+    if (cs.maxHeight !== "none") {
+      el.style.maxHeight = "none";
+    }
+    if (cs.overflowX !== "visible" || cs.overflowY !== "visible") {
+      el.style.overflow = "visible";
+    }
+  });
+
   try {
     const fullWidth = container.offsetWidth || 1180;
     const fullHeight = container.offsetHeight || 800;
@@ -113,6 +115,11 @@ export async function captureGridPng(
       cacheBust: true,
       width: fullWidth,
       height: fullHeight,
+      // The Google Fonts stylesheet is cross-origin: reading its cssRules
+      // throws SecurityError and silently kills the capture on strict
+      // browsers. Fonts from the page still apply at render time; skipping
+      // the font-embed pass only drops the (optional) inlined font data.
+      skipFonts: true,
     });
     return dataUrl;
   } finally {

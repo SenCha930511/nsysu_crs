@@ -496,13 +496,13 @@ function HomePage() {
       {/* LEFT: unified timetable canvas + send bar */}
       <div className="col-12 col-xl-7">
         <div className="schedule-canvas-pane">
-          <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap gap-3 py-2.5 px-3.5">
-            <div className="d-flex align-items-center gap-3 flex-wrap">
-              <div className="schedule-canvas-title">
+          <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap py-2.5 px-3.5" style={{ gap: "1rem" }}>
+            <div className="d-flex align-items-center flex-wrap" style={{ gap: "1rem" }}>
+              <div className="schedule-canvas-title" style={{ gap: "0.55rem" }}>
                 <CalendarCheck size={18} className="text-teal-600" />
                 <span>{tx("目前課表", "Current Timetable")}</span>
               </div>
-              <div className="d-inline-flex align-items-center gap-2 px-3 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.82rem" }}>
+              <div className="d-inline-flex align-items-center px-3 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.82rem", gap: "0.6rem" }}>
                 <span>{tx(`已選 ${totals.courseCount} 門`, `${totals.courseCount} courses`)}</span>
                 <span className="text-slate-400">·</span>
                 <span>{tx(`${totals.totalCredits} 學分`, `${totals.totalCredits} cr`)}</span>
@@ -511,11 +511,11 @@ function HomePage() {
               </div>
             </div>
 
-            <div className="d-flex align-items-center gap-3.5 flex-wrap">
+            <div className="d-flex align-items-center flex-wrap" style={{ gap: "1.25rem" }}>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs"
-                style={{ fontSize: "0.84rem" }}
+                className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
+                style={{ fontSize: "0.84rem", gap: "0.55rem" }}
                 onClick={onPng}
                 disabled={pngState === "busy" || visualCount === 0}
               >
@@ -523,14 +523,14 @@ function HomePage() {
                 <span>{pngState === "busy" ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}</span>
               </button>
 
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex align-items-center" style={{ gap: "0.75rem" }}>
                 <span className="text-muted d-none d-sm-inline" style={{ fontSize: "0.78rem" }} role="status">
                   {syncedAt === null ? tx("尚未同步", "Not synced") : tx(`同步：${formatSyncedTime(syncedAt)}`, `Synced: ${formatSyncedTime(syncedAt)}`)}
                 </span>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold"
-                  style={{ fontSize: "0.84rem" }}
+                  className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 d-inline-flex align-items-center fw-semibold"
+                  style={{ fontSize: "0.84rem", gap: "0.5rem" }}
                   onClick={onSync}
                   disabled={syncing}
                   title={syncedAt ? `上次同步：${syncedAt}` : undefined}

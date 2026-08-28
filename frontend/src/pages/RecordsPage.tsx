@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRepeat,
+  CalendarCheck,
   CheckCircleFill,
   Clock,
   ClockHistory,
@@ -16,6 +17,7 @@ import {
   SendCheck,
   XCircleFill,
 } from "react-bootstrap-icons";
+import { Link } from "react-router-dom";
 
 import { ApiError, fetchWriteJobs } from "../lib/api";
 import type { JobView } from "../lib/api";
@@ -123,18 +125,20 @@ function JobCard({ job }: { job: JobView }) {
 
   const StatusIcon = statusInfo.icon;
   const duration = formatDuration(job.created_at, job.finished_at);
+  const addCount = job.ops.filter((op) => op.action === "+").length;
+  const dropCount = job.ops.filter((op) => op.action === "-").length;
 
   return (
-    <article className="record-job-card">
+    <article className={`record-job-card status-${job.status}`}>
       <div className="record-job-header">
-        <div className="d-flex align-items-center gap-2 flex-wrap">
-          <span className={`badge rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-bold ${statusInfo.badgeClass}`}>
-            <StatusIcon size={12} />
+        <div className="d-flex align-items-center gap-2.5 flex-wrap">
+          <span className={`badge rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5 fw-bold ${statusInfo.badgeClass}`}>
+            <StatusIcon size={13} />
             <span>{statusInfo.label}</span>
           </span>
 
           {job.reconcile !== null && (
-            <span className="badge bg-amber-100 text-amber-900 border border-amber-300 rounded-pill px-2.5 py-1">
+            <span className="badge bg-amber-100 text-amber-900 border border-amber-300 rounded-pill px-2.5 py-1 fw-bold">
               {tx("需重新對帳", "Reconcile needed")}
             </span>
           )}
@@ -144,11 +148,20 @@ function JobCard({ job }: { job: JobView }) {
           </span>
         </div>
 
-        <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: "0.82rem" }}>
-          <Clock size={13} className="text-secondary" />
-          <span className="fw-semibold">{formatTimestamp(job.created_at)}</span>
+        <div className="d-flex align-items-center gap-3 text-muted flex-wrap" style={{ fontSize: "0.82rem" }}>
+          {job.ops.length > 0 && (
+            <span className="fw-semibold text-slate-600">
+              {addCount > 0 && <span>＋{addCount} {tx("加選", "add")} </span>}
+              {addCount > 0 && dropCount > 0 && <span className="text-slate-300 mx-1">·</span>}
+              {dropCount > 0 && <span>−{dropCount} {tx("退選", "drop")}</span>}
+            </span>
+          )}
+          <div className="d-flex align-items-center gap-1.5">
+            <Clock size={13} className="text-secondary" />
+            <span className="fw-semibold">{formatTimestamp(job.created_at)}</span>
+          </div>
           {duration !== null && (
-            <span className="badge bg-slate-100 text-slate-600 border border-slate-200 rounded-pill px-2">
+            <span className="badge bg-slate-100 text-slate-600 border border-slate-200 rounded-pill px-2.5 py-1">
               {tx(`耗時 ${duration}`, `took ${duration}`)}
             </span>
           )}
@@ -173,7 +186,7 @@ function JobCard({ job }: { job: JobView }) {
             return (
               <div key={`${op.code}-${index}`} className="record-op-row">
                 <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
-                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <div className="d-flex align-items-center gap-2.5 flex-wrap">
                     {op.action === "+" ? (
                       <span className="badge bg-teal-100 text-teal-800 border border-teal-300 rounded-pill px-2.5 py-1 fw-bold">
                         {tx("加選", "Add")}
@@ -197,7 +210,7 @@ function JobCard({ job }: { job: JobView }) {
 
                   <div className="d-flex align-items-center gap-1.5">
                     <span
-                      className={`badge rounded-pill px-2.5 py-1.5 fw-bold ${
+                      className={`badge rounded-pill px-3 py-1.5 fw-bold ${
                         isSuccess
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
                           : isDanger
@@ -214,11 +227,11 @@ function JobCard({ job }: { job: JobView }) {
 
                 {sanitizedReason !== "" && op.outcome !== "success" && (
                   <div className="record-reason-box">
-                    <div className="d-flex align-items-start gap-1.5">
-                      <ExclamationCircleFill size={13} className="flex-shrink-0 mt-0.5" />
+                    <div className="d-flex align-items-start gap-2">
+                      <ExclamationCircleFill size={14} className="flex-shrink-0 mt-0.5 text-rose-600" />
                       <div>
-                        <strong>{tx("學校回報原因：", "School rejection reason: ")}</strong>
-                        <span>{sanitizedReason}</span>
+                        <strong className="text-rose-900">{tx("學校回報原因：", "School rejection reason: ")}</strong>
+                        <span className="text-rose-800">{sanitizedReason}</span>
                       </div>
                     </div>
                   </div>
@@ -232,12 +245,15 @@ function JobCard({ job }: { job: JobView }) {
   );
 }
 
+type RecordFilter = "all" | "done" | "abnormal";
+
 function RecordsPage() {
   const { tx } = useI18n();
   const { csrfToken } = useAuth();
   const [jobs, setJobs] = useState<JobView[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [filter, setFilter] = useState<RecordFilter>("all");
 
   const load = useCallback(() => {
     if (csrfToken === null) return;
@@ -265,96 +281,141 @@ function RecordsPage() {
     return { totalJobs, successfulJobs, lastJobTime };
   }, [jobs]);
 
+  const filteredJobs = useMemo(() => {
+    if (!jobs) return null;
+    if (filter === "done") {
+      return jobs.filter((j) => j.status === "done" && j.ops.every((op) => op.outcome === "success"));
+    }
+    if (filter === "abnormal") {
+      return jobs.filter((j) => j.status !== "done" || j.ops.some((op) => op.outcome !== "success"));
+    }
+    return jobs;
+  }, [jobs, filter]);
+
   return (
-    <div className="studio-canvas-container py-3">
-      <div className="row justify-content-center">
-        <div className="col-12 col-xl-10">
-          {/* Header Card */}
-          <div className="card shadow-sm border-0 rounded-4 mb-4">
-            <div className="card-body p-4">
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <div>
-                  <h1 className="h4 fw-bold mb-1 text-dark d-flex align-items-center gap-2.5">
-                    <div className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center">
-                      <ClockHistory size={22} />
-                    </div>
-                    <span>{tx("送單紀錄", "Submission History")}</span>
-                  </h1>
-                  <p className="text-muted mb-0" style={{ fontSize: "0.88rem" }}>
-                    {tx(
-                      "檢視您所有選課志願單的送出歷程、執行狀態與校方系統回傳結果。",
-                      "Review your submitted batch histories, execution status, and verbatim school responses.",
-                    )}
-                  </p>
-                </div>
-
-                <div className="d-flex align-items-center gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5 shadow-sm"
-                    style={{ fontSize: "0.88rem" }}
-                    onClick={load}
-                    disabled={loading}
-                  >
-                    <ArrowRepeat size={14} className={loading ? "spin-animation" : ""} />
-                    <span>{loading ? tx("同步中…", "Refreshing…") : tx("更新紀錄", "Refresh")}</span>
-                  </button>
-                </div>
+    <div className="py-3" style={{ maxWidth: "1080px", margin: "0 auto" }}>
+      {/* Hero Header Card */}
+      <div className="records-hero-card">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 className="h4 fw-bold mb-1.5 text-dark d-flex align-items-center gap-2.5">
+              <div className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center">
+                <ClockHistory size={22} />
               </div>
-
-              {summary !== null && (
-                <div className="d-flex align-items-center flex-wrap gap-2.5 mt-3 pt-3 border-top">
-                  <div className="selected-stat-chip">
-                    <SendCheck size={14} className="text-teal-600" />
-                    <span>{tx(`總送單 ${summary.totalJobs} 批次`, `Total ${summary.totalJobs} batches`)}</span>
-                  </div>
-                  <div className="selected-stat-chip">
-                    <CheckCircleFill size={14} className="text-emerald-600" />
-                    <span>{tx(`完成 ${summary.successfulJobs} 批次`, `Finished ${summary.successfulJobs} batches`)}</span>
-                  </div>
-                  <div className="selected-stat-chip">
-                    <Clock size={14} className="text-secondary" />
-                    <span>{tx(`最新送單：${summary.lastJobTime}`, `Latest: ${summary.lastJobTime}`)}</span>
-                  </div>
-                </div>
+              <span>{tx("送單紀錄", "Submission History")}</span>
+            </h1>
+            <p className="text-muted mb-0" style={{ fontSize: "0.88rem" }}>
+              {tx(
+                "檢視您所有選課志願單的送出歷程、執行狀態與校方系統回傳結果。",
+                "Review your submitted batch histories, execution status, and verbatim school responses.",
               )}
-            </div>
+            </p>
           </div>
 
-          {errorText !== null && (
-            <div className="alert alert-danger py-2.5 px-3.5 rounded-3 mb-4 d-flex align-items-center gap-2" role="alert">
-              <ExclamationCircleFill size={16} />
-              <span>{errorText}</span>
-            </div>
-          )}
-
-          {jobs === null && loading ? (
-            <div className="card shadow-sm border-0 rounded-4 p-5 text-center text-muted">
-              <div className="d-inline-flex align-items-center justify-content-center mb-2">
-                <HourglassSplit size={24} className="text-teal-600 spin-animation" />
-              </div>
-              <p className="mb-0 fw-semibold">{tx("讀取選單送出紀錄中…", "Loading submission history…")}</p>
-            </div>
-          ) : jobs !== null && jobs.length === 0 ? (
-            <div className="card shadow-sm border-0 rounded-4 p-5 text-center text-muted">
-              <div className="p-3 bg-slate-100 text-slate-400 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style={{ width: "56px", height: "56px" }}>
-                <Layers size={24} />
-              </div>
-              <h3 className="h6 fw-bold text-dark mb-1">{tx("尚無任何送單紀錄", "No Submissions Yet")}</h3>
-              <p className="small mb-0 text-muted">
-                {tx(
-                  "於「查課・課表」排定志願並送出後，所有的批次執行歷程與校方結果將完整記錄於此。",
-                  "Once you queue and submit your schedule from Courses & Timetable, all execution details and feedback will appear here.",
-                )}
-              </p>
-            </div>
-          ) : (
-            <div className="records-list-container">
-              {jobs?.map((job) => <JobCard key={job.job_id} job={job} />)}
-            </div>
-          )}
+          <div className="d-flex align-items-center gap-2">
+            <button
+              type="button"
+              className="btn btn-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center gap-1.5 shadow-sm fw-semibold"
+              style={{ fontSize: "0.88rem" }}
+              onClick={load}
+              disabled={loading}
+            >
+              <ArrowRepeat size={14} className={loading ? "spin" : ""} />
+              <span>{loading ? tx("更新中…", "Refreshing…") : tx("更新紀錄", "Refresh")}</span>
+            </button>
+          </div>
         </div>
+
+        {summary !== null && (
+          <div className="d-flex align-items-center flex-wrap gap-2.5 mt-3 pt-3 border-top">
+            <div className="record-stat-chip">
+              <SendCheck size={14} className="text-teal-600" />
+              <span>{tx(`總送單 ${summary.totalJobs} 批次`, `Total ${summary.totalJobs} batches`)}</span>
+            </div>
+            <div className="record-stat-chip">
+              <CheckCircleFill size={14} className="text-emerald-600" />
+              <span>{tx(`完全成功 ${summary.successfulJobs} 批次`, `Finished ${summary.successfulJobs} batches`)}</span>
+            </div>
+            <div className="record-stat-chip">
+              <Clock size={14} className="text-secondary" />
+              <span>{tx(`最新送單：${summary.lastJobTime}`, `Latest: ${summary.lastJobTime}`)}</span>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Filter Tabs */}
+      {jobs !== null && jobs.length > 0 && (
+        <div className="record-filter-nav" role="tablist" aria-label={tx("紀錄篩選", "Record filter")}>
+          <button
+            type="button"
+            className={`record-filter-btn ${filter === "all" ? "active" : ""}`}
+            onClick={() => setFilter("all")}
+          >
+            <span>{tx("全部", "All")}</span>
+            <span className="badge text-bg-light border rounded-pill font-monospace" style={{ fontSize: "0.72rem" }}>
+              {jobs.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            className={`record-filter-btn ${filter === "done" ? "active" : ""}`}
+            onClick={() => setFilter("done")}
+          >
+            <span>{tx("完全成功", "Success")}</span>
+          </button>
+          <button
+            type="button"
+            className={`record-filter-btn ${filter === "abnormal" ? "active" : ""}`}
+            onClick={() => setFilter("abnormal")}
+          >
+            <span>{tx("含失敗 / 需對帳", "Failed / Issues")}</span>
+          </button>
+        </div>
+      )}
+
+      {errorText !== null && (
+        <div className="alert alert-danger py-2.5 px-3.5 rounded-3 mb-4 d-flex align-items-center gap-2" role="alert">
+          <ExclamationCircleFill size={16} />
+          <span>{errorText}</span>
+        </div>
+      )}
+
+      {jobs === null && loading ? (
+        <div className="card shadow-sm border-0 rounded-4 p-5 text-center text-muted bg-white">
+          <div className="d-inline-flex align-items-center justify-content-center mb-2">
+            <HourglassSplit size={26} className="text-teal-600 spin" />
+          </div>
+          <p className="mb-0 fw-semibold">{tx("讀取選單送出紀錄中…", "Loading submission history…")}</p>
+        </div>
+      ) : jobs !== null && jobs.length === 0 ? (
+        <div className="card shadow-sm border-0 rounded-4 p-5 text-center text-muted bg-white">
+          <div className="p-3 bg-slate-100 text-slate-400 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style={{ width: "64px", height: "64px" }}>
+            <Layers size={28} />
+          </div>
+          <h3 className="h6 fw-bold text-dark mb-1">{tx("尚無任何送單紀錄", "No Submissions Yet")}</h3>
+          <p className="small mb-3 text-muted" style={{ maxWidth: "480px", margin: "0 auto" }}>
+            {tx(
+              "於「查課・課表」排定志願並送出後，所有的批次執行歷程與校方結果將完整記錄於此。",
+              "Once you queue and submit your schedule from Courses & Timetable, all execution details and feedback will appear here.",
+            )}
+          </p>
+          <div>
+            <Link to="/" className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5">
+              <CalendarCheck size={14} />
+              <span>{tx("前往查課排課", "Go to Courses & Timetable")}</span>
+            </Link>
+          </div>
+        </div>
+      ) : filteredJobs !== null && filteredJobs.length === 0 ? (
+        <div className="card shadow-sm border-0 rounded-4 p-4 text-center text-muted bg-white">
+          <p className="mb-0">{tx("此篩選條件下無任何紀錄。", "No records match this filter.")}</p>
+        </div>
+      ) : (
+        <div className="records-list-container">
+          {filteredJobs?.map((job) => <JobCard key={job.job_id} job={job} />)}
+        </div>
+      )}
     </div>
   );
 }
