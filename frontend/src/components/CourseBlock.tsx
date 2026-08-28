@@ -114,9 +114,9 @@ export interface CourseBlockProps {
    * button - the block is a pure visual rendering of the course. */
   readOnly?: boolean;
   /** Number of periods spanned in this contiguous block */
-  spanCount?: number;
+  spanCount?: number | undefined;
   /** Clock range string (e.g. "09:10-12:00") */
-  timeRange?: string;
+  timeRange?: string | undefined;
 }
 
 function CourseBlock({

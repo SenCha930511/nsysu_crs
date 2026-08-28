@@ -53,6 +53,25 @@ export interface CoursePage {
   items: CourseOut[];
 }
 
+export interface CourseOutline {
+  name_zh: string | null;
+  code: string | null;
+  name_en: string | null;
+  course_type: string | null;
+  requirement: string | null;
+  dept: string | null;
+  instructor: string | null;
+  credit: string | null;
+  semester_title: string | null;
+  syllabus: string | null;
+  objectives: string | null;
+  teaching_methods: string | null;
+  evaluation: string | null;
+  references: string | null;
+  source_url: string;
+  fetched_at: string;
+}
+
 export interface CatalogMeta {
   ok: boolean;
   updated_at: string | null;
@@ -225,6 +244,16 @@ export function fetchCourses(
 
 export function fetchCatalogMeta(signal?: AbortSignal): Promise<CatalogMeta> {
   return request<CatalogMeta>("/api/catalog/meta", signal !== undefined ? { signal } : {});
+}
+
+export function fetchCourseOutline(
+  courseId: string,
+  signal?: AbortSignal,
+): Promise<CourseOutline> {
+  return request<CourseOutline>(
+    `/api/courses/${courseId}/outline`,
+    signal !== undefined ? { signal } : {},
+  );
 }
 
 // ---------- ops posture (anonymous; todo 17 breaker banner seam) ----------

@@ -14,17 +14,19 @@ import {
   BookmarkCheck,
   CalendarCheck,
   CheckCircleFill,
+  Download,
   Eraser,
   ExclamationTriangleFill,
   HourglassSplit,
+  Search,
   Send,
   XCircleFill,
 } from "react-bootstrap-icons";
 import { Link } from "react-router-dom";
 
 import CourseBrowser from "../components/CourseBrowser";
+import CourseDetailModal from "../components/CourseDetailModal";
 import ScheduleTable from "../components/ScheduleTable";
-import TotalsPanel from "../components/TotalsPanel";
 import {
   ApiError,
   fetchSelections,
@@ -51,6 +53,7 @@ import type { StagedAdd } from "../lib/consoleOps";
 import { downloadGridPng } from "../lib/export";
 import { useI18n } from "../lib/i18n";
 import { buildSelectionGridCourses } from "../lib/selectionGrid";
+import { totalCreditsAndHours } from "../lib/totals";
 import { outcomeCopy } from "../lib/writeOps";
 import { useAuth } from "../state/auth";
 
@@ -79,11 +82,15 @@ function HomePage() {
   // ---- staging ----
   const [stagedAdds, setStagedAdds] = useState<StagedAdd[]>([]);
   const [stagedDrops, setStagedDrops] = useState<SelectionItem[]>([]);
+  // Short codes whose last submission failed per-op; rows show 送出失敗
+  // instead of pretending the course is on the timetable.
+  const [failedCodes, setFailedCodes] = useState<Set<string>>(new Set());
 
   // ---- tabs / browse ----
   const [tab, setTab] = useState<Tab>("browse");
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
   const [previewCourse, setPreviewCourse] = useState<CourseOut | null>(null);
+  const [detailCourse, setDetailCourse] = useState<CourseOut | null>(null);
 
   // ---- png (parity with the previous home) ----
   const gridRef = useRef<HTMLDivElement>(null);
@@ -201,13 +208,20 @@ function HomePage() {
   const visualCount = gridCourses.filter(
     (c) => c.class_time !== null && c.class_time.some((slot) => slot !== ""),
   ).length;
+  const totals = useMemo(
+    () => totalCreditsAndHours(gridCourses),
+    [gridCourses],
+  );
 
   // ---- browse integration ----
-  const isCoursePicked = useCallback(
-    (course: CourseOut) =>
-      selectedShorts.has(course.code as string) ||
-      stagedAdds.some((a) => a.course.id === course.id),
-    [selectedShorts, stagedAdds],
+  const pickStateOf = useCallback(
+    (course: CourseOut): "selected" | "staged" | "failed" | null => {
+      if (course.code !== null && failedCodes.has(course.code)) return "failed";
+      if (course.code !== null && selectedShorts.has(course.code)) return "selected";
+      if (stagedAdds.some((a) => a.course.id === course.id)) return "staged";
+      return null;
+    },
+    [failedCodes, selectedShorts, stagedAdds],
   );
 
   const reprioritize = (rows: StagedAdd[]): StagedAdd[] =>
@@ -217,6 +231,14 @@ function HomePage() {
     (course: CourseOut) => {
       if (stagedAdds.some((a) => a.course.id === course.id)) {
         setStagedAdds((prev) => reprioritize(prev.filter((a) => a.course.id !== course.id)));
+        if (course.code !== null) {
+          setFailedCodes((prev) => {
+            if (!prev.has(course.code as string)) return prev;
+            const next = new Set(prev);
+            next.delete(course.code as string);
+            return next;
+          });
+        }
         setPreview(null);
         return;
       }
@@ -255,6 +277,7 @@ function HomePage() {
   const clearStaging = useCallback(() => {
     setStagedAdds([]);
     setStagedDrops([]);
+    setFailedCodes(new Set());
     setPreview(null);
     setPreviewError(null);
   }, []);
@@ -325,6 +348,7 @@ function HomePage() {
       .then((body) => {
         setJob(null);
         setPhase("job");
+        setFailedCodes(new Set());
         const jobId = body.job_id;
         const poll = (): void => {
           void fetchWriteJob(jobId, csrfToken)
@@ -332,7 +356,27 @@ function HomePage() {
               setJob(view);
               if (JOB_TERMINAL.has(view.status)) {
                 setSubmitting(false);
-                clearStaging();
+                // Selective settle: successful adds leave staging (school truth
+                // now carries them); failed adds stay staged BUT get flagged so
+                // the browse list shows 送出失敗 instead of 已在課表.
+                const successAdd = new Set(
+                  view.ops.filter((o) => o.action === "+" && o.outcome === "success").map((o) => o.code),
+                );
+                const failed = new Set(
+                  view.ops.filter((o) => o.outcome === "failed" || o.outcome === "parse_failed").map((o) => o.code),
+                );
+                setStagedAdds((prev) =>
+                  reprioritize(prev.filter((a) => a.course.code === null || !successAdd.has(a.course.code))),
+                );
+                setStagedDrops((prev) =>
+                  prev.filter((d) => {
+                    const short = selectionShortCode(d);
+                    return short !== null && failed.has(short);
+                  }),
+                );
+                setFailedCodes(failed);
+                setPreview(null);
+                setPreviewError(null);
                 onSync();
                 if (view.reconcile !== null) setJobNote(tx("部分結果需要重新對帳；已自動同步已選。", "Some results need a fresh reconcile; selections were re-synced automatically."));
               } else {
@@ -381,24 +425,49 @@ function HomePage() {
       {/* LEFT: unified timetable canvas + send bar */}
       <div className="col-12 col-xl-7">
         <div className="schedule-canvas-pane">
-          <div className="schedule-canvas-header">
-            <div className="schedule-canvas-title">
-              <CalendarCheck size={17} className="text-teal-600" />
-              <span>{tx("目前課表", "Current Timetable")}</span>
+          <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <div className="schedule-canvas-title">
+                <CalendarCheck size={17} className="text-teal-600" />
+                <span>{tx("目前課表", "Current Timetable")}</span>
+              </div>
+              <div className="d-inline-flex align-items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.78rem" }}>
+                <span>{tx(`已選 ${totals.courseCount} 門`, `${totals.courseCount} courses`)}</span>
+                <span className="text-slate-300">·</span>
+                <span>{tx(`${totals.totalCredits} 學分`, `${totals.totalCredits} cr`)}</span>
+                <span className="text-slate-300">·</span>
+                <span>{tx(`${totals.totalHours} 節`, `${totals.totalHours} hrs`)}</span>
+              </div>
             </div>
+
             <div className="d-flex align-items-center gap-2">
-              <span className="text-muted small d-none d-sm-inline" role="status">
-                {syncedAt === null ? tx("尚未同步", "Not synced yet") : tx(`上次同步：${syncedAt}`, `Last synced: ${syncedAt}`)}
-              </span>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
-                onClick={onSync}
-                disabled={syncing}
+                className="btn btn-sm btn-outline-brand rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1.5 fw-semibold shadow-xs"
+                style={{ fontSize: "0.8rem" }}
+                onClick={onPng}
+                disabled={pngState === "busy" || visualCount === 0}
               >
-                <ArrowRepeat size={12} className={syncing ? "spin" : ""} />
-                <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步", "Sync")}</span>
+                <Download size={13} />
+                <span>{pngState === "busy" ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}</span>
               </button>
+
+              <div className="d-flex align-items-center gap-1.5">
+                <span className="text-muted d-none d-xxl-inline" style={{ fontSize: "0.74rem" }} role="status">
+                  {syncedAt === null ? tx("尚未同步", "Not synced") : tx(`同步：${syncedAt}`, `Synced: ${syncedAt}`)}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1"
+                  style={{ fontSize: "0.8rem" }}
+                  onClick={onSync}
+                  disabled={syncing}
+                  title={syncedAt ? `上次同步：${syncedAt}` : undefined}
+                >
+                  <ArrowRepeat size={12} className={syncing ? "spin" : ""} />
+                  <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步", "Sync")}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -412,15 +481,17 @@ function HomePage() {
             <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{pngError}</div>
           )}
 
-          <div className="schedule-grid-scroll-container" ref={gridRef}>
-            <ScheduleTable
-              selectedCourses={gridCourses}
-              hoveredCourseId={hoveredCourseId}
-              onCourseHover={setHoveredCourseId}
-              onCourseRemove={() => undefined}
-              readOnly
-              previewCourse={previewCourse}
-            />
+          <div className="schedule-grid-scroll-container">
+            <div ref={gridRef} className="w-100">
+              <ScheduleTable
+                selectedCourses={gridCourses}
+                hoveredCourseId={hoveredCourseId}
+                onCourseHover={setHoveredCourseId}
+                onCourseRemove={() => undefined}
+                readOnly
+                previewCourse={previewCourse}
+              />
+            </div>
           </div>
 
           {/* staged drops chips (undoable) */}
@@ -580,36 +651,36 @@ function HomePage() {
             </div>
           )}
 
-          <TotalsPanel
-            selectedCourses={gridCourses}
-            onDownloadPng={onPng}
-            isDownloadingPng={pngState === "busy"}
-          />
         </div>
       </div>
 
       {/* RIGHT: two-tab side panel */}
       <div className="col-12 col-xl-5">
-        <div className="d-flex gap-2 mb-2" role="tablist" aria-label={tx("右側檢視切換", "Right-panel view switch")}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "browse"}
-            className={`btn btn-sm rounded-pill px-3 ${tab === "browse" ? "btn-brand" : "btn-outline-secondary"}`}
-            onClick={() => setTab("browse")}
-          >
-            {tx("查課", "Find courses")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "selections"}
-            className={`btn btn-sm rounded-pill px-3 ${tab === "selections" ? "btn-brand" : "btn-outline-secondary"}`}
-            onClick={() => setTab("selections")}
-          >
-            <BookmarkCheck size={12} className="me-1" />
-            {tx("已選", "My selections")} {items.length > 0 ? `(${items.length})` : ""}
-          </button>
+        <div className="d-flex align-items-center justify-content-between mb-2">
+          {/* Segmented Tab Switcher for Right Panel */}
+          <div className="studio-segmented-tabs" role="tablist" aria-label={tx("右側功能切換", "Right panel view switch")}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "browse"}
+              className={`segmented-tab-btn ${tab === "browse" ? "active" : ""}`}
+              onClick={() => setTab("browse")}
+            >
+              <Search size={13} className="me-1.5" />
+              <span>{tx("查課探索", "Find Courses")}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "selections"}
+              className={`segmented-tab-btn ${tab === "selections" ? "active" : ""}`}
+              onClick={() => setTab("selections")}
+            >
+              <BookmarkCheck size={13} className="me-1.5" />
+              <span>{tx("已選課程", "My Selections")}</span>
+              {items.length > 0 && <span className="tab-count-pill ms-1.5">{items.length}</span>}
+            </button>
+          </div>
         </div>
 
         {tab === "browse" ? (
@@ -618,8 +689,9 @@ function HomePage() {
             onCourseHover={setHoveredCourseId}
             onCoursePreview={setPreviewCourse}
             baseCourses={gridCourses}
-            isCoursePicked={isCoursePicked}
+            pickState={pickStateOf}
             onToggleCourse={onToggleCourse}
+            onViewCourse={setDetailCourse}
           />
         ) : (
           <section className="card shadow-sm border-0 rounded-4" aria-label={tx("我的已選課程", "My selections")}>
@@ -697,6 +769,11 @@ function HomePage() {
           </section>
         )}
       </div>
+
+      {/* course detail + syllabus modal */}
+      {detailCourse !== null && (
+        <CourseDetailModal course={detailCourse} onClose={() => setDetailCourse(null)} />
+      )}
 
       {/* confirm modal */}
       {phase === "confirm" && preview !== null && preview.confirm_token !== null && (

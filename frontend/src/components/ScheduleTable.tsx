@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { Laptop } from "react-bootstrap-icons";
 
-import { PERIOD_CODES, TIMESLOTS, WEEKDAYS, parseDayTimeString } from "../config/timeslots";
+import { TIMESLOTS, WEEKDAYS, parseDayTimeString } from "../config/timeslots";
 import type { CourseOut } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import CourseBlock from "./CourseBlock";
@@ -20,14 +19,13 @@ export interface ScheduleTableProps {
 
 interface CellItem {
   type: "render" | "skip";
-  rowSpan?: number;
-  spanCount?: number;
-  timeRange?: string;
+  rowSpan?: number | undefined;
+  spanCount?: number | undefined;
+  timeRange?: string | undefined;
   courses: CourseOut[];
-  isFocusDay?: boolean;
 }
 
-const DAY_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAY_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function getGhostSlots(course: CourseOut | null | undefined): Set<string> {
   if (!course || !course.class_time) return new Set();
@@ -86,12 +84,13 @@ function ScheduleTable({
 
   // Build grid matrix with contiguous span calculation
   const gridPlan = useMemo(() => {
-    // 1. Raw cell occupancy: rawGrid[rowIndex][dayIndex] = CourseOut[]
-    const rawGrid: CourseOut[][][] = TIMESLOTS.map(() =>
-      WEEKDAYS.map(() => []),
-    );
+    const numRows = TIMESLOTS.length;
+    const numDays = WEEKDAYS.length;
 
-    const coursesByDay: CourseOut[][] = WEEKDAYS.map(() => []);
+    // 1. Raw cell occupancy: rawGrid[rowIndex][dayIndex] = CourseOut[]
+    const rawGrid: CourseOut[][][] = Array.from({ length: numRows }, () =>
+      Array.from({ length: numDays }, () => []),
+    );
 
     for (const course of validCourses) {
       const time = course.class_time ?? [];
@@ -99,88 +98,86 @@ function ScheduleTable({
         const dayStr = time[weekday.index] ?? "";
         if (!dayStr) return;
         const codes = parseDayTimeString(dayStr);
-        if (codes.size > 0) {
-          coursesByDay[dayIndex]?.push(course);
-        }
         TIMESLOTS.forEach((timeslot, rowIndex) => {
           if (codes.has(timeslot.code)) {
-            rawGrid[rowIndex]?.[dayIndex]?.push(course);
+            const cellList = rawGrid[rowIndex]?.[dayIndex];
+            if (cellList) {
+              cellList.push(course);
+            }
           }
         });
       });
     }
 
     // 2. Matrix of CellItem plans for [rowIndex][dayIndex]
-    const planMatrix: CellItem[][] = TIMESLOTS.map(() =>
-      WEEKDAYS.map(() => ({ type: "render", rowSpan: 1, courses: [] })),
+    const planMatrix: CellItem[][] = Array.from({ length: numRows }, () =>
+      Array.from({ length: numDays }, () => ({ type: "render", rowSpan: 1, courses: [] })),
     );
 
-    WEEKDAYS.forEach((weekday, dayIndex) => {
-      const totalCoursesOnDay = coursesByDay[dayIndex]?.length ?? 0;
-      
-      // If a day has 0 courses and no preview ghost on this day, mark whole day as Focus Day
-      const hasGhostOnDay = previewCourse?.class_time?.[dayIndex] ? true : false;
-      if (totalCoursesOnDay === 0 && !hasGhostOnDay) {
-        planMatrix[0][dayIndex] = {
-          type: "render",
-          rowSpan: TIMESLOTS.length,
-          courses: [],
-          isFocusDay: true,
-        };
-        for (let r = 1; r < TIMESLOTS.length; r++) {
-          planMatrix[r][dayIndex] = { type: "skip", courses: [] };
-        }
-        return;
-      }
-
+    for (let dayIndex = 0; dayIndex < numDays; dayIndex++) {
       // Check contiguous blocks for single-occupancy courses
       let rowIndex = 0;
-      while (rowIndex < TIMESLOTS.length) {
-        const cellCourses = rawGrid[rowIndex][dayIndex] ?? [];
+      while (rowIndex < numRows) {
+        const rowData = rawGrid[rowIndex];
+        const cellCourses = rowData?.[dayIndex] ?? [];
 
         if (cellCourses.length === 1) {
           const singleCourse = cellCourses[0];
+          if (!singleCourse) {
+            rowIndex++;
+            continue;
+          }
           // Check how many contiguous rows this same single course occupies
           let span = 1;
           while (
-            rowIndex + span < TIMESLOTS.length &&
-            rawGrid[rowIndex + span][dayIndex].length === 1 &&
-            rawGrid[rowIndex + span][dayIndex][0]?.id === singleCourse.id
+            rowIndex + span < numRows &&
+            (rawGrid[rowIndex + span]?.[dayIndex]?.length ?? 0) === 1 &&
+            rawGrid[rowIndex + span]?.[dayIndex]?.[0]?.id === singleCourse.id
           ) {
             span++;
           }
 
           const startSlot = TIMESLOTS[rowIndex];
           const endSlot = TIMESLOTS[rowIndex + span - 1];
-          const timeRange = `${startSlot.start}–${endSlot.end}`;
+          const timeRange =
+            startSlot && endSlot ? `${startSlot.start}–${endSlot.end}` : undefined;
 
-          planMatrix[rowIndex][dayIndex] = {
-            type: "render",
-            rowSpan: span,
-            spanCount: span,
-            timeRange,
-            courses: [singleCourse],
-          };
+          const currRow = planMatrix[rowIndex];
+          if (currRow) {
+            currRow[dayIndex] = {
+              type: "render",
+              rowSpan: span,
+              spanCount: span,
+              timeRange,
+              courses: [singleCourse],
+            };
+          }
 
           for (let s = 1; s < span; s++) {
-            planMatrix[rowIndex + s][dayIndex] = { type: "skip", courses: [] };
+            const skipRow = planMatrix[rowIndex + s];
+            if (skipRow) {
+              skipRow[dayIndex] = { type: "skip", courses: [] };
+            }
           }
           rowIndex += span;
         } else {
           // Empty cell or Clash cell
-          planMatrix[rowIndex][dayIndex] = {
-            type: "render",
-            rowSpan: 1,
-            spanCount: 1,
-            courses: cellCourses,
-          };
+          const currRow = planMatrix[rowIndex];
+          if (currRow) {
+            currRow[dayIndex] = {
+              type: "render",
+              rowSpan: 1,
+              spanCount: 1,
+              courses: cellCourses,
+            };
+          }
           rowIndex++;
         }
       }
-    });
+    }
 
-    return { planMatrix, coursesByDay };
-  }, [validCourses, previewCourse]);
+    return { planMatrix };
+  }, [validCourses]);
 
   return (
     <div className="schedule-table-wrapper w-100">
@@ -242,26 +239,18 @@ function ScheduleTable({
               <th scope="col" className="studio-timeslot-header">
                 <div>{tx("時間 / 節次", "Time / Period")}</div>
               </th>
-              {displayedWeekdays.map((day) => {
-                const dayIndex = day.index;
-                const isFreeDay = (gridPlan.coursesByDay[dayIndex]?.length ?? 0) === 0;
-                return (
-                  <th
-                    key={day.index}
-                    scope="col"
-                    className={`schedule-day-header ${day.index >= 5 ? "schedule-weekend" : ""} ${isFreeDay ? "schedule-free-day-header" : ""}`}
-                  >
-                    <div className="day-header-title">週{day.label}</div>
-                    <div className="day-header-sub">
-                      {isFreeDay ? (
-                        <span className="text-amber-600 fw-bold">{tx("Focus Day", "Focus Day")}</span>
-                      ) : (
-                        DAY_EN[day.index]
-                      )}
-                    </div>
-                  </th>
-                );
-              })}
+              {displayedWeekdays.map((day) => (
+                <th
+                  key={day.index}
+                  scope="col"
+                  className={`schedule-day-header ${day.index >= 5 ? "schedule-weekend" : ""}`}
+                >
+                  <div className="day-header-title">週{day.label}</div>
+                  <div className="day-header-sub">
+                    {lang === "en" ? DAY_EN[day.index] : `星期${day.label}`}
+                  </div>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -277,27 +266,6 @@ function ScheduleTable({
 
                   if (plan?.type === "skip") {
                     return null;
-                  }
-
-                  if (plan?.isFocusDay) {
-                    return (
-                      <td
-                        key={`${day.index}-${timeslot.code}`}
-                        rowSpan={plan.rowSpan}
-                        className="schedule-focus-day-cell"
-                      >
-                        <div className="focus-day-card">
-                          <div className="focus-day-icon-circle">
-                            <Laptop size={22} />
-                          </div>
-                          <div className="focus-day-title">{tx("Lab 專注研究日", "Focus & Deep Work")}</div>
-                          <div className="focus-day-sub">
-                            {tx("整日無課排程 • 自習 / 專題 / 實驗", "No classes scheduled • Study & research")}
-                          </div>
-                          <span className="focus-day-chip">DEEP WORK</span>
-                        </div>
-                      </td>
-                    );
                   }
 
                   const coursesInCell = plan?.courses ?? [];

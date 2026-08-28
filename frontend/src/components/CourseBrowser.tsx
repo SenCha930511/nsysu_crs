@@ -23,6 +23,8 @@ import { useSelection } from "../state/selection";
 const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
 
+export type PickState = "selected" | "staged" | "failed" | null;
+
 export interface CourseBrowserProps {
   hoveredCourseId: string | null;
   onCourseHover: (courseId: string | null) => void;
@@ -31,8 +33,13 @@ export interface CourseBrowserProps {
   baseCourses?: readonly CourseOut[];
   /** Console mode: row picked-state override (matched against grid courses). */
   isCoursePicked?: (course: CourseOut) => boolean;
+  /** Console mode: per-row state resolver (selected/staged/failed). Takes
+   * precedence over isCoursePicked when provided. */
+  pickState?: (course: CourseOut) => PickState;
   /** Console mode: add/remove routes here instead of the plan selection. */
   onToggleCourse?: (course: CourseOut) => void;
+  /** Fires when the user wants the course's detail sheet (name click). */
+  onViewCourse?: (course: CourseOut) => void;
 }
 
 interface Filters {
@@ -143,13 +150,20 @@ export default function CourseBrowser({
   onCoursePreview,
   baseCourses,
   isCoursePicked,
+  pickState,
   onToggleCourse,
+  onViewCourse,
 }: CourseBrowserProps) {
   const { lang, tx } = useI18n();
   const { selected, isSelected, toggle } = useSelection();
   const effBase = baseCourses ?? selected;
   const effIsPicked =
     isCoursePicked ?? ((course: CourseOut) => isSelected(course.id));
+  const stateOf = useCallback(
+    (course: CourseOut): PickState =>
+      pickState !== undefined ? pickState(course) : effIsPicked(course) ? "selected" : null,
+    [pickState, effIsPicked],
+  );
   const effToggle = onToggleCourse ?? toggle;
 
   const categoryLabel = (key: string): string => {
@@ -289,7 +303,8 @@ export default function CourseBrowser({
   const clashByCourse = useMemo(() => {
     const map = new Map<string, string>();
     for (const course of items) {
-      if (effIsPicked(course)) continue;
+      const st = stateOf(course);
+      if (st === "selected" || st === "staged") continue;
       const clashes = findClashes(course, effBase);
       if (clashes.length > 0) {
         const detail = clashes
@@ -302,11 +317,12 @@ export default function CourseBrowser({
       }
     }
     return map;
-  }, [items, effBase, effIsPicked, tx]);
+  }, [items, effBase, stateOf, tx]);
 
   const renderRow = useCallback(
     (_index: number, course: CourseOut) => {
-      const picked = effIsPicked(course);
+      const st = stateOf(course);
+      const picked = st === "selected" || st === "staged";
       const hovered = hoveredCourseId === course.id;
       const clashTip = clashByCourse.get(course.id);
       const { tags, invalid } = timeTags(course);
@@ -326,7 +342,14 @@ export default function CourseBrowser({
             clashTip !== undefined && !picked ? "is-conflict" : ""
           } ${hovered ? "is-hovered" : ""}`}
           data-course-id={course.id}
-          title={picked ? undefined : clashTip}
+          title={
+            picked
+              ? undefined
+              : (clashTip ??
+                (st === "failed"
+                  ? tx("上次送出失敗——點擊可再暫存重試", "Last submit failed — click to stage and retry")
+                  : undefined))
+          }
           onMouseEnter={() => {
             onCourseHover(course.id);
             if (onCoursePreview && !picked) {
@@ -343,7 +366,23 @@ export default function CourseBrowser({
           {/* Row 1: Title, Badges & Quota Pill */}
           <div className="d-flex align-items-center justify-content-between gap-2 min-w-0">
             <div className="d-flex align-items-center gap-2 min-w-0 flex-grow-1 overflow-hidden">
-              <span className="card-course-name text-truncate me-1">{courseName(course)}</span>
+              {onViewCourse !== undefined ? (
+                <button
+                  type="button"
+                  className="card-course-name btn btn-link p-0 border-0 text-truncate me-1 text-start text-decoration-none"
+                  style={{ fontSize: "inherit", color: "inherit" }}
+                  title={tx("查看課程詳細資訊與大綱", "View course detail & syllabus")}
+                  aria-label={tx(`查看 ${courseName(course)} 詳細資訊`, `View detail of ${courseName(course)}`)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewCourse(course);
+                  }}
+                >
+                  {courseName(course)}
+                </button>
+              ) : (
+                <span className="card-course-name text-truncate me-1">{courseName(course)}</span>
+              )}
               {course.dept && (
                 <span className="card-course-dept flex-shrink-0">{course.dept}</span>
               )}
@@ -402,24 +441,42 @@ export default function CourseBrowser({
             <button
               type="button"
               className={`btn btn-card-toggle flex-shrink-0 ${
-                picked
+                st === "selected"
                   ? "btn-danger shadow-sm"
-                  : "btn-brand shadow-sm"
+                  : st === "staged"
+                    ? "btn-warning shadow-sm"
+                    : st === "failed"
+                      ? "btn-outline-danger"
+                      : "btn-brand shadow-sm"
               }`}
-              data-action={picked ? "remove" : "add"}
+              data-action={picked || st === "failed" ? "remove" : "add"}
               onClick={(e) => {
                 e.stopPropagation();
                 effToggle(course);
               }}
             >
-              {picked ? <Check2 size={13} /> : <PlusLg size={11} />}
-              <span>{picked ? tx("已在課表", "On timetable") : tx("加入課表", "Add")}</span>
+              {st === "selected" ? (
+                <Check2 size={13} />
+              ) : st === "failed" ? (
+                <XLg size={13} />
+              ) : (
+                <PlusLg size={11} />
+              )}
+              <span>
+                {st === "selected"
+                  ? tx("已在課表", "On timetable")
+                  : st === "staged"
+                    ? tx("準備加選", "Staged")
+                    : st === "failed"
+                      ? tx("送出失敗", "Submit failed")
+                      : tx("加入課表", "Add")}
+              </span>
             </button>
           </div>
         </div>
       );
     },
-    [effIsPicked, effToggle, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview, lang, tx],
+    [stateOf, effToggle, hoveredCourseId, clashByCourse, onCourseHover, onCoursePreview, onViewCourse, lang, tx],
   );
 
   const ListFooter = useCallback(

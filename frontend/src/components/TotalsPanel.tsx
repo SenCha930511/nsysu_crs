@@ -10,6 +10,7 @@ export interface TotalsPanelProps {
   selectedCourses: readonly CourseOut[];
   onDownloadPng?: () => void;
   isDownloadingPng?: boolean;
+  className?: string;
 }
 
 function courseName(course: CourseOut): string {
@@ -20,6 +21,7 @@ function TotalsPanel({
   selectedCourses,
   onDownloadPng,
   isDownloadingPng = false,
+  className = "top-stats-dock",
 }: TotalsPanelProps) {
   const { tx } = useI18n();
   const totals = useMemo(
@@ -36,7 +38,7 @@ function TotalsPanel({
     .join("\n");
 
   return (
-    <div className="floating-stats-dock" aria-label={tx("選課統計懸浮資訊", "Selection statistics dock")}>
+    <div className={className} aria-label={tx("選課統計懸浮資訊", "Selection statistics dock")}>
       <div className="dock-stat-item">
         <Book size={14} className="text-teal-400" />
         <span>{tx(`已選 ${totals.courseCount} 門`, `${totals.courseCount} course(s)`)}</span>

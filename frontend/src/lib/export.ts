@@ -68,11 +68,56 @@ export async function captureGridPng(
   node: HTMLElement,
   pixelRatio = 2,
 ): Promise<string> {
-  return toPng(node, {
-    pixelRatio,
-    backgroundColor: "#ffffff",
-    cacheBust: false,
+  const tableWrapper =
+    (node.querySelector(".schedule-table-wrapper") as HTMLElement | null) ??
+    (node.classList.contains("schedule-table-wrapper") ? node : null) ??
+    node;
+
+  // Clone node into an off-screen unconstrained staging container
+  const clone = tableWrapper.cloneNode(true) as HTMLElement;
+
+  // Unset all responsive scrollbars, scroll limitations and sticky positioning in clone
+  clone.querySelectorAll("*").forEach((el) => {
+    const htmlEl = el as HTMLElement;
+    if (htmlEl.style) {
+      if (htmlEl.classList.contains("table-responsive")) {
+        htmlEl.style.overflow = "visible";
+        htmlEl.style.display = "block";
+      }
+      if (htmlEl.style.position === "sticky") {
+        htmlEl.style.position = "static";
+      }
+    }
   });
+
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "1180px";
+  container.style.backgroundColor = "#ffffff";
+  container.style.padding = "24px";
+  container.style.borderRadius = "16px";
+  container.style.boxSizing = "border-box";
+  container.style.zIndex = "-1000";
+  container.appendChild(clone);
+  document.body.appendChild(container);
+
+  try {
+    const fullWidth = container.offsetWidth || 1180;
+    const fullHeight = container.offsetHeight || 800;
+
+    const dataUrl = await toPng(container, {
+      pixelRatio,
+      backgroundColor: "#ffffff",
+      cacheBust: true,
+      width: fullWidth,
+      height: fullHeight,
+    });
+    return dataUrl;
+  } finally {
+    document.body.removeChild(container);
+  }
 }
 
 /** Guard + capture: the friendly-throwing entry the buttons call. */
