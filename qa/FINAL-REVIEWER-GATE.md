@@ -163,3 +163,26 @@ Non-blocking follow-ups recommended before M-LAUNCH (not gate conditions):
 Once blocking item 1 lands, this gate may flip to **APPROVE** on the tree state alone
 (no other re-verification is required — suites and greps above were run against the
 current tree minus one documentation line).
+
+---
+
+## 8. Flip resolution (appended 2026-08-28 by orchestrator, per §7's stated condition)
+
+Blocking item 1 **LANDED**: `qa/F4-scope.md`'s two grep-command lines were rewritten to
+a parametric form (`"$STUDENT_ID"` sourced from the out-of-repo creds env); a repo-wide
+`grep 153040024` over tracked files returns **zero hits** after the scrub. The literal
+remains in git history at `39beccb` — the history remedy is deferred to the user per
+§7 (recorded acceptance vs force-push rewrite; decision logged in the final delivery
+report).
+
+Non-blocking follow-ups also closed in the same pass:
+- **R2**: `docs/verified-facts.md` pending markers resolved — solver section now reads
+  CLOSED-by-adjudication; `sso2_fail_*.html` and the Referer probe are annotated with
+  their M-CAPTURE 09-09~09-11 承接 (the negative-login probe stays deliberately un-run
+  for lockout-safety).
+- **R3**: tally erratum applied — `qa/05-accuracy.log` now reads 18/21; the F1
+  observation line was annotated with the correction instead of erased (trail honesty
+  preserved).
+
+**Final verdict: APPROVE.** Handover ready; the M-LAUNCH checklist (v1.0.0 tag, R1a
+full-volume backup-restore re-proof, M-CAPTURE window items) governs what remains.

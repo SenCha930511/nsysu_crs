@@ -66,7 +66,7 @@ evening / late-night / morning-window):
   batch 1: 7/7 ok (p=0.438)
   batch 2: 6/7 ok (p=0.273, 1 unsolvable)
   batch 3: 5/7 ok (p=0.227, 2 unsolvable)
-Totals: 19/21 pages; per-attempt p_total = 18/60 = 0.300.
+Totals: 18/21 pages; per-attempt p_total = 18/60 = 0.300.
 
 Decision branch (the plan's BLOCKED-ON-USER-DECISION menu offers
 A loosen gate / B torch plan-change / C community JSON re-scope):

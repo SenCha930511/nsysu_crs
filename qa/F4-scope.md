@@ -246,10 +246,10 @@ TermsPage.tsx:19: 「本站不提供自動搶課；…業務失敗…不自動�
 ## Row 10 — Repo 衛生
 
 ```console
-$ grep -rin '153040024' $(git ls-files)
-(零命中, EXIT2=1)
+$ grep -rin "$STUDENT_ID" $(git ls-files)   # $STUDENT_ID 源出 /tmp/ulw-creds.env（repo 外）；審查時明文詢詞、落檔一律不寫出
+(零命中, EXIT=1)
 
-$ git log --all --oneline -S '153040024'
+$ git log --all --oneline -S '<同上：未遮罩學號>'
 (零命中 — 歷史任何分支皆未提交過該憑證字串)
 
 $ cat .gitignore

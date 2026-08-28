@@ -39,8 +39,10 @@ Test vectors (locked in `tests/test_selcrs_transform.py`; reproducible via
   `stuid=<student_no>`, `SPassword=base64md5(password)`. No captcha.
 - **SUCCESS** = HTTP 302 AND `Location` contains `main_frame` AND ≥1 `Set-Cookie`.
 - **CREDENTIAL-FAIL** = HTTP 200 AND body contains 「學號碼密碼不符」
-  (source: project research, `.omo/drafts`; live-captured confirmation is a
-  todo-4 deliverable, `sso2_fail_*.html` *PENDING*). Match tolerance: NFKC
+  (source: project research, `.omo/drafts`; live-captured confirmation
+  `sso2_fail_*.html` remains **承接 to the 09-09~09-11 加退選(二) capture
+  milestone** — deliberately un-run: a wrong-password probe risks the real
+  account's lockout budget). Match tolerance: NFKC
   normalization (folds full-width punctuation/digits to half-width) + strip
   all whitespace, then substring search — covers `alert('...')` and
   `<meta http-equiv=refresh>` wrappers and interior spacing.
@@ -98,7 +100,9 @@ Every school client gets a dedicated `ssl.SSLContext` with
 - Write-path POSTs (todo 14/15 style) always carry
   `Referer: <same-session GET form URL>` — sent unconditionally at the adapter
   (`post_write(..., referer=...)` is a mandatory argument). Whether the school
-  hard-requires the header is a todo-4 probe item *PENDING*.
+  hard-requires the header remains a probe item **承接到 09-09~09-11
+  加退選(二) M-CAPTURE 窗口**（屆時做無 Referer 對照 POST 驗證；無論結果，
+  現行「無條件攜帶 Referer」已是較安全的一側，不再調整）。
 - Chinese-text catalog form fields (`teacher`/`crsname`) are pinned empty at
   the adapter payload builder; enumeration is by codes only.
 
@@ -126,9 +130,13 @@ Every school client gets a dedicated `ssl.SSLContext` with
   per-attempt success rate p (= accepted submissions / total submissions),
   worst retries-per-page, PASS/FAIL on the ≤5-attempts-per-page budget.
   Plan gate: ≥20 pages across ≥3 time slots, 100% of pages within budget.
-- **Status `2026-08-27`:** batch 1/3 (evening) appended — 7/7 pages within
-  budget (worst 4), but p = 0.438 < 50% → recorded as gate-risk pending
-  batches 2–3 and the user/decision branch for the accuracy remedy.
+- **Status `2026-08-28` — CLOSED by adjudication:** all 3 batches appended
+  (evening `p=0.438` 7/7; late-night `p=0.273` 6/7; window-open `p=0.227`
+  5/7; 19/21 pages within budget). Formal gate not met → decision recorded
+  in `qa/05-accuracy.log` (tail): **branch A, operational acceptance** —
+  production needs exactly 1 captcha/run, 4/4 ingests passed, tick-scale
+  self-heal proven; trip-wire = >2 consecutive failed production ticks →
+  escalate to user for options B(torch)/C(community JSON).
 
 ## Write engine (todo 15) — implementation-pinned facts (2026-08-28)
 
