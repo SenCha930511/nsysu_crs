@@ -27,13 +27,13 @@ def async_url(database_url: str) -> str:
 
 
 def build_engine(settings: Settings) -> AsyncEngine:
-    """One engine per process (pool defaults are fine: ingest is serialized
-    by the Redis singleton lock; the API layer is added in todo 7).
+    """One engine per process; the pool serves every API request and the
+    worker through the per-:func:`build_session_factory` sessions.
 
-    ``pool_pre_ping=True`` (todo 17 hardening): every checkout runs a cheap
-    liveness probe and transparently recycles dead connections - after a
-    Postgres recreate/restart the pool hands out only live backends instead
-    of failing one request per stale pooled connection."""
+    ``pool_pre_ping=True``: every checkout runs a cheap liveness probe and
+    transparently recycles dead connections - after a Postgres recreate /
+    restart the pool hands out only live backends instead of failing one
+    request per stale pooled connection."""
     return create_async_engine(
         async_url(settings.database_url),
         pool_pre_ping=True,

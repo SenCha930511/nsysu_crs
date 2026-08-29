@@ -22,7 +22,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3",
-    "httpx2>=2.0",  # test-only: starlette TestClient transport; the selcrs adapter arrives in todo 3
     "ruff>=0.16.5",
     "mypy>=2.3.1",
 ]
