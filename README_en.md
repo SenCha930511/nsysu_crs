@@ -4,8 +4,8 @@
 
 ---
 
-> [!NOTE]
-> 🚀 **Website Coming Soon! Stay tuned.**
+> [!TIP]
+> 🌐 **Live Website Available**: [https://nsysucrs.senchaaa.com](https://nsysucrs.senchaaa.com)
 
 A modern course selection wrapper and planning system designed for National Sun Yat-sen University (NSYSU). It provides an intuitive catalog browser with multi-dimensional filtering, an interactive weekly timetable with real-time clash and credit validation, direct syllabus links, PNG timetable export, and school selection synchronization. Under strict **human-in-the-loop confirmation** and high-standard security guardrails, it supports asynchronous proxy course add/drop submissions.
 
