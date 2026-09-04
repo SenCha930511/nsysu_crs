@@ -85,7 +85,11 @@ function HomePage() {
   const { lang, tx } = useI18n();
   const { status, csrfToken } = useAuth();
   const { selected, remove } = useSelection();
-  const authed = status === "authed" && csrfToken !== null;
+  // Page mode follows the site session only. CSRF is a /api/write/*-level
+  // requirement: sync/selections/stage don't send it, and the token lives in
+  // per-tab sessionStorage - gating the whole page on it stranded cookie-valid
+  // tabs (logged-in header + guest panel) after a new tab / browser restart.
+  const authed = status === "authed";
 
   // ---- real selections (school truth) ----
   const [items, setItems] = useState<SelectionItem[]>([]);
@@ -335,8 +339,10 @@ function HomePage() {
 
   // ---- send flow ----
   const stagedCount = stagedAdds.length + stagedDrops.length;
+  // Writes need the login-minted CSRF token; without it the button stays off.
+  const csrfReady = csrfToken !== null;
   const canSend =
-    authed && stage?.writable === true && stagedCount > 0 && phase !== "previewing";
+    authed && csrfReady && stage?.writable === true && stagedCount > 0 && phase !== "previewing";
 
   const onPreview = useCallback(() => {
     if (!authed || csrfToken === null || phase === "previewing") return;
@@ -730,6 +736,9 @@ function HomePage() {
                 className="btn btn-brand btn-sm rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1"
                 onClick={onPreview}
                 disabled={!canSend}
+                title={authed && !csrfReady
+                  ? tx("此分頁缺少送單憑證，請重新登入後再送單", "This tab lacks the submission credential; sign in again to submit")
+                  : undefined}
                 data-testid="console-preview"
               >
                 <Send size={12} />
