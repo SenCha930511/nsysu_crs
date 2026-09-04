@@ -32,6 +32,7 @@ The todo-8 breaker (`app/auth/breaker.py`, unchanged semantics) became the singl
 
 - `/api/auth/login` and `/api/write/submit` — admit + record wiring since todo 8/15 (unchanged).
 - `/api/auth/write/preview`, `/api/stage`, `/api/me/selections/sync` — same wiring since todo 17: jar checks stay first (local), then `breaker.admit()`; while open they answer 503 **locally** with zero school contact. `SelcrsUnavailable` outcomes feed the streak; any coherent outcome (including a login-page bounce, which proves the host speaks its protocol) closes/resets it.
+- `/api/schedule` — the anonymous schedule refresh: cache-miss fetches go through `admit()`; an open breaker or a failed fetch serves the Redis last-good blob with `stale=true` (or `ok=false` when nothing is cached) and never contacts the school. Cached reads never touch it.
 - `/api/write/jobs/{id}` is **not** gated: it is a pure Postgres read of our own ledger (no school contact), so the read-only posture keeps it available. Zero-queueing is enforced at preview+submit, the only enqueue paths.
 - The **worker** (write engine) and the **catalog ingest loop** deliberately do not feed or consult the breaker: queued jobs carry their own bounded transport-retry semantics (todo 15), and the ingest loop reports its own degrade via `ingest_runs.ok=false` + the meta banner. The breaker is the API-layer posture.
 
@@ -45,6 +46,10 @@ One route, two trust levels:
 - **Admin** (adds `streak`, `opened_at`, thresholds, `lockouts {today,yesterday,total}`): gated by `X-App-Secret: <APP_SECRET>` (constant-time compare) **or** a direct loopback peer (no proxy in between; through Caddy the peer is Caddy's container IP, so use the header). Runbook: `curl -H "X-App-Secret: $APP_SECRET" http://localhost/api/ops/state`.
 
 Lockout abuse counters (todo 17): `FailureLog.record_credential_fail` increments `lockout:events:total` and `lockout:events:<YYYYMMDD-in-TZ>` (30d TTL) **only** when a *new* `loginlock:*` key is created (NX success) — aggregate counters, no student identifiers, feeding the `鎖定濫用` monitor/alarm SOP in `docs/runbook.md`.
+
+## `/api/schedule` — selection-window schedule (選課日程)
+
+Anonymous read of the school's front-page 選課日程 table, parsed into stable-key events (ROC years → Asia/Taipei stamps; windows vs 公佈 instants; labels verbatim). Always-200 contract like `/api/catalog/meta`: `ok=false` only when no snapshot exists AND the live fetch failed. Cache-aside over Redis `schedule:selcrs:v1` with NO expiry — staleness is a read-time property of `fetched_at` (`FRESHNESS_SECONDS` = 6h); a 30s NX mutex coalesces refreshes and `stale=true` marks last-good serving after a failed refresh. The refresh path is breaker-gated exactly like stage/sync (admit; classified on success, unknown on transport/drift), so the school is never polled while the breaker is open.
 
 ## Request access log (todo 17)
 

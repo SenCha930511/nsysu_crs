@@ -31,7 +31,7 @@ FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / C
 
 | 權限層級 | 適用對象 | 功能說明 |
 |---|---|---|
-| **公開瀏覽** | 任何人（免登入） | 課程目錄瀏覽（虛擬滾動支援大量資料流暢載入）、關鍵字搜尋、**多維度進階篩選**（開課學系／年級／學分／必選修／EMI 英語授課／尚有餘額／星期／節次）、課程名稱直通學校官方教學大綱頁面（另開分頁）、雙語介面切換（繁體中文 ⇄ English）。 |
+| **公開瀏覽** | 任何人（免登入） | 課程目錄瀏覽（虛擬滾動支援大量資料流暢載入）、關鍵字搜尋、**多維度進階篩選**（開課學系／年級／學分／必選修／EMI 英語授課／尚有餘額／星期／節次）、課程名稱直通學校官方教學大綱頁面（另開分頁）、**選課日程時間軸**（目前階段即時倒數、完整日程展開；學校異常時以最後快照續供）、雙語介面切換（繁體中文 ⇄ English）。 |
 | **排課模擬** | 訪客／免登入 | 本地暫存排課（localStorage）、視覺化週課表預覽、即時衝堂警示、學分與節數自動統計、PNG 高解析度課表圖檔匯出。 |
 | **學生專區** | 在學學生（SSO2 認證） | 校內「我的已選」即時同步、暫存清單加退選代送（支援志願序）、送出前表單校對預覽（Preview）與**密碼二次確認防呆機制**、非同步背景工作佇列（Redis Queue + Background Worker）、即時送單紀錄與執行結果追蹤（精確顯示校內反饋如「違反限修條件」，學號自動遮罩脫敏）。 |
 
@@ -53,7 +53,7 @@ flowchart LR
 
 - **Caddy (`deploy/`)**：單一對外 HTTP(S) 入口（80/443），負責靜態前端資源託管與 `/api/*` 反向代理，配置嚴格的 CSP（Content Security Policy）與安全標頭。
 - **FastAPI 後端 (`backend/app/`)**：
-  - **課程檢索**：`/api/courses`（分頁查詢）、`/api/catalog/meta`（資料新鮮度）、`/api/catalog/depts`（學系清單快取 30 分鐘）、`/api/courses/{id}/outline`（教學大綱代理）。
+  - **課程檢索**：`/api/courses`（分頁查詢）、`/api/catalog/meta`（資料新鮮度）、`/api/catalog/depts`（學系清單快取 30 分鐘）、`/api/courses/{id}/outline`（教學大綱代理）、`/api/schedule`（選課日程，Redis 最新快照續供）。
   - **認證與安全性**：`/api/auth/*`（SSO2 登入流、密碼雜湊處理、Session Cookie），內建登入防暴破計數鎖定與校內端點熔斷機制（Circuit Breaker）。
   - **加退選流水線**：`POST /api/write/preview`（送單前校對）→ `POST /api/write/submit`（密碼二次確認與防重送 CSRF Token，排入 Redis 佇列）→ `GET /api/write/jobs*`（執行紀錄追蹤）。
   - **隱私慣例**：非公開／禁止存取之內部端點一律回應 404（而非 401/403），避免端點結構外洩。

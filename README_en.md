@@ -31,7 +31,7 @@ FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / C
 
 | Access Tier | Target Audience | Overview |
 |---|---|---|
-| **Public Browser** | Anyone (No login required) | Virtualized course catalog browsing for high-performance rendering, keyword search, **advanced multi-criteria filters** (department / grade / credits / compulsory or elective / EMI / available seats / weekday / period), direct links to official course syllabus pages (new tab), and instant bilingual switching (Traditional Chinese ⇄ English). |
+| **Public Browser** | Anyone (No login required) | Virtualized course catalog browsing for high-performance rendering, keyword search, **advanced multi-criteria filters** (department / grade / credits / compulsory or elective / EMI / available seats / weekday / period), direct links to official course syllabus pages (new tab), a **selection-schedule timeline** (live countdown for the current window, full schedule on toggle, snapshot-served when the school is down), and instant bilingual switching (Traditional Chinese ⇄ English). |
 | **Timetable Planner** | Guests / Anonymous | Local staging (localStorage), visual weekly timetable preview, real-time schedule conflict detection, automatic calculation of credits and hours, and high-resolution PNG timetable export. |
 | **Student Zone** | Enrolled Students (SSO2 Authentication) | Real-time synchronization of current enrolled courses, staged add/drop submission (with priority support), submission preview and **two-factor password re-confirmation**, asynchronous background queue processing (Redis Queue + Background Worker), and live job tracking with verbatim school feedback (e.g. "Violation of course restriction", with student IDs automatically masked). |
 
@@ -53,7 +53,7 @@ flowchart LR
 
 - **Caddy (`deploy/`)**: The unified HTTP(S) entrypoint (ports 80/443) serving static frontend assets and reverse-proxying `/api/*`, configured with strict Content Security Policy (CSP) and security headers.
 - **FastAPI Backend (`backend/app/`)**:
-  - **Catalog & Search**: `/api/courses` (paginated queries), `/api/catalog/meta` (data freshness), `/api/catalog/depts` (department dropdown, Redis-cached for 30 minutes), and `/api/courses/{id}/outline` (syllabus proxy).
+  - **Catalog & Search**: `/api/courses` (paginated queries), `/api/catalog/meta` (data freshness), `/api/catalog/depts` (department dropdown, Redis-cached for 30 minutes), `/api/courses/{id}/outline` (syllabus proxy), and `/api/schedule` (selection schedule, snapshot-served from Redis).
   - **Authentication & Security**: `/api/auth/*` (SSO2 flow, password handling, session cookies), brute-force lockout counters, and an automatic circuit breaker for school endpoints.
   - **Write Pipeline**: `POST /api/write/preview` (form echo) → `POST /api/write/submit` (password re-confirmation + CSRF token, enqueued to Redis) → `GET /api/write/jobs*` (job audit ledger).
   - **Privacy Conventions**: Forbidden/unauthorized internal endpoints return HTTP 404 (instead of 401/403) to prevent structure disclosure.
