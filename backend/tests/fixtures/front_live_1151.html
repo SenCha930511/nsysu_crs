@@ -1,0 +1,306 @@
+
+
+<!DOCTYPE HTML>
+<html>
+
+
+<head>
+	<title>國立中山大學選課系統</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<link rel="stylesheet" href="inc/main.css">
+
+</head>
+
+<script Language="JavaScript"><!--
+function openwin(mylink){
+	toolwin=window.open(mylink,'toolwin','400','200')
+}
+
+function init_page(mylink){
+	toolwin=window.open(mylink,'toolwin','height=300, width=750, top=50,left=50,toolbar=no, menubar=no, scrollbars=yes')
+}
+
+function FrontPage_Form1_Validator(theForm)
+{
+
+  if (theForm.stuid.value == "")
+  {
+    alert("學號必須為10位字 !! 請重新輸入");
+    theForm.stuid.focus();
+    return (false);
+  }
+
+  if ((theForm.stuid.value.length > 10))
+  {
+    alert("帳號必須少於等於10位字 !! 請重新輸入");
+    theForm.stuid.focus();
+    return (false);
+  }
+
+ 
+
+  var checkOK = "0123456789";
+  var checkStr = theForm.stuid.value;
+  var allValid = true;
+  var decPoints = 0;
+  var allNum = "";
+  for (i = 5;  i < checkStr.length;  i++)
+  {
+    ch = checkStr.charAt(i);
+    for (j = 0;  j < checkOK.length;  j++)
+      if (ch == checkOK.charAt(j))
+        break;
+    if (j == checkOK.length)
+    {
+      allValid = false;
+      break;
+    }
+    allNum += ch;
+  }
+  if (!allValid)
+  {
+    alert("學號必須為 10 位阿拉伯數字（或英文字母） !! 請重新輸入");
+    theForm.stuid.focus();
+    return (false);
+  }
+
+  if (theForm.SPassword.value == "")
+  {
+    alert("密碼必須為阿拉伯數字（或英文字母） ！請重新輸入");
+    theForm.SPassword.focus();
+    return (false);
+  }
+
+  /*
+  if (theForm.SPassword.value.length > 6)
+  {
+    alert("密碼必須為阿拉伯數字（或英文字母） ！請重新輸入");
+    theForm.SPassword.focus();
+    return (false);
+  }
+*/
+
+  if (theForm.ValidCode.value == "")
+  {
+    alert("驗證碼必須輸入!! \n Validation Code Needed.");
+    return (false);
+  }
+
+  if ((theForm.ValidCode.value.length < 4))
+  {
+    alert("驗證碼需4位阿拉伯數字 !! 請重新輸入 \n 4-digit Validation Code Needed.");
+    return (false);
+  }  
+
+  return (true);
+}
+//--></script>
+               
+<body style="background-color:#f5f5f5">
+<!--
+<div style="text-align:center">
+<span>
+	<img style="vertical-align:bottom" height="105" width="150" src="images/nsysulogo2.gif" border="0">
+	<img style="vertical-align:bottom" height="105" width="600" src="images/
+	selcrs-c.png
+	" border="0">
+</span>
+</div> 
+-->
+
+
+<div>
+<table align="center" valign="top" cellspacing="0" cellpadding="1" style="border-collapse:collapse"><tbody>
+<tr valign="bottom">
+	<td align="center">
+		<img style="vertical-align:bottom" height="105" width="150" src="images/nsysulogo2.gif" border="0">
+	</td>
+	<td>
+		<img style="vertical-align:bottom" height="105" width="600" src="images/
+		selcrs-c.png
+		" border="0">
+	</td>
+</tr>
+
+<tr>
+	<td valign="top" style="background-color:#99ccff;border:1px solid #f5f5f5;">
+	<div style="min-width:150px">
+		<table border="0" cellspacing="0" cellpadding="1"><tbody>
+		<tr><td class="menu highlight highlight-link"><span>
+			<a href='smain.asp?eng=1'>英文介面<br>(English Version)</a>
+		</span></td></tr>
+		
+		<tr><td class="menu head"><span>
+			課程查詢
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='menu1/CourseQuery.asp?HIS=1&eng=0' target='w2'>》當學期課程</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='menu1/qrycrsfrm.asp?HIS=2&eng=0' target='w3'>》歷年課程</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='menu1/qrycrsfrm.asp?HIS=1&eng=0&in_eng=2' target='w2'>》當學期英語授課課程</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span><a href='http://ctdr.nsysu.edu.tw/class2.php' target='w9'>》學程專區</a></span></td></tr><tr><td class="menu item menu-link"><span><a href='http://ctdr.nsysu.edu.tw/teacher2-7.php' target='w9'>》教學優良課程</a></span></td></tr><tr><td class="menu item menu-link"><span><a href='http://ctdr.nsysu.edu.tw/teacher3-7.php' target='w9'>》教學傑出及績優教師</a></span></td></tr>
+		
+		<tr><td class="menu head"><span>
+			選課須知與法規
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://oaa.nsysu.edu.tw/p/405-1003-20388,c2935.php?Lang=zh-tw' target='w9'>》選課須知</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://oaa.nsysu.edu.tw/p/404-1003-157435.php?Lang=zh-tw' target=w1>》選課操作說明</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://oaa.nsysu.edu.tw/p/412-1003-3290.php?Lang=zh-tw' target='w9'>》選課相關法規</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://oaa.nsysu.edu.tw/p/412-1003-98.php?Lang=zh-tw' target='w9'>》行事曆</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='各節次上課時間.pdf' target='w1'>》各節次上課時間表</a>
+		</span></td></tr>
+		
+		<tr><td class="menu head"><span>
+			學號及忘記密碼
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='newstu/stu_new.asp?action=14' target='w3'>》學號查詢</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://sso.nsysu.edu.tw/' target='w3'>》忘記密碼</a>
+		</span></td></tr>
+		
+		<tr><td class="menu head"><span>
+			校際選課
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://oaa.nsysu.edu.tw/p/412-1003-3277.php?Lang=zh-tw' target='w9'>》校際選課程序</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://selcrs.nsysu.edu.tw/stu_out/STU_OUT.asp?action=1' target='w3'>》外校生課程網<br><font size=2>　(無115學年第1學期帳號者)</font></a>
+		</span></td></tr>
+		
+		<tr><td class="menu head"><span>
+			課程管理系統
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://selcrs.nsysu.edu.tw/menu5/tchpass.asp?eng=0' target='w3'>》教師課務</a>
+		</span></td></tr>
+		
+		<tr><td class="menu item menu-link"><span>
+			<a href='https://selcrs.nsysu.edu.tw/open_crs/' target='w3'>》系所課務</a>
+		</span></td></tr>
+		
+		
+		
+		<tr><td class="menu head"><span>
+			計時區
+		</span></td></tr>
+
+		<tr><td><span class="text-S">
+			尚未到選課開啟時段			
+		</span></td></tr></tbody></table>
+	</div></td>
+	
+	<td valign="top" style="background-color:#ccccff;border:1px solid #f5f5f5;">
+	<div>
+		<table width="600" border="0" cellspacing="0" cellpadding="1">
+		<tr><td class="menu head2">
+			<div>選課系統登錄</div>
+		</td></tr>
+		<tr><td align="left" class="text" style="background-color:#ccccff">
+			<div>
+			<form method="POST" action="menu4/Studcheck.asp" onSubmit="return FrontPage_Form1_Validator(this)" name="Studpassform">
+				<div style="margin:5px">
+					　帳號：
+					<input type="text" name="stuid" size="12">
+				</div>
+				
+				<div style="margin:5px">
+					　密碼：
+					<input type="password" name="SPassword" size="12">
+				</div>
+				
+				<div style="margin:5px">
+				<span">
+					　驗證碼：
+					<input type="text" name="ValidCode" size="10">
+					<img id="imgVC" name="imgVC" style="vertical-align:middle" src="validcode.asp?epoch=1788521112" onclick="this.src='validcode.asp?epoch=' + (new Date()).getTime()">
+				</span>
+				<span class="button text-S">
+					<a href="#" onclick="javascript:document.getElementById('imgVC').src='validcode.asp?epoch='+(new Date()).getTime()">
+					重新產生
+					</a>
+				</span>
+				</div>
+				
+				<div style="margin:5px"><span>
+				　<input class="button text" type='submit' value='確　定' name='B1'>
+				</span></div>
+			</form>
+			</div>
+			
+			<div><p></div>
+			
+			<div class="text-S" style="margin:10px;border-style:double;border-radius:10px;padding:0px 5px">
+			<ul>
+				<li>本校生帳號：學號；外校生：身份證字號。</li>
+				<li>本校生選課密碼預設值：身分證末六碼；外校生：自行設定之密碼。</li>
+				<li>選課前，請務必先修改密碼，以免選課資料遭人竄改。</li>
+				<li>同階段選上機率相同，不需急於第一天選課。請查妥課號再選課，以加速選課作業時間。</li>
+				<li>點選左方選單「當學期課程」可查詢本學期開設課程及課號。</li>
+				<li>學生登錄選課系統前，請詳閱選課須知及選課操作說明。</li>
+				
+			</ul>
+			</div>
+		</td></tr>
+		
+		<tr><td class="menu head2">
+			<div>系統公告</div>
+		</td></tr>
+		
+		<tr><td valign="top" class="text-S" style="background-color:#ccccff;">
+			<div style="min-height:450px;padding:5px">
+			<table border="0" cellspacing="0" cellpadding="1">
+            <!--newsbegin--><tr><td colspan=2 align=left><br>【訊息公告】
+<br><font color="black">自102學年度第2學期起各大樓教室代碼異動，課表所列教室編號已配合更動，同學上課前，請確認相關教室位置，各大樓教室代碼及位置，請參考<a class="button" href=" http://www.nsysu.edu.tw/p/412-1000-1503.php?Lang=zh-tw ">本校校區地圖</a><br>
+
+<br>【注意事項】
+<br><font color="black">(1)各階段選課結果公布於選課系統網頁。<br>
+(2)本校加選課程不採『先選先上』制，同階段完成加選課程之選上機率相同（依優先序配課），同學於時程內完成選課即可。<br>
+(3)未於選課階段上網確認必修課程者，視同未完成選課，系統預置之必修課程一律刪除。<br><br>
+
+
+</td></tr><tr><td colspan=2 align=left valign=middle><blockquote style="color:green">一佰一十五學年度第一學期選課日程</blockquote></td></tr><tr><td><div style="text-align:right;color:#800000">初選一</div></td><td><div style="min-width:250px;color:#800000">：115.08.20(09:00)&nbsp;~&nbsp;115.08.21(22:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">初選一公佈</div></td><td><div style="min-width:250px;color:#800000">：115.08.24(14:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">初選二</div></td><td><div style="min-width:250px;color:#800000">：115.08.25(09:00)&nbsp;~&nbsp;115.08.26(17:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">初選二公佈</div></td><td><div style="min-width:250px;color:#800000">：115.08.27(14:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">加退選一</div></td><td><div style="min-width:250px;color:#800000">：115.08.28(09:00)&nbsp;~&nbsp;115.08.31(17:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">加退選一公佈</div></td><td><div style="min-width:250px;color:#800000">：115.09.01(14:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">加退選二</div></td><td><div style="min-width:250px;color:#800000">：115.09.09(09:00)&nbsp;~&nbsp;115.09.11(22:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">加退選二公佈</div></td><td><div style="min-width:250px;color:#800000">：115.09.14(14:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">異常處理</div></td><td><div style="min-width:250px;color:#800000">：115.09.15(09:00)&nbsp;~&nbsp;115.09.18(17:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">超修單列印</div></td><td><div style="min-width:250px;color:#800000">：115.08.20(09:00)&nbsp;~&nbsp;115.09.11(17:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">棄選時間</div></td><td><div style="min-width:250px;color:#800000">：115.11.13(09:00)&nbsp;~&nbsp;115.11.20(17:00)</div></td></tr><tr><td><div style="text-align:right;color:#800000">選課確認</div></td><td><div style="min-width:250px;color:#800000">：115.09.15(09:00)&nbsp;~&nbsp;115.09.24(17:00)</div></td></tr><!--newsend-->      
+            </table>
+            </div>
+		</td></tr>
+        </table>
+	</div></td>
+</tr>
+
+
+	
+</tbody></table>
+</div>
+
+</body>
+
+</html>

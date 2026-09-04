@@ -54,6 +54,9 @@ STAGE_ADD_DROP: Final = "加退選"
 STAGE_FIRST_ROUND: Final = "初選"
 STAGE_CLOSED: Final = "關閉"
 STAGE_UNKNOWN: Final = "未知"
+#: The 棄選 (course-withdrawal) menu entry - reported read-only; its write
+#: flow has no live capture yet (window opens 2026-11-13, see verified-facts).
+STAGE_WITHDRAWAL: Final = "棄選"
 
 #: Form variants (ssform = 15 rows, stage5 = 10 rows; plan todo 13).
 VARIANT_SSFORM: Final = "ssform"
@@ -65,6 +68,10 @@ REASON_STAGE5_LINK: Final = "stage5_link"
 REASON_CLOSED_HEADING: Final = "closed_heading"
 REASON_CLOSED_READONLY_LINKS: Final = "closed_readonly_links"
 REASON_DRIFT_NO_MARKER: Final = "drift_no_marker"
+REASON_WITHDRAWAL_LINK: Final = "withdrawal_link"
+
+#: Anchor-text marker for the withdrawal menu entry.
+WITHDRAWAL_LINK_TEXT: Final = "棄選"
 
 #: Live-verified closed-state heading (studfun_closed_live_1151.html).
 CLOSED_HEADING: Final = "選課關閉"
@@ -179,6 +186,18 @@ def parse_studfun(html: str) -> StudfunDetection:
                 params=_params_from(href),
                 reason=_VARIANT_REASON[variant],
             )
+    # Withdrawal menu entry (棄選): visible awareness only. Checked on ANCHOR
+    # TEXT (menu entries look like ``[棄選...]``) and provenance is explicit:
+    # no live capture exists yet, so ``form_href`` stays None and the shared
+    # writable policy below answers False for this stage by construction.
+    if any(WITHDRAWAL_LINK_TEXT in tag.get_text() for tag in soup.find_all("a")):
+        return StudfunDetection(
+            stage=STAGE_WITHDRAWAL,
+            variant=None,
+            form_href=None,
+            params=None,
+            reason=REASON_WITHDRAWAL_LINK,
+        )
     # The heading is matched on VISIBLE text: HTML comments/boilerplate that
     # mention the words (e.g. this repo's own fixture notes) must not count.
     if CLOSED_HEADING in soup.get_text():

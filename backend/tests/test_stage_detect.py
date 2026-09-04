@@ -15,6 +15,7 @@ from app.selcrs.errors import SelcrsSessionExpired
 from app.stage.detect import (
     PRESTEP_ONCLICK_ANCHOR,
     detect_need_confirmation,
+    is_writable,
     parse_studfun,
 )
 
@@ -89,6 +90,27 @@ def test_legacy_provisional_closed_fixture_reads_as_readonly_links() -> None:
     assert result.stage == "關閉"
     assert result.variant is None
     assert result.reason == "closed_readonly_links"
+
+
+# ---------- 棄選 menu entry (provisional until the 2026-11-13 window) ----------
+
+
+def test_withdrawal_entry_reports_awareness_never_writable() -> None:
+    result = parse_studfun(_load("studfun_open_withdrawal_provisional.html"))
+    assert result.stage == "棄選"
+    assert result.variant is None
+    assert result.form_href is None
+    assert result.params is None
+    assert result.reason == "withdrawal_link"
+    # The shared policy must answer False for a variant-less detection.
+    assert is_writable(result, need_confirmation=False, first_round_write=True) is False
+
+
+def test_real_closed_fixture_is_not_mistaken_for_withdrawal() -> None:
+    # 棄選 must match anchor TEXT only: the real closed page (notes prose and
+    # read-only links) keeps reporting 關閉.
+    result = parse_studfun(_load("studfun_closed_live_1151.html"))
+    assert result.stage == "關閉"
 
 
 # ---------- prestep gate (need_confirmation) ----------

@@ -13,6 +13,7 @@ from app.api.catalog import router as catalog_router
 from app.api.courses import router as courses_router
 from app.api.health import router as health_router
 from app.api.ops import router as ops_router
+from app.api.schedule import router as schedule_router
 from app.api.selections import router as selections_router
 from app.api.stage import router as stage_router
 from app.api.write import router as write_router
@@ -72,4 +73,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(write_submit_router)
     app.include_router(write_jobs_router)
     app.include_router(ops_router)
+    app.include_router(schedule_router)
     return app

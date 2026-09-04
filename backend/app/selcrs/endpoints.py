@@ -186,6 +186,19 @@ async def get_studfun(
     return _require_200(response, "Studfun.asp")
 
 
+async def fetch_front_page(
+    *,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> str:
+    """GET the site front page (選課日程 table lives here) as decoded HTML.
+
+    Public and cookie-less: no session jar is attached by construction.
+    """
+    async with build_client(transport=transport) as client:
+        response = await request_school(client, "GET", f"{SELCRS_BASE_URL}/")
+    return _require_200(response, "front page")
+
+
 async def get_slt_result(
     cookies: httpx.Cookies,
     *,
