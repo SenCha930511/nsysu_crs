@@ -1,0 +1,776 @@
+
+<html>
+    <head>
+        <meta http-equiv="Content-Language" content="zh-tw">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="GENERATOR" content="Microsoft FrontPage 6.0">
+        <meta name="ProgId" content="FrontPage.Editor.Document">
+
+        <title>註冊</title>
+
+        <meta name="Microsoft Theme" content="none">
+
+        <style type="text/css">
+
+            body {
+                background-color: #40476A;
+                font-family:Times New Roman,標楷體;
+            }
+
+            .font01 {
+                font-size: 13pt;
+                color: #609;
+                font-weight: bold;
+                font-family:Times New Roman,標楷體;
+            }
+
+            .font01 a {
+                font-size: 13pt;
+                color: #609;
+                text-decoration: none;
+                font-weight: bold;
+                font-family:Times New Roman,標楷體;
+            }
+
+            .font01 a:hover {
+                font-size: 13pt;
+                color: #609;
+                text-decoration: none;
+                font-weight: bold;
+                font-family:Times New Roman,標楷體;
+            }
+
+            li { 
+                line-height:20px; 
+            }
+ 
+            .memo_type {
+                font-size: 12pt;
+                font-family:Times New Roman,標楷體;
+                color:#800000;
+            }
+
+            .stamp {
+                position: absolute;
+                top: 419px;
+                left: 775px;
+                z-index: 2;
+                width: 169px;
+                height: 240px;
+                font-family:Times New Roman,標楷體;
+            }
+		.memu_title{
+              width:200px;
+              height:40px;
+              line-height:20px;  
+			  padding:0px 0px 0px 20px; 
+			  background:#FBFBFB;
+              color:#FB3A0D;
+			  font-size: 20pt;
+			  font-weight:bold;
+			  font-family:Times New Roman,微軟正黑體;
+			  border-radius: 10px;	
+			}
+		.td_cir{
+              width:200px;
+              height:50px;			
+              line-height:20px;  
+			  padding:5px 10px 5px 10px; 	  
+			  background:#2D67BF;
+              color:#fff;
+			  font-size: 12pt;		   	 
+			  font-family:Times New Roman,微軟正黑體;
+              border-radius: 10px;		
+			  a:link 
+				{
+                text-decoration:none;
+				color:#fff;
+              }
+			  a:visited
+			    {
+                text-decoration:none;
+				color:#fff;
+                }
+           }
+			
+		
+        </style>
+
+        <script language ="javascript">
+            <!--
+
+            menu_num = 0;
+
+            var menu0 = new Array();
+            menu0[0] = "學士班";
+            menu0[1] = "碩博士班";
+            menu0[2] = "碩士專班";
+            menu0[3] = "二年制專班";
+
+            var menu1 = new Array();
+            menu1[0] = "文、理學院";
+            menu1[1] = "工、社科學院";
+            menu1[2] = "管理、海科院";
+
+            menu_left  = 10;
+            menu_top   = 50;
+            item_width = 100;
+
+            item_color = "#E2E2E2";
+            item_over_color = "#20B9B1";
+
+            write_menu(menu0);
+            write_menu(menu1);
+
+
+            function show_menu(menu_no) {
+                for (i = 0; i < menu_num; i++) {
+                    if (("menu"+i) == menu_no) { document.all["menu"+i].style.dispaly = ""; }
+                    else { document.all["menu"+i].style.display = "none"; }
+                }
+            }
+
+            function hide_all() {
+                for (i = 0; i < menu_num; i++) { document.all['menu'+i].style.display = "none"; }
+            }
+
+            function write_item(myitem) {
+                var cont = '<tr><a href="">'+'<td width="100%" bgcolor="#e2e2e2" onmouseout="this.style.backgroundcolor=\''
+                         + item_color + ' \' ; this.style.color=\'black\'" onmouseover="this.style.bachgroudcolor=\''
+                         + item_over_color + ' \' ;this.style.color=\'#ffffff\'">';
+
+                cont += myitem;
+                cont += ' </TD></A></TR>';
+
+                document.write(cont);
+            }
+
+            function write_head(a) {
+                var true_left = menu_left + menu_num * (item_width + 5);
+                var cont = '<div id=' + a + ' style="cursor:hand; position:absolute;display:none;top:'
+                         + menu_top + ' ;left:' + true_left + '">' + '<table border="1" cellpadding="2" cellspacing="0" >';
+
+                document.write(cont);
+            }
+
+            function write_tail() { var cont = '</table></div>'; document.write(cont); }
+
+            function write_menu(mymenu) {
+                self_id = "menu" + menu_num;
+                write_head(self_id);
+
+                for (i = 0;i < mymenu.length; i++) { write_item(mymenu[i]); }
+
+                write_tail();
+                menu_num++;
+            }  
+
+            function copyid() { document.f1.ID.value = document.f1.IDtmp.value; }
+            function copypw() { document.f1.passwd.value = document.f1.passwdtmp.value; }
+
+            function chk_key1() {
+                var c; 
+                c = event.keyCode;
+                if (c == 13) { event.keyCode = 0; f1.passwdtmp.focus(); }
+            }
+
+            // function chk_key2() {
+            //     var c; 
+            //     c = event.keyCode;
+            //     if(c == 13) { event.keyCode= 0; f1_submit(); } 
+            // }
+
+            function chk_key2() {
+                var c; 
+                c = event.keyCode;
+                if(c == 13) { event.keyCode= 0; f1.ValidCode.focus(); } 
+            }
+
+            function chk_key3() {
+                var c; 
+                c = event.keyCode;
+                if(c == 13) { event.keyCode= 0; f1_submit(); } 
+            }
+
+            function f1_submit() {
+            	  if (FrontPage_Form1_Validator(f1) == true ) {
+                    copyid(); copypw(); f1.submit();
+                }
+            }
+
+            function FrontPage_Form1_Validator(theForm) {
+                if (theForm.IDtmp.value == "") {
+                    alert("學號必須為七位阿拉伯數字 !! 請重新輸入");
+                    theForm.stuid.focus();
+                    return (false);
+                }
+
+                if ((theForm.IDtmp.value.length > 10)) {
+                    alert("帳號必須少於等於10位阿拉伯數字 !! 請重新輸入");
+                    theForm.stuid.focus();
+                    return (false);
+                }
+
+                var checkOK = "0123456789";
+                var checkStr = theForm.IDtmp.value;
+                var allValid = true;
+                var decPoints = 0;
+                var allNum = "";
+
+                for (i = 5; i < checkStr.length; i++) {
+                    ch = checkStr.charAt(i);
+                    for (j = 0; j < checkOK.length; j++) {
+                        if (ch == checkOK.charAt(j)) { break; }
+                    }
+
+                    if (j == checkOK.length) { allValid = false; break; }
+                    allNum += ch;
+                }
+
+                if (!allValid) {
+                    alert("學號必須為7 或 10 位阿拉伯數字（或英文字母） !! 請重新輸入");
+                    theForm.IDtmp.focus();
+                    return (false);
+                }
+
+                if (theForm.passwdtmp.value == "") {
+                    alert("密碼必須為阿拉伯數字（或英文字母） ！請重新輸入");
+                    theForm.passwdtmp.focus();
+                    return (false);
+                }
+
+
+                if (theForm.ValidCode.value == "") {
+                    alert("驗證碼必須輸入!! \n Validation Code Needed.");
+                    return (false);
+                }
+
+                if ((theForm.ValidCode.value.length < 4)) {
+                    alert("驗證碼需4位阿拉伯數字 !! 請重新輸入 \n 4-digit Validation Code Needed.");
+                    return (false);
+                }  
+
+                return (true);
+            }
+
+            -->
+        </script>
+    </head>
+
+    <body onclick=hide_all()>
+        <center>
+            <!-- <table border="0" width="230" bgcolor="#FFFFFF" valign="top"> -->
+            <table border="0" width="960" bgcolor="#FFFFFF" valign="top">
+
+<!--
+                <tr>
+                    <td align="left" width="335" height="12" colspan="2" bgcolor="#FFFFFF">
+                        <img border="0" src="images/title3.gif" width="242" height="44">
+                    </td>
+                    <td  align="left" width="435" height="12" colspan="3" bgcolor="#FFFFFF">
+                        <img border="0" src="images/TITL1-2.jpg"><span onmouseout="this.style.color='blue'"  onmouseover="this.style.color='red';
+                        show_menu('menu1')" stsyle="cursor:hand;color:blue;font-size:23px"><a href="http://ftp.nsysu.edu.tw/cpatch/editor/acrobat/adberdr601_cht_full.exe"><img border="0" src="getacro.gif" align="right" width="43" height="20"></a></span>
+                    </td>
+                </tr>
+-->
+
+                <tr>
+                    <td align="left" colspan="3" bgcolor="#FFFFFF">
+                        <img border="0"  width="100%"  src="images/top3.jpg" >
+                    </td>
+
+                </tr>
+
+                <tr>
+                    <!-- <td width="187"  height="416" rowspan="3" valign="top"> -->
+                    <td width="300" rowspan="4" valign="top">
+                            <!-- <table border="0" width="207" style="background-color: #FFFFFF"> -->
+   <table border="0" width="100%"  cellpadding="0" cellspacing="5"  style="background-color: #FFFFFF,border-radius:10px">
+		<!-- <table border="0" width="100%" cellpadding="20" cellspacing="10" class="td_cir">-->
+
+        <!--
+        <tr>
+            <td width="201" style="background-color: #99CCFF"><font face="Times New Roman,標楷體" color="#FF6600"><strong>各項資訊及表單</strong></font><BR><font face="Times New Roman" size="1">(Information & Downloads)</font></td>
+        </tr>
+        <tr>
+            <td width="201" style="background-color: #99CCFF"><font face="Times New Roman,標楷體" color="#FF6600"><strong>資訊區</strong></font><font face="Times New Roman" size="1">(Information)</font></td>
+        </tr>
+        -->
+        <tr>
+            <td class="memu_title">
+               重要須知
+            </td>
+        </tr>
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="reg_data.htm">註冊須知(Guide for Registration)</a>
+            </td>
+        </tr>     
+
+        
+
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="https://oaa.nsysu.edu.tw/p/412-1003-98.php?Lang=zh-tw">行事曆(Academic Calendar)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="https://regs.nsysu.edu.tw/rule/rul_vie?rul=20190920102213&dep=20190816110743016">本校學則(NSYSU Academic Regulation)</a>
+            </td>
+        </tr>
+<tr>
+            <td class="memu_title">
+               選課相關
+            </td>
+        </tr>       
+<tr>
+            <td class="td_cir">
+                <a target="_blank" href="https://selcrs.nsysu.edu.tw/">選課系統(Course Selection System)</a>
+            </td>
+        </tr>
+	   <tr>
+            <td class="memu_title">
+                新生相關
+            </td>
+        </tr>       
+        <tr>
+            <td class="td_cir">
+
+<a href='https://selcrs.nsysu.edu.tw/newstu/login_stu_new.htm' target='_blank'>報到前資料確認<br>(限研究生、寒假轉學生)
+                <br>Personal Information Confirmation<br>
+                ( Graduate Students only)</a>
+            </td>
+        </tr>
+
+<!--
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="newstu_teaching.pdf">新生入學指導課程表(Orientation Schedule)</a>
+            </td>
+        </tr>
+-->       
+        <tr>
+            <td class="td_cir">     
+<script language="JavaScript"> 
+                /*
+                if ((Jmonth == 3 && Jdate<=5) || (Jmonth <=2 )) {
+                    document.write(' <a href="https://selcrs.nsysu.edu.tw/newstu/stu_new.asp?action=14"></a>');
+                }
+                else { document.write('<a href="stuid_query.htm">學號查詢</a>'); }
+                */
+</script>
+
+ <a target='_blank' href='https://selcrs.nsysu.edu.tw/newstu/stu_new.asp?action=14'>學號查詢(Student ID Number Inquiry)</a>
+            </td>
+        </tr>
+      <tr>
+            <td class="td_cir">                  
+                <a target="_blank" href="https://email.nsysu.edu.tw/p/404-1049-264961.php?Lang=zh-tw">新生E-mail(Email Notice)</a>
+            </td>
+        </tr>
+       <tr>
+            <td class="memu_title">
+                舊生相關
+            </td>
+        </tr>   
+        <tr>
+            <td class="td_cir">  
+                <a href="https://selcrs.nsysu.edu.tw/scoreqry/" target="_blank">舊生成績查詢(Grade Inquiry)</a>
+            </td>
+        </tr>
+
+       <tr>
+            <td class="memu_title">
+                學雜費相關
+            </td>
+        </tr>   
+
+        <tr>
+            <td class="td_cir">
+               <a target="_blank" href="https://oaa.nsysu.edu.tw/p/412-1003-3288.php?Lang=zh-tw">學雜費徵收標準<br>(Tuition and Fees Standard)</a>
+            </td>
+        </tr>
+       <tr>
+            <td class="td_cir"><a href="https://tfstu.nsysu.edu.tw/tfstu/tfstu_login2.asp" target="_blank">繳費狀態查詢(Check Payment Status)</a>
+            </td>
+        </tr>
+        <tr>
+            <td class="td_cir">
+                <!-- <a target="_blank" href="reback_charge.pdf"> -->
+                <!-- <a target="_blank" href="reback_charge.pdf">休退學退費標準</a></font><br><font face="Times New Roman" size="1">(Tuition Refund Policy)</font> -->
+                <a target="_blank" href="reback_charge.pdf">休退學畢業離校退費標準<br>(Tuition Refund Policy)</a>
+            </td>
+        </tr>
+<!--
+        <tr>
+            <td class="td_cir"><font face="Times New Roman,標楷體" color="#6600FF">      
+                <a href="https://tfstu.nsysu.edu.tw/tfstu/tfstu_login.asp" target="_blank">                     
+               學雜費繳費單列印</a></font><br>
+                <font face="Times New Roman" size="1">(Print Tuition Invoice)</font>
+            </td>
+        </tr>
+-->
+    <tr>
+            <td class="memu_title">
+                車管會
+            </td>
+        </tr>        
+ <tr>
+            <td class="td_cir">
+                <a href="https://vehicle.nsysu.edu.tw/" target="_blank">線上申請停車證系統<br>(Vehicle Management)</a>
+            </td>
+        </tr>
+    
+
+<!--
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="https://selcrs.nsysu.edu.tw/newstu/map.htm">校區平面圖(NSYSU Campus Map)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="http://admin-support.oga.nsysu.edu.tw/files/15-1042-41593,c4167-1.php?Lang=zh-tw">停車資訊(Parking Information)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="http://secretariat.nsysu.edu.tw/for_high_school/index.php?a=8&b=life">生活資訊(About NSYSU)</a>
+            </td>
+        </tr>
+
+-->
+
+    <script language="JavaScript"> 
+
+        // define variable 
+        var Jsay; 
+        var Jdayr; 
+        var Jtoday = new Date(); 
+        var Jyear = Jtoday.getYear(); 
+
+        Jmonth = Jtoday.getMonth() + 1;
+        Jday   = Jtoday.getDay();
+        Jdate  = Jtoday.getDate(); 
+        Jhrs   = Jtoday.getHours();
+        Jmin   = Jtoday.getMinutes();
+        Jsec   = Jtoday.getSeconds(); 
+
+        // document.write('<b><font color=white size=+1>'+Jhrs+'點'+Jmin+'分');
+        // document.write('</b></font>');
+
+        MON_DAY = Jmonth + '' + Jdate;
+
+        // if (Jmonth == 7 && Jdate >= 15 && Jdate <= 31)
+        function go_h() {
+            // alert("大學部大一新生請於8月11日以後再行上網確認資料");
+            location.href="https://selcrs.nsysu.edu.tw/newstu/login_stu_new.htm";
+        }
+
+    </script>
+
+<!--
+        <tr>
+            <td class="td_cir"> 
+                <a target="_blank" href="ch_assign_table.pdf">改分發申請表 <br>(Application for Re-assignment)</a>
+            </td>
+        </tr>
+-->
+  <tr>
+            <td class="memu_title">
+                學務處相關
+            </td>
+        </tr>   
+	    <tr>
+            <td class="td_cir">
+                <a href="https://sis.nsysu.edu.tw/ONAMS/index.php" target="_blank">學務處通辦網</a>
+            </td>
+        </tr>      
+	    <tr>
+            <td class="td_cir">
+                <a target="_blank" href="https://ag-osa.nsysu.edu.tw/p/412-1087-22166.php?Lang=zh-tw">請假(Leave for Absence)</a>
+            </td>
+        </tr>
+	   <!--
+        <tr>
+            <td class="td_cir">
+                <a href="https://sis.nsysu.edu.tw/ONAMS/" target="_blank">緩徵與儘後召集申請(Application for deferment of military service)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a href="https://sis.nsysu.edu.tw/ONAMS/" target="_blank">住宿申請(Dormitory Application)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a href="https://sis.nsysu.edu.tw/ONAMS/" target="_blank">學雜費減免申請(Tuition Waiver)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="https://sis.nsysu.edu.tw/ONAMS/">
+                弱勢學生助學申請(Financial Support for underprivileged students)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a href="https://sis.nsysu.edu.tw/ONAMS/" target="_blank">就學貸款申請(Student Loans)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a href="https://sis.nsysu.edu.tw/ONAMS/" target="_blank">新生健康檢查(Health Examination)</a>
+            </td>
+        </tr>
+   -->
+       <tr>
+            <td class="memu_title">
+                表單下載
+            </td>
+        </tr>     
+       
+        <tr>
+            <td class="td_cir">
+                <a href="job_agree.pdf" target="_blank">在職進修同意書
+                <br>
+                (Consent Letter for On-job Studying)</a>
+				<!--<br>
+                                
+                <a href="job_agree.pdf" target="_blank"><font size="2" color="#6600FF" face="Times New Roman,標楷體">[開啟PDF檔]</font></a>-->
+            </td>
+        </tr>
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="advance_enter_apply.pdf">提前入學申請表<br>(Application for Early Admission)</a>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="td_cir">
+                <a target="_blank" href="recognizance.pdf">(延遲)補繳學歷證件切結書(Affidavit)</a>
+            </td>
+        </tr>    
+        <tr>
+            <td class="td_cir">
+                <a href="https://oaa.nsysu.edu.tw/p/404-1003-19669.php?Lang=zh-tw"  target="_blank">委託書(Letter of Authorization)</a>
+            </td>
+        </tr>
+
+    </table> 
+                    </td>
+
+                    <td colspan="2" valign="top">
+	 
+                        <table width="100%"  border="0"  cellpadding="0" bordercolorlight="#000080" bordercolordark="#000080" rules="none" >
+                            <tr>
+                                <td bgcolor="#ffffef" align="left">
+                                    <form name="f1" method="post" action="stu_enroll_loginchk.asp" >
+
+                                        <table border="0" width="100%" style="background-color: #ffffef">
+                                            <tr>
+                                                <td width="22%">
+                                                    <b><font face="Times New Roman,標楷體" color="#000080" size="4">帳號</font><font face="Times New Roman" size="1">(Username)</font><font face="Times New Roman,標楷體" color="#000080" size="4">：</font></b>
+                                                </td>
+
+                                                <td width="18%">
+                                                    <input type="text" name="IDtmp" size="12" tabindex="1" onKeypress="chk_key1();">
+                                                </td>
+
+                                                <td width="19%">
+                                                    <b><font face="Times New Roman,標楷體" color="#000080" size="4">密碼</font><font face="Times New Roman" size="1">(Password)</font><font face="Times New Roman,標楷體" color="#000080" size="4">：</font></b>
+                                                </td>
+
+                                                <td width="18%">
+                                                    <input type="password" name="passwdtmp" size="12" tabindex="2" onKeypress="chk_key2();">
+                                                </td>
+
+                                                <td width="23%" rowspan="2" align="left">&nbsp;&nbsp;
+                                                    <input type="hidden" name="ID"     size="20">
+                                                    <input type="hidden" name="passwd" size="20">
+                                                    <input type="button" name="b1" value="確認 (Enter)" tabindex="4" onClick="f1_submit();">
+                                                </td>
+                                                <td align="right" valign="top" nowrap><a href="index_eng.asp">English</a>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                                            </tr>
+
+                                            <tr>
+                                                <td >
+                                                    <b><font face="Times New Roman,標楷體" color="#000080" size="4">驗證碼</font><font face="Times New Roman" size="1">(Verified Code)</font><font face="Times New Roman,標楷體" color="#000080" size="4">：</font></b>
+                                                </td>
+
+                                                <td >
+                                                    <input type="text" name="ValidCode" size="12" maxlength="4" tabindex="3" onKeypress="chk_key3();">
+                                                </td>
+
+                                                <td >
+                                                    <img id="imgVC" name="imgVC" style="vertical-align:middle" src="validcode.asp?epoch=1468419307" onClick="this.src='validcode.asp?epoch=' + (new Date()).getTime()">
+                                                </td>
+
+                                                <td >
+                                                    <input type="button" value="重新產生" onClick="javascript:document.getElementById('imgVC').src='validcode.asp?epoch='+(new Date()).getTime()">
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                    </form>
+                                </td>
+                            </tr>
+                     <!--       <tr>
+   <td valign="top" class="font01" colspan="3"> 
+   <table border="3">
+   <tr><td class="font01">
+   各位同學好：<BR /><BR />
+為因應近期嚴重特殊傳染性肺炎（武漢肺炎）疫情爆發，本校已啟動防疫措施，為了解同學相關接觸紀錄，將於本系統(網路註冊)、選課、繳費建置調查表以確保校園安全，煩請同學配合填報。<BR />
+**任一系統填報即可，系統將會自動記錄**<br>
+<font color=red>**開學時間延後至2月27日，註冊程序截止日延至3月2日**</font><BR><BR />
+造成不便請同學見諒，也請同學於防疫期間配合相關程序，感謝各位!<BR />
+</td></tr>
+</table>
+    </td>   
+</tr>
+-->
+                             <tr><td bgcolor="#ffffef">
+<FONT size='3' COLOR=RED>115學年度第1學期 開放時間：2026/08/01 00:00:00 至 2027/01/31 23:59:00<br>(Online Registration open from 2026/08/01 00:00:00 to 2027/01/31 23:59:00)</FONT>
+    </td></tr>
+
+    <tr>
+        <td bgcolor="#ffffef">&nbsp;</td>
+    </tr>
+
+    <tr>
+        <td bgcolor="#ffffef">
+            <font face="Times New Roman,標楷體" size="3" color="#00400f">※&nbsp;新生請進入
+ <a target='_blank' href='https://selcrs.nsysu.edu.tw/newstu/stu_new.asp?action=14'>學號查詢</a>
+            <font face="Times New Roman" size="2">（New students please refer to  
+ <a  target='_blank'  href='https://selcrs.nsysu.edu.tw/newstu/stu_new.asp?action=14'>Student ID Number Inquiry</a>
+            ）</font>
+            <BR>
+            <font face="Times New Roman,標楷體" size="3" color="#00400f">※&nbsp;帳號為學號。</font>
+            <font face="Times New Roman" size="2">(Default username name：student ID number)</font>
+            <BR>
+            <font face="Times New Roman,標楷體" size="3" color="#00400f">※&nbsp;密碼
+            </font>
+            <!--<font face="Times New Roman" size="1">(Default password)</font>-->
+            <font face="Times New Roman,標楷體" size="3" color="#00400f"> ：
+            </font>
+            <BR>
+            <FONT  face="Times New Roman,標楷體" size="3" COLOR="#00400f">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;新生密碼預設值：身分證末六碼（若已變更過密碼，則同選課密碼）。<br>
+            <!-- &nbsp;&nbsp;&nbsp;&nbsp;舊生密碼預設值：同選課密碼。舊生如忘記密碼，請至<a target='_blank' href='http://selcrs.nsysu.edu.tw/menu3/sqrypass.asp'>密碼查詢</a>。 -->
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;舊生密碼預設值：同選課密碼。舊生如忘記密碼，請至<a target='_blank' href='https://sso.nsysu.edu.tw/index.php/passport/forget'>密碼查詢</a>。
+            </FONT>
+        </td>
+    </tr>
+
+    <tr>
+        <td bgcolor="#ffffef"> 
+            <font face="Times New Roman" size="2">
+            <br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Default password：</font>
+        </td>
+    </tr>
+
+    <tr>
+        <td bgcolor="#ffffef"> 
+            <font face="Times New Roman" size="2">
+                <ol> 
+                    <li>New students: last 6 digits of ROC ID number</li>
+                    <li>Current students: same as course selection password</li>
+                    <li>Overseas Chinese/International students: birth date (4 digits) + first 2 letter of your name (e.g. James Bond 1960/06/20, password: 0620JA)</li>
+                </ol>
+            </font>
+        </td>
+    </tr> 
+
+
+                        </table>
+
+                    </td>
+                </tr>              
+                 <tr>
+   <td class="font01" colspan="2" valign="top">
+<!--<img src="images/hot.gif" width="55" height="27"><a href="111prin_stu.pdf" target="_blank">校長給大學部新生的一封信</a><br />
+   <img src="images/hot.gif" width="55" height="27"><a href="111prin_par.pdf" target="_blank">校長給大學部新生家長的一封信</a><br />-->
+ <!--  <img src="images/hot.gif" width="55" height="27">-->
+ <a href="115newstu_note.pdf" target="_blank">※115學年度學士班新生入學手冊</a>
+   <br />	
+   <!-- 
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color=red>※註冊須知部分有更新(page.8~12)</font>
+   <br>
+   <br>-->
+	   <a href="https://oaa.nsysu.edu.tw/p/406-1003-178325,r2410.php?Lang=zh-tw" target="_blank">※保留入學及休學規定對照表</a>
+    </td>   
+</tr>
+<tr><td colspan="2" valign="top">
+    <table  class="memo_type" border="0" cellpadding="8" cellspacing="0"  bordercolor="#6666FF" valign="top">
+        <tr><td colspan="1" valign="top">註冊前請同學務必詳閱左欄「註冊須知」，以下為重點提醒:</td></tr>
+        <tr><td nowrap>※&nbsp;註冊日期：9月7日(星期一)</td></tr>
+        <tr><td nowrap>※&nbsp;開學日期：9月7日(星期一)</td></tr>
+        <tr><td nowrap>※&nbsp;學雜費繳費訊息：</td></tr>
+        <tr>
+            <td nowrap>
+                <ol>
+                    <li>本校註冊須知、學雜費不再寄發紙本，繳費單請同學自行上網列印。</li>
+                    <li>學雜費繳費期限為<font color='red'>9月7日15:30前</font></li>
+                    <li>學雜費繳費單開放列印時間:<br />
+                    舊生：8月14日(五)起<br />
+                    新生：8月26日(三)起
+                    </li>
+                </ol>
+            </td>
+        </tr>
+        <tr><td>※&nbsp;新生領取學生證：	
+			</td></tr>
+        <tr>
+            <td nowrap>
+                <ol>
+					<li>地點：<font color='blue'>各系所辦公室</font></li>
+                    <li>時間：<font color='red'>9月7日(註冊日)開放領取</font> </li>
+				</ol>                
+             <!--  <div style="background:#FFFF00;font-color:#F00;margin-left:20px;width:240px;">【※因應疫情可能提前全面發放】</div>    -->   
+             </td></tr>
+      <!--  <tr>
+            <td nowrap>
+              <ol>
+                    <li>2月13日
+                        <br>◎&nbsp;<font color='blue'>各系所辦公室</font>：繳費截止日<font color='red'>(2月8日)</font>前完成網路註冊及繳費(<font color='red'>即費用有入學校帳戶</font>)者。
+                        <br>◎&nbsp;<font color='blue'>行政大樓六樓註冊課務組</font>：未於繳費截止日(2月8日)前完成網路註冊及繳費者。
+                    </li>
+                    <li>2月14日(含)以後：一律至<font color='blue'>行政大樓六樓註冊課務組</font>領取。<BR /><div style="background:#FFFF00;font-color:#F00;">【如因應疫情門禁管制，將請系所全面發放】</div>                     </li>
+                </ol>            
+                 
+            </td>
+        </tr> -->
+        <tr><td>
+<table width='100%'>
+<tr><td align=right valign=top width=5><font color='red'>※</font></td>
+           <td> <font color='red'>休學申請：系統於115年8月3日起開放。</font></td></tr>
+           <tr><td align=right valign=top width=5>※</td>
+           <td>若各項申請(如.就學貸款、兵役緩徵..等)於本系統開放前已受理學生申請，請逕至受理單位網頁辦理。</td></tr>
+  <tr><td align=right valign=top width=5>※</td>
+           <td>兵役部分：
+           <ol>
+            <li>尚未服兵役的男同學，如:新生、復學生、轉學生、轉系生、徑讀碩士班或博士班、延畢生，務必重新辦理學校方的緩徵，已服完兵役的同學可辦理儘後召集，申請至開學第一週截止，謝謝。</li>
+           <li>尚未服兵役的延畢生，務必重新辦理學校的緩徵，已服完兵役的同學可辦理儘後召集，申請至開學第一週截止，謝謝。</li>
+           </ol>
+            </td></tr>
+        </table>
+        </td></tr>
+    </table>	
+</td></tr>
+<tr><td  height='400'></td></tr> 
+				  
+                <tr><td colspan="3">&nbsp;</td></tr>
+
+            </table>
+        </center>
+    </body>
+</html>

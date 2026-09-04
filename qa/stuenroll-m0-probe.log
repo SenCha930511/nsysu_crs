@@ -1,0 +1,51 @@
+[17:30:45] === stu_enroll M0 capture round (anonymous solve-rate) ===
+[17:30:45] outbound calls: login POST + captcha BMPs + pure GET reads only; ledger printed at end.
+[17:30:45] -> CALL 1: GET https://selcrs.nsysu.edu.tw/stu_enroll/
+[17:30:46] saved stuenroll_login_live_1151.html (+.txt), 32414 bytes
+[17:30:46]   login form: action='stu_enroll_loginchk.asp', inputs=['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp'], missing=none
+[17:30:46] -> CALL 2: GET validcode.asp?epoch=<ms>
+[17:30:46] saved stuenroll_validcode_live_1151.bmp, 8982 bytes
+[17:30:46]   sample 1/10: 5 chars, 4-digit=False
+[17:30:46] -> CALL 3: GET validcode.asp?epoch=<ms>
+[17:30:46]   sample 2/10: 4 chars, 4-digit=True
+[17:30:46] -> CALL 4: GET validcode.asp?epoch=<ms>
+[17:30:47]   sample 3/10: 4 chars, 4-digit=True
+[17:30:47] -> CALL 5: GET validcode.asp?epoch=<ms>
+[17:30:47]   sample 4/10: 4 chars, 4-digit=True
+[17:30:47] -> CALL 6: GET validcode.asp?epoch=<ms>
+[17:30:47]   sample 5/10: 5 chars, 4-digit=False
+[17:30:47] -> CALL 7: GET validcode.asp?epoch=<ms>
+[17:30:47]   sample 6/10: 4 chars, 4-digit=True
+[17:30:47] -> CALL 8: GET validcode.asp?epoch=<ms>
+[17:30:48]   sample 7/10: 4 chars, 4-digit=True
+[17:30:48] -> CALL 9: GET validcode.asp?epoch=<ms>
+[17:30:48]   sample 8/10: 4 chars, 4-digit=True
+[17:30:48] -> CALL 10: GET validcode.asp?epoch=<ms>
+[17:30:48]   sample 9/10: 4 chars, 4-digit=True
+[17:30:48] -> CALL 11: GET validcode.asp?epoch=<ms>
+[17:30:48]   sample 10/10: 4 chars, 4-digit=False
+[17:30:48] anonymous round complete (no login POST performed).
+[17:30:48] --- OUTBOUND CALL ENUMERATION (all calls this round) ---
+[17:30:48]   1. GET https://selcrs.nsysu.edu.tw/stu_enroll/
+     read-only because: public login page; seeds the cookie lineage
+[17:30:48]   2. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   3. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   4. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   5. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   6. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   7. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   8. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   9. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   10. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48]   11. GET validcode.asp?epoch=<ms>
+     read-only because: captcha BMP fetch; the answer is bound to this session lineage
+[17:30:48] total outbound calls: 11
