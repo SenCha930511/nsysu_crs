@@ -91,14 +91,16 @@ def _serve(
     if cached is None:
         return ScheduleResponse(ok=False, stale=False, fetched_at=None, title=None, events=[])
     fetched_raw = cached.get("fetched_at")
+    title_raw = cached.get("title")
+    events_raw = cached.get("events", [])
     return ScheduleResponse(
         ok=True,
         stale=stale,
         fetched_at=datetime.fromisoformat(fetched_raw) if isinstance(fetched_raw, str) else None,
-        title=cached.get("title") if isinstance(cached.get("title"), str) else None,
+        title=title_raw if isinstance(title_raw, str) else None,
         events=[  # cached blobs were written by _to_response; validate per-field at the model
             ScheduleEventOut.model_validate(event)
-            for event in cached.get("events", [])  # type: ignore[union-attr]
+            for event in (events_raw if isinstance(events_raw, list) else [])
             if isinstance(event, dict)
         ],
     )
