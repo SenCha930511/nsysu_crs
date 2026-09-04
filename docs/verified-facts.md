@@ -367,3 +367,122 @@ diff mode or a longer peak interval plus a meta announcement.
 
 - **Front-page 選課日程 table shape**: CONFIRMED - heading blockquote 「一佰一十五學年度第一學期選課日程」 + one ``tr`` per event; label div in cell 1; spec div in cell 2 as ``：115.08.20(09:00)&nbsp;~&nbsp;115.08.21(22:00)`` (window) or ``：115.08.24(14:00)`` (公佈 instants). 12 rows live: 8 windows + 4 公佈. ROC years (115 = 2026). Fixture backend/tests/fixtures/front_live_1151.html (public, personal-data-free; consumed by GET /api/schedule with Redis last-good semantics).
 - **115-1 棄選 window on the front page**: CONFIRMED - 115.11.13(09:00) ~ 115.11.20(17:00). The 棄選 WRITE FLOW (Studfun menu entry's href, form shape, submit endpoint): UNVERIFIED - no live capture exists; window closed at research time. `parse_studfun` gains read-only AWARENESS (anchor-text 「棄選」 -> stage=棄選, variant=None, reason=withdrawal_link - never writable by construction); the write path is deferred until a supervised capture pass inside the live window. Provisional fixture backend/tests/fixtures/studfun_open_withdrawal_provisional.html marks the placeholder href explicitly.
+
+## live-verified (stu_enroll 115-1 m0)
+
+### capture run 2026-09-04 17:42 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: CONFIRMED - 6/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+
+### capture run 2026-09-04 17:44 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 4/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://selcrs.nsysu.edu.tw/scoreqry/'), ('cert', 'https://selcrs.nsysu.edu.tw/newstu/login_stu_new.htm')]
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=False; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 17:48 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 4/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll -> regweb login handoff (two-hop ceremony)**: CONFIRMED - loginchk returns an auto-submit form (ID/passwd/cmd/action, action=https://regweb.nsysu.edu.tw/webreg/wregloginchk.asp); the SCHOOL page echoes the password in plaintext (masked in fixtures); regweb is the real student system
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://selcrs.nsysu.edu.tw/scoreqry/'), ('cert', 'https://selcrs.nsysu.edu.tw/newstu/login_stu_new.htm')]
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=False; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 17:49 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 4/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+
+### capture run 2026-09-04 17:51 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 5/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregloginchk2.asp; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://selcrs.nsysu.edu.tw/scoreqry/'), ('cert', 'https://selcrs.nsysu.edu.tw/newstu/login_stu_new.htm')]
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 17:51 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 4/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401'), ('payment', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp'), ('cert', 'https://selcrs.nsysu.edu.tw/newstu/login_stu_new.htm')]
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 17:55 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 5/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401'), ('payment', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp'), ('cert', 'https://selcrs.nsysu.edu.tw/newstu/login_stu_new.htm')]
+- **verify subsystem (資料確認 / 在學證明 entry)**: CONFIRMED - verify landing captured; no cert link on it this round
+- **tfstu subsystem (繳費狀態)**: UNVERIFIED - login page carried no scrapable form this round
+- **sco grades subsystem (舊生成績查詢)**: CONFIRMED - landing https://selcrs.nsysu.edu.tw/scoreqry/; authed-shape=True; fixture stuenroll_grades_live_1151.html
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 17:59 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: CONFIRMED - 6/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401'), ('payment', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp')]
+- **verify subsystem (資料確認 / 在學證明 entry)**: CONFIRMED - verify landing captured; no cert link on it this round
+- **tfstu subsystem (繳費狀態)**: CONFIRMED - landing https://regweb.nsysu.edu.tw/webreg/WregRedirect.asp?out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp; authed-shape=True; fixture stuenroll_payment_live_1151.html
+- **sco grades subsystem (舊生成績查詢)**: CONFIRMED - landing https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101; authed-shape=True; fixture stuenroll_grades_live_1151.html
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 18:00 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 4/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401'), ('payment', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp')]
+- **verify subsystem (資料確認 / 在學證明 entry)**: CONFIRMED - verify landing captured; no cert link on it this round
+- **tfstu subsystem (繳費狀態)**: CONFIRMED - landing https://tfstu.nsysu.edu.tw/tfstu/tfstudata.asp?act=11; authed-shape=True; fixture stuenroll_payment_live_1151.html
+- **sco grades subsystem (舊生成績查詢)**: CONFIRMED - landing https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101; authed-shape=True; fixture stuenroll_grades_live_1151.html
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 18:02 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 4/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401'), ('payment', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp')]
+- **verify subsystem (資料確認 / 在學證明 entry)**: CONFIRMED - verify landing captured; no cert link on it this round
+- **tfstu subsystem (繳費狀態)**: CONFIRMED - landing https://tfstu.nsysu.edu.tw/tfstu/tfstudata.asp?act=11; authed-shape=True; fixture stuenroll_payment_live_1151.html
+- **sco grades subsystem (舊生成績查詢)**: CONFIRMED - landing https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101 + 2 frame(s); authed-shape=True; fixture stuenroll_grades_live_1151.html
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-04 18:02 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 2/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregloginchk2.asp; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401'), ('payment', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp')]
+- **verify subsystem (資料確認 / 在學證明 entry)**: CONFIRMED - verify landing captured; no cert link on it this round
+- **tfstu subsystem (繳費狀態)**: CONFIRMED - landing https://tfstu.nsysu.edu.tw/tfstu/tfstudata.asp?act=11; authed-shape=True; fixture stuenroll_payment_live_1151.html
+- **sco grades subsystem (舊生成績查詢)**: CONFIRMED - landing https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101 + 2 frame(s); authed-shape=True; fixture stuenroll_grades_live_1151.html
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### consolidated reading 2026-09-04 (Asia/Taipei) - window stu_enroll M0 (supersedes the iterated per-run rows above)
+
+- **Tier-2 subsystem map & login chain**: CONFIRMED - stu_enroll loginchk -> (auto-form ID/passwd/cmd/action) -> regweb wregloginchk -> (auto-form ID/passwd) -> wregloginchk2 -> 302 WRegMain3.asp?act=11 (registration checklist, 316 anchors); the password is officially the course-selection password (each subsystem's own page states it).
+- **Handoff/relay mechanics**: CONFIRMED - each hop is a tiny (<2KB) auto-``<formname>.submit()`` all-hidden form; GET redirects interleave (302 Location is FOLLOWED verbatim). Cookie lineage: each host issues its own ASPSESSIONID* cookie and the jar must be re-read from ``client.cookies`` after EVERY call (httpx copies the passed-in jar; the input object never receives Set-Cookie).
+- **The SCHOOL echoes the password in PLAINTEXT inside handoff forms**: CONFIRMED - every school handoff page embeds the plaintext credential in hidden fields; probe artifacts mask id (M153****24) AND password (********) in place.
+- **captcha family**: CONFIRMED - /stu_enroll/validcode.asp and /scoreqry/validcode.asp are the same BMP 124x24 8982-byte shape as menu1/validcode.asp; ddddocr per-attempt acceptance observed 33-100% (in-probe clean-4-digit gate + 5-attempt login budget completed every final run); wrong-code answer is HTTP 200 「驗證碼錯誤。/ Incorrect verified code!!」(129 bytes) with 回首頁 to index.asp. Fixture backend/tests/fixtures/stuenroll_validcode_live_1151.bmp.
+- **grades (sco)**: CONFIRMED - scoreqry interactive login (SID/PASSWD/ValidCode + own captcha) -> auto-form (SID/PASSWD/ValidCode/ACTION/INTYPE) -> sco_query.asp 302 -> sco_query.asp?action=101 -> frameset; the menu frame (action=1) links 歷年成績查詢 (action=811&KIND=3), 學期成績 (action=700&KIND=2), 預警 (action=817&KIND=5), 授課教師開放 (action=700&KIND=1); fixtures backend/tests/fixtures/stuenroll_grades{frame,_frame_0,_frame_1}_live_1151.html. NOTE for classifiers: handoff pages themselves CONTAIN the ValidCode field name, so a "still on login form" heuristic keyed on ValidCode is a false positive - handoffs must be detected structurally (tiny page + auto-submit script + all-hidden form).
+- **payment (tfstu)**: CONFIRMED - act=71&out relay -> WregRedirect -> auto-form (the RELAY forwards the credentials - zero interactive login) -> tfstu_login_chk.asp 302 -> tfstudata.asp?act=11 (payment page with 金額/狀態 fields and tfstu_receipt_crd_us.asp receipt links); fixture backend/tests/fixtures/stuenroll_payment_live_1151.html.
+- **verify (個人基本資料確認)**: CONFIRMED - act=71&out=verify_stu.asp relay -> auto-form (ssn1=idno & idno) -> verify_stu.asp (80KB confirmation form posting VACTION=1 - a WRITE, never submitted); fixture backend/tests/fixtures/stuenroll_verify_live_1151.html.
+- **在學證明 electronic cert**: UNVERIFIED - with 資料確認 already 已完成, no read-only cert link exists (absent from the regweb checklist AND from the verify page; earlier runs' "cert" captures were the PUBLIC 新生 newstu page, a keyword misroute - corrected here). Generation likely rides the 確認 form submit (a write) or appears only around a fresh confirmation; the wrapper plans guide/link-out instead of automation.
+- **session TTL (all subsystems)**: UNVERIFIED - t+0 alive everywhere; sliding/hard bounds not probed by design (M0 scope).

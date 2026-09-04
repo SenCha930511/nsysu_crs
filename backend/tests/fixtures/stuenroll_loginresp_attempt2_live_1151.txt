@@ -1,0 +1,1 @@
+驗證碼錯誤。<br><br>Incorrect verified code!!<br/><br/><a href='index.asp'><font color='red'>回首頁&nbsp;Back</font></a>

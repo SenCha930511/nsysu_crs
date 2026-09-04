@@ -1,51 +1,184 @@
-[17:30:45] === stu_enroll M0 capture round (anonymous solve-rate) ===
-[17:30:45] outbound calls: login POST + captcha BMPs + pure GET reads only; ledger printed at end.
-[17:30:45] -> CALL 1: GET https://selcrs.nsysu.edu.tw/stu_enroll/
-[17:30:46] saved stuenroll_login_live_1151.html (+.txt), 32414 bytes
-[17:30:46]   login form: action='stu_enroll_loginchk.asp', inputs=['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp'], missing=none
-[17:30:46] -> CALL 2: GET validcode.asp?epoch=<ms>
-[17:30:46] saved stuenroll_validcode_live_1151.bmp, 8982 bytes
-[17:30:46]   sample 1/10: 5 chars, 4-digit=False
-[17:30:46] -> CALL 3: GET validcode.asp?epoch=<ms>
-[17:30:46]   sample 2/10: 4 chars, 4-digit=True
-[17:30:46] -> CALL 4: GET validcode.asp?epoch=<ms>
-[17:30:47]   sample 3/10: 4 chars, 4-digit=True
-[17:30:47] -> CALL 5: GET validcode.asp?epoch=<ms>
-[17:30:47]   sample 4/10: 4 chars, 4-digit=True
-[17:30:47] -> CALL 6: GET validcode.asp?epoch=<ms>
-[17:30:47]   sample 5/10: 5 chars, 4-digit=False
-[17:30:47] -> CALL 7: GET validcode.asp?epoch=<ms>
-[17:30:47]   sample 6/10: 4 chars, 4-digit=True
-[17:30:47] -> CALL 8: GET validcode.asp?epoch=<ms>
-[17:30:48]   sample 7/10: 4 chars, 4-digit=True
-[17:30:48] -> CALL 9: GET validcode.asp?epoch=<ms>
-[17:30:48]   sample 8/10: 4 chars, 4-digit=True
-[17:30:48] -> CALL 10: GET validcode.asp?epoch=<ms>
-[17:30:48]   sample 9/10: 4 chars, 4-digit=True
-[17:30:48] -> CALL 11: GET validcode.asp?epoch=<ms>
-[17:30:48]   sample 10/10: 4 chars, 4-digit=False
-[17:30:48] anonymous round complete (no login POST performed).
-[17:30:48] --- OUTBOUND CALL ENUMERATION (all calls this round) ---
-[17:30:48]   1. GET https://selcrs.nsysu.edu.tw/stu_enroll/
+[18:02:49] === stu_enroll M0 capture round (credentialed, M153****24) ===
+[18:02:49] outbound calls: login POST + captcha BMPs + pure GET reads only; ledger printed at end.
+[18:02:49] -> CALL 1: GET https://selcrs.nsysu.edu.tw/stu_enroll/
+[18:02:50] saved stuenroll_login_live_1151.html (+.txt), 32414 bytes
+[18:02:50]   login form: action='stu_enroll_loginchk.asp', inputs=['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp'], missing=none
+[18:02:50] -> CALL 2: GET validcode.asp?epoch=<ms>
+[18:02:50] saved stuenroll_validcode_live_1151.bmp, 8982 bytes
+[18:02:50]   sample 1/8: 4 chars, 4-digit=True
+[18:02:50] -> CALL 3: GET validcode.asp?epoch=<ms>
+[18:02:50]   sample 2/8: 5 chars, 4-digit=False
+[18:02:50] -> CALL 4: GET validcode.asp?epoch=<ms>
+[18:02:50]   sample 3/8: 5 chars, 4-digit=False
+[18:02:50] -> CALL 5: GET validcode.asp?epoch=<ms>
+[18:02:51]   sample 4/8: 4 chars, 4-digit=True
+[18:02:51] -> CALL 6: GET validcode.asp?epoch=<ms>
+[18:02:51]   sample 5/8: 5 chars, 4-digit=False
+[18:02:51] -> CALL 7: GET validcode.asp?epoch=<ms>
+[18:02:51]   sample 6/8: 3 chars, 4-digit=False
+[18:02:51] -> CALL 8: GET validcode.asp?epoch=<ms>
+[18:02:51]   sample 7/8: 5 chars, 4-digit=False
+[18:02:51] -> CALL 9: GET validcode.asp?epoch=<ms>
+[18:02:51]   sample 8/8: 4 chars, 4-digit=False
+[18:02:51] -> CALL 10: POST https://selcrs.nsysu.edu.tw/stu_enroll/stu_enroll_loginchk.asp (login, real credentials, wire body never saved)
+[18:02:51] -> CALL 11: GET validcode.asp?epoch=<ms>
+[18:02:52] saved stuenroll_validcode_live_1151.bmp, 8982 bytes
+[18:02:52]   attempt 1 fetch 1: misread (4 chars), refetching
+[18:02:52] -> CALL 12: GET validcode.asp?epoch=<ms>
+[18:02:52]   attempt 1: captcha solved (4 chars)
+[18:02:52]   attempt 1 wire: HTTP 200; Location=-; cookie-names=['ASPSESSIONIDQSADTSBT', 'BIGipServerPL-Selcrs', 'TS01b534ab']
+[18:02:52] saved stuenroll_loginresp_attempt1_live_1151.html (+.txt) (id/password masked in-place), 347 bytes
+[18:02:52]   attempt 1 body classification: content
+[18:02:52]   response is not a login form: SUCCESS shape
+[18:02:52] -> CALL 13: POST https://regweb.nsysu.edu.tw/webreg/wregloginchk.asp (handoff hop 1)
+[18:02:52] saved stuenroll_hop1_live_1151.html (+.txt) (id/password masked in-place), 347 bytes
+[18:02:52]   hop 1 wire: HTTP 200; Location=-; cookie-names=['ASPSESSIONIDQSADTSBT', 'BIGipServerPL-Selcrs', 'TS01b534ab', 'ASPSESSIONIDQGDSRQCS']
+[18:02:52] -> CALL 14: POST https://regweb.nsysu.edu.tw/webreg/wregloginchk2.asp (handoff hop 2)
+[18:02:52] saved stuenroll_hop2_live_1151.html (+.txt) (id/password masked in-place), 217 bytes
+[18:02:53]   hop 2 wire: HTTP 302; Location=wregmain3.asp?act=11; cookie-names=['ASPSESSIONIDQSADTSBT', 'BIGipServerPL-Selcrs', 'TS01b534ab', 'ASPSESSIONIDQGDSRQCS']
+[18:02:53] -> CALL 15: GET https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11 (redirect hop 1)
+[18:02:53] saved stuenroll_regweb_main_live_1151.html (+.txt) (id/password masked in-place), 24703 bytes
+[18:02:53]   discovered 316 anchors across landing+frames:
+[18:02:53]     [登出] -> WRegMain3.asp?act=99
+[18:02:53]     [Logout] -> WRegMain3.asp?act=99
+[18:02:53]     [權益說明] -> WReg_Right.asp
+[18:02:53]     [Terms and Conditions] -> WReg_Right.asp
+[18:02:53]     [更新網頁] -> WRegMain3.asp?act=11
+[18:02:53]     [UpDates] -> WRegMain3.asp?act=11
+[18:02:53]     [確認個人基本資料] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Personal information confirmation] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [8月3日-9月7日] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [August.3] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [rd] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [- September.7] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [th] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [是] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [(YES)] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [已完成!] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [教務處] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [分機 2121] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Office of Academic Affairs] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Ext.2121] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [繳交畢業證書正本及身分證影本] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Submit documents:] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Original authenticated diploma with cumulative transcript] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Photocopy of ARC] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [(研究生)報到時繳交] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [(Graduate)Upon arrival for registration] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [是] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [(YES)] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [教務處] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [註冊組分機 2121~2127] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Office of Academic Affairs] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [Ext.2121~2127] -> WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53]     [繳交學雜費/列印繳費單] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53]     [Tuition & fees/print payment notice] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53]     [(舊生)8月14日-9月7日] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53]     [(新生)8月26日-9月7日] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53]     [(Current Students)August. 14] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53]     [th] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53]     [- September.7] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53]     [th] -> WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53] -> CALL 16: GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401
+[18:02:53] saved stuenroll_grades_live_1151.html (+.txt), 2415 bytes
+[18:02:53]   grades: HTTP 200, authed-shape=True
+[18:02:53] -> CALL 17: GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:53] saved stuenroll_payment_live_1151.html (+.txt), 179 bytes
+[18:02:53]   payment: HTTP 302, authed-shape=True
+[18:02:53] -> CALL 18: GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+[18:02:53] -> CALL 19: GET https://regweb.nsysu.edu.tw/webreg/WregRedirect.asp?out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp (redirect hop 1)
+[18:02:54] -> CALL 20: POST https://selcrs.nsysu.edu.tw/verify/verify_stu.asp (handoff hop 1)
+[18:02:54] saved stuenroll_hop1_live_1151.html (+.txt) (id/password masked in-place), 404 bytes
+[18:02:54]   hop 1 wire: HTTP 200; Location=-; cookie-names=['ASPSESSIONIDQSADTSBT', 'BIGipServerPL-Selcrs', 'TS01b534ab', 'ASPSESSIONIDQGDSRQCS']
+[18:02:54] saved stuenroll_verify_live_1151.html (+.txt) (id/password masked in-place), 80082 bytes
+[18:02:54] -> CALL 21: GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+[18:02:54] -> CALL 22: GET https://regweb.nsysu.edu.tw/webreg/WregRedirect.asp?out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp (redirect hop 1)
+[18:02:54] -> CALL 23: POST https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp (handoff hop 1)
+[18:02:54] saved stuenroll_hop1_live_1151.html (+.txt) (id/password masked in-place), 411 bytes
+[18:02:55]   hop 1 wire: HTTP 302; Location=tfstudata.asp?act=11; cookie-names=['ASPSESSIONIDQSADTSBT', 'BIGipServerPL-Selcrs', 'TS01b534ab', 'ASPSESSIONIDQGDSRQCS', 'ASPSESSIONIDSURDRQTD', 'TS01b44028']
+[18:02:55] -> CALL 24: GET https://tfstu.nsysu.edu.tw/tfstu/tfstudata.asp?act=11 (redirect hop 2)
+[18:02:55]   tfstu(繳費): no interactive login form - treating the landing as content
+[18:02:55] saved stuenroll_payment_live_1151.html (+.txt) (id/password masked in-place), 9675 bytes
+[18:02:55] -> CALL 25: GET https://selcrs.nsysu.edu.tw/scoreqry/
+[18:02:55] -> CALL 26: POST https://selcrs.nsysu.edu.tw/scoreqry/sco_query_loginchk.asp (sco(成績) subsystem login, real credentials)
+[18:02:55] -> CALL 27: GET https://selcrs.nsysu.edu.tw/scoreqry/validcode.asp?epoch=<ms>
+[18:02:56]   sco(成績) attempt 1: misread (5 chars), refetching
+[18:02:56] -> CALL 28: GET https://selcrs.nsysu.edu.tw/scoreqry/validcode.asp?epoch=<ms>
+[18:02:56]   sco(成績) attempt 1 wire: HTTP 200; Location=-; cookie-names=['ASPSESSIONIDQSADTSBT', 'BIGipServerPL-Selcrs', 'TS01b534ab', 'ASPSESSIONIDQGDSRQCS', 'ASPSESSIONIDSURDRQTD', 'TS01b44028']
+[18:02:56]   sco(成績) login classification: content
+[18:02:56] -> CALL 29: POST https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp (handoff hop 1)
+[18:02:56] saved stuenroll_hop1_live_1151.html (+.txt) (id/password masked in-place), 463 bytes
+[18:02:56]   hop 1 wire: HTTP 302; Location=sco_query.asp?action=101; cookie-names=['ASPSESSIONIDQSADTSBT', 'BIGipServerPL-Selcrs', 'TS01b534ab', 'ASPSESSIONIDQGDSRQCS', 'ASPSESSIONIDSURDRQTD', 'TS01b44028']
+[18:02:56] -> CALL 30: GET https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101 (redirect hop 1)
+[18:02:56] saved stuenroll_grades_live_1151.html (+.txt), 525 bytes
+[18:02:56] -> CALL 31: GET https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=1
+[18:02:57] saved stuenroll_grades_frame_0_live_1151.html (+.txt) (id/password masked in-place), 5020 bytes
+[18:02:57] -> CALL 32: GET https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp
+[18:02:57] saved stuenroll_grades_frame_1_live_1151.html (+.txt), 300 bytes
+[18:02:57] verified-facts updated (9 probes) under '## live-verified (stu_enroll 115-1 m0)'
+[18:02:57] --- OUTBOUND CALL ENUMERATION (all calls this round) ---
+[18:02:57]   1. GET https://selcrs.nsysu.edu.tw/stu_enroll/
      read-only because: public login page; seeds the cookie lineage
-[17:30:48]   2. GET validcode.asp?epoch=<ms>
+[18:02:57]   2. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   3. GET validcode.asp?epoch=<ms>
+[18:02:57]   3. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   4. GET validcode.asp?epoch=<ms>
+[18:02:57]   4. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   5. GET validcode.asp?epoch=<ms>
+[18:02:57]   5. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   6. GET validcode.asp?epoch=<ms>
+[18:02:57]   6. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   7. GET validcode.asp?epoch=<ms>
+[18:02:57]   7. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   8. GET validcode.asp?epoch=<ms>
+[18:02:57]   8. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   9. GET validcode.asp?epoch=<ms>
+[18:02:57]   9. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   10. GET validcode.asp?epoch=<ms>
+[18:02:57]   10. POST https://selcrs.nsysu.edu.tw/stu_enroll/stu_enroll_loginchk.asp (login, real credentials, wire body never saved)
+     read-only because: the permitted authentication POST; it creates a session and cannot change any account state by construction
+[18:02:57]   11. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48]   11. GET validcode.asp?epoch=<ms>
+[18:02:57]   12. GET validcode.asp?epoch=<ms>
      read-only because: captcha BMP fetch; the answer is bound to this session lineage
-[17:30:48] total outbound calls: 11
+[18:02:57]   13. POST https://regweb.nsysu.edu.tw/webreg/wregloginchk.asp (handoff hop 1)
+     read-only because: the school's auto-submit credential handoff (browser f1.submit() equivalent); forwards ONLY the hidden fields the school itself echoed - still the authentication ceremony
+[18:02:57]   14. POST https://regweb.nsysu.edu.tw/webreg/wregloginchk2.asp (handoff hop 2)
+     read-only because: the school's auto-submit credential handoff (browser f1.submit() equivalent); forwards ONLY the hidden fields the school itself echoed - still the authentication ceremony
+[18:02:57]   15. GET https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11 (redirect hop 1)
+     read-only because: manual follow of a redirect chain hop (the adapter pins follow_redirects=False because a 302 is meaningful data here; browsers follow these verbatim)
+[18:02:57]   16. GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401
+     read-only because: pure GET of the already-linked grades page (no fields sent)
+[18:02:57]   17. GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+     read-only because: pure GET of the already-linked payment page (no fields sent)
+[18:02:57]   18. GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp
+     read-only because: regweb relay toward the verify/資料確認 subsystem (act=71 out-link; pure GET of the already-linked relay)
+[18:02:57]   19. GET https://regweb.nsysu.edu.tw/webreg/WregRedirect.asp?out=https://selcrs.nsysu.edu.tw/verify/verify_stu.asp (redirect hop 1)
+     read-only because: manual follow of a redirect chain hop (the adapter pins follow_redirects=False because a 302 is meaningful data here; browsers follow these verbatim)
+[18:02:57]   20. POST https://selcrs.nsysu.edu.tw/verify/verify_stu.asp (handoff hop 1)
+     read-only because: the school's auto-submit credential handoff (browser f1.submit() equivalent); forwards ONLY the hidden fields the school itself echoed - still the authentication ceremony
+[18:02:57]   21. GET https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp
+     read-only because: tfstu(繳費) subsystem login page (public form)
+[18:02:57]   22. GET https://regweb.nsysu.edu.tw/webreg/WregRedirect.asp?out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp (redirect hop 1)
+     read-only because: manual follow of a redirect chain hop (the adapter pins follow_redirects=False because a 302 is meaningful data here; browsers follow these verbatim)
+[18:02:57]   23. POST https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp (handoff hop 1)
+     read-only because: the school's auto-submit credential handoff (browser f1.submit() equivalent); forwards ONLY the hidden fields the school itself echoed - still the authentication ceremony
+[18:02:57]   24. GET https://tfstu.nsysu.edu.tw/tfstu/tfstudata.asp?act=11 (redirect hop 2)
+     read-only because: manual follow of a redirect chain hop (the adapter pins follow_redirects=False because a 302 is meaningful data here; browsers follow these verbatim)
+[18:02:57]   25. GET https://selcrs.nsysu.edu.tw/scoreqry/
+     read-only because: sco(成績) subsystem login page (public form)
+[18:02:57]   26. POST https://selcrs.nsysu.edu.tw/scoreqry/sco_query_loginchk.asp (sco(成績) subsystem login, real credentials)
+     read-only because: the subsystem's own authentication POST - same-account credentials; creates a session and cannot change account state
+[18:02:57]   27. GET https://selcrs.nsysu.edu.tw/scoreqry/validcode.asp?epoch=<ms>
+     read-only because: sco(成績) captcha BMP fetch (answer binds to this session lineage)
+[18:02:57]   28. GET https://selcrs.nsysu.edu.tw/scoreqry/validcode.asp?epoch=<ms>
+     read-only because: sco(成績) captcha BMP fetch (answer binds to this session lineage)
+[18:02:57]   29. POST https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp (handoff hop 1)
+     read-only because: the school's auto-submit credential handoff (browser f1.submit() equivalent); forwards ONLY the hidden fields the school itself echoed - still the authentication ceremony
+[18:02:57]   30. GET https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101 (redirect hop 1)
+     read-only because: manual follow of a redirect chain hop (the adapter pins follow_redirects=False because a 302 is meaningful data here; browsers follow these verbatim)
+[18:02:57]   31. GET https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=1
+     read-only because: pure GET of a grades frameset frame (the frameset page itself is only a shell)
+[18:02:57]   32. GET https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp
+     read-only because: pure GET of a grades frameset frame (the frameset page itself is only a shell)
+[18:02:57] total outbound calls: 32

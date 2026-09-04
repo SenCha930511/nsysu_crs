@@ -1,0 +1,120 @@
+
+<style>
+        a {
+                text-decoration: none;
+                color: inherit;
+        }
+        
+        .button {
+                background-color: #238591;
+                border-radius: 6px;
+                border: 0;
+                color: #ffffff;
+                cursor: pointer;
+                display: inline-block;
+                height: 1.5em;
+                line-height: 1.5em;
+                padding: 1px 10px;
+                text-align: center;
+                text-decoration: none;
+                white-space: nowrap;
+                margin:1px;
+        }
+        
+        .button:hover {
+                background-color: #ca3d3d;
+        }
+        
+        .button:active {
+                background-color: #238591;
+        }
+        
+</style>
+<style>
+@font-face {
+  font-family: EUDC;
+  src:url('./fonts/eudc/EUDC.woff?v=20211020') format('woff'),
+	   url('./fonts/eudc/EUDC.ttf?v=20211020') format('truetype');
+}
+
+body {
+	font-family:  "Microsoft JhengHei", "新細明體", "細明體", Arial, "EUDC";
+}
+.font-eudc {
+	font-family:  "EUDC" !important;
+}
+</style>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"><html lang="zh-TW"><head><title>繳費單管理</title><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><link rel="stylesheet" type="text/css"  ></head><style type=text/css><!--body { font-family:Calibri, 微軟正黑體, 細明體, 標楷體, mingliu, taipei;  background-color:#ffffff;  color:#000000;  border-color:#000000;  border-width:1px;  margin-top:0;  margin-right:0;  margin-bottom:0; margin-left:0;  } .f1_cn  { font-family: Calibri, 微軟正黑體, 細明體; font-size: 100%; } .f1_en  { font-family: Calibri,Times New Roman; font-size:90%;  line-height:100%;  color:#000000 } .page_title2 { width=96%; background:#bfe2f9; } .tr_1 { padding-bottom:4px;  } .tr_sp {line-height:6px;  } .col_title { line-height:100%;  background:#bfe29f; } .col_value { background:#ffffef;  margin-left:12px; } .col_note  { font-size:92%; } --> </style> <Script Language="javascript" type="text/javascript" src=""></Script><script language="JavaScript"><!--function recheck(){ if (f1.fg_load.value == "1") {   location.reload(); } else {   f1.fg_load.value="1"; }}function main_submit(){ var para; para = "&OrderSet=" + f1.OrderSet.value ; para = para + "&WhereSet=" + f1.WhereSet.value; window.location.href = "tfstudata.asp?action=11" + para ;}function order_submit( order_req ) { f1.OrderSet.value = order_req ; main_submit();}//--></script><body onload="recheck();"><form name="f1"  method="post" ><input type="hidden" name="fg_load"  value="0" /><input type="hidden" name="orderset" size="20" value="" /><input type="hidden" name="whereset" size="20" value="" /><center><div class="page_title2" ><img src="tf_top.jpg" width="100%" height="90" border="0" alt="國立中山大學繳費單資訊" > </div><div><table width="96%" cellspacing="0" border="0" cellpadding="0" align="center" ><tbody><tr class="tr_1" valign="top" ><td class="f1_cn" colspan="4" align="left" >&nbsp;</td><td class="f1_cn" align="right" ><a href="tfstudata.asp?act=99" >登出系統 [logout]</a></td></tr><tr class="tr_1" valign="top" ><td class="f1_cn" colspan="1" align="left" ><nobr>系所<span class="f1_en">(Department/Institute)</span></nobr></td><td class="f1_cn" align="right" >：</td><td class="f1_cn" colspan="3" align="left" >資訊工程學系碩士班<br><span class="f1_en" >(INSTITUTE OF COMPUTER SCIENCE AND ENGINEERING)</span></td></tr><tr class="tr_1" ><td class="f1_cn" width="15%" align="left" vlign="top" ><nobr>學號<span class="f1_en">(Student ID number)</span>：</nobr></td><td class="f1_cn" width="1%"  align="right" >：</td><td class="f1_cn" width="25%" align="left" >M153****24</td><td class="f1_cn" width="30%" align="left" >年級<span class="f1_en">(Grade)</span>：1</td><td class="f1_cn" width="*%" align="left" >&nbsp;</td></tr><tr class="tr_1" ><td class="f1_cn" align="left" >姓名<span class="f1_en">(Name)</span></td><td class="f1_cn" align="right" >：</td><td class="f1_cn font-eudc" colspan="3" align="left" >&#x5F90;&#x52AD;&#x9706;</td></tr><tr></tbody></table></div><div><table width="96%" class="tab_brow" border="1" cellspacing="0"  cellpadding="4" align="center" summary="表格：資料瀏覽"  ><tbody><tr align="center" valign="middle" bgcolor="#89ca90" ><td width="30%" class="col_title" >單據名稱<br><span class="f1_en">Item</span></td><td width="12%" class="col_title" >應繳金額<br><span class="f1_en">Amount</span></td><td width="18%" class="col_title" >繳費狀態<br><span class="f1_en">Payment Status</span></td><td width="16%" class="col_title" >繳費日期<br><span class="f1_en">Date of Payment</span></td><td width="*%"  class="col_title" >處理<br><span class="f1_en">Notice</span></td></tr><tr class="1151學雜費"><td align="left" class="col_value" >1151學雜費<br><span class="f1_en" >1151&nbsp;Tuition and Fees</span></td><td align="right" class="col_value" >14,155&nbsp;&nbsp;</td><td align="left" class="col_value" >繳費成功<br><span class="f1_en">Payment completed</span></td><td align="left" class="col_value" >2026/08/31</td><td align="left" class="col_value"><a class="button" href="#" onclick="javascript:window.location.href='tfstudata.asp?act=61&mst_sno=IM1151006292'" >收據 (Receipt)</a></td></tr></tbody></table><br /><br /><table width="90%" cellspacing="0" border="1" cellpadding="2px" rules="none" ><tbody><tr><td class="col_note" >本校提供多元之繳費管道，無需列印繳費單亦能完成繳費者有下列方法：</td></tr><tr><td class="col_note" >&nbsp;&nbsp;(1).信用卡繳費（目前免手續費）：學校代號：8814600786</td></tr><tr><td class="col_note" >&nbsp;&nbsp;&nbsp;&nbsp;(1-1).網頁直接轉帳：<a href="https://www.27608818.com"  target="_blank"  >https://www.27608818.com</a>，輸入學校代號、繳款帳號即可完成繳費。</td></tr><tr><td class="col_note" >&nbsp;&nbsp;&nbsp;&nbsp;(1-2).電話語音繳費：02-27608818，輸入學校代號、繳款帳號即可完成繳費。</td></tr><tr><td class="col_note" >&nbsp;&nbsp;(2).自動櫃員繳費：輸入臺灣銀行代號：004、繳款帳號及金額即完成轉帳繳費。</td></tr><tr><td class="col_note" ><br>繳費單列印時，「頁面縮放」設定為「無」；請勿縮小頁面，避免條碼讀取失敗。</tr><tr><td class="col_note" ><br><span style="color:blue;">109學年度學雜費優惠調減證明書<span><br><a href="https://oaa.nsysu.edu.tw/p/406-1003-244256,r717.php?Lang=zh-tw">https://oaa.nsysu.edu.tw/p/406-1003-244256,r717.php?Lang=zh-tw</a></tr></tbody></table><br /><br /></tbody></table></div></center></form></body></html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+<script type="text/babel">
+function formatNumber(num) {
+   return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+}
+//var resp = {};
+var g_syear = 115;
+var resp = {"syear":"115","semester":"1","stuid":"M153****24","mgfees":[]};
+var g_fees = [];
+g_fees['a'] = true;
+g_fees['b'] = false;
+g_fees['1151學雜費_IM1151006292'] = Boolean('True'==='True');
+$(document).ready(function(){
+   if (resp) {
+      $.each(resp.mgfees, function(i, mgfee) {
+		 //console.log(mgfee);
+		 // if pay by TWD, not SHOW USD
+		 var feedle = mgfee.syear + mgfee.semester + mgfee.mg_fee_title.title_cht;
+  		 //console.log(feedle);
+		 var isPaidByTWD = false;
+		 for(var key in g_fees) { 
+			//console.log(key);
+			if (key.indexOf(feedle) == 0 && g_fees[key]) {
+				isPaidByTWD = true;
+				break;
+			}
+		 }
+		 if (isPaidByTWD && mgfee.status == '0') return; // continue $.each mgfees
+		 
+         var syear = mgfee.syear;
+         var semester = mgfee.semester;
+         var title = mgfee.title;
+         var usd_money = 0;
+         $.each(mgfee.items, function(i, item) {
+            usd_money += parseFloat(item.item_price_usd);
+         });
+         var status_desc = mgfee.status_desc_eng;
+         var pay_day = mgfee.pay_date;
+         var action = '';
+         if (mgfee.status == '0') {
+            action = `<a class="button" href="tfstu_pay_crd_us.asp?mgfee_id=${mgfee.id}">Pay US dollar with credit card</a>`;
+		 } else if (mgfee.status == '1') {
+		 	$("." + feedle).hide();
+         } else if (mgfee.status == '2') {
+			$("." + feedle).hide();
+            action = `<a class="button" href="tfstu_receipt_crd_us.asp?mgfee_id=${mgfee.id}">Receipt(USD)</a>`;
+         }
+         var html = `
+         <tr>
+            <td align="left" class="col_value">${syear}${semester}&nbsp;${title}</td>
+            <td align="right" class="col_value">US$${formatNumber(usd_money)}&nbsp;&nbsp;</td>
+            <td align="left" class="col_value">${status_desc}</td>
+            <td align="left" class="col_value">${pay_day}</td>
+            <td align="left" class="col_value">${action}</td>
+         </tr>
+         `;
+         $('table.tab_brow').append(html);
+      });
+   }
+	var html = `
+	<tr>
+	    <td align="left" class="col_value">${g_syear}學生會會費</td>
+		<td align="right" class="col_value">450</td>
+		<td align="left" class="col_value"><a style="color:blue;" href="https://sis.nsysu.edu.tw/ONAMS/apply_index.php?ONA_ITEM_NO=0H02001&CTYPE=A" target="_blank">自由繳交</a></td>
+		<td align="left" class="col_value">2024/11/30</td>
+		<td align="left" class="col_value"><a class="button" href="https://school.bot.com.tw/newTwbank/StudentLogin.aspx" target="_blank">繳費</a></td>
+	</tr>
+	`;
+	$('table.tab_brow').append(html);
+});
+</script>

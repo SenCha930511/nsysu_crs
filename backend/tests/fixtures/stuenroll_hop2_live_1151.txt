@@ -1,0 +1,1 @@
+<form name="f1" method="post" action="wregloginchk2.asp"><input type="hidden" name="ID" value="M153****24"><input type="hidden" name="passwd" value="********"></form><script Language="JavaScript">f1.submit();</script>
