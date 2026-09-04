@@ -26,6 +26,7 @@ import { Link } from "react-router-dom";
 
 import CourseBrowser from "../components/CourseBrowser";
 import ScheduleTable from "../components/ScheduleTable";
+import { ScheduleCard } from "../components/ScheduleCard";
 import {
   ApiError,
   fetchSelections,
@@ -496,6 +497,7 @@ function HomePage() {
   if (!authed) {
     return (
       <div className="row g-3">
+        <ScheduleCard />
         <div className="col-12 col-xl-7">
           <div className="schedule-canvas-pane">
             <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap py-2.5 px-3.5" style={{ gap: "1rem" }}>
@@ -569,6 +571,7 @@ function HomePage() {
 
   return (
     <div className="row g-3">
+      <ScheduleCard />
       {/* LEFT: unified timetable canvas + send bar */}
       <div className="col-12 col-xl-7">
         <div className="schedule-canvas-pane">

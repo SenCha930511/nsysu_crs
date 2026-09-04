@@ -237,6 +237,34 @@ export function fetchCatalogMeta(signal?: AbortSignal): Promise<CatalogMeta> {
   return request<CatalogMeta>("/api/catalog/meta", signal !== undefined ? { signal } : {});
 }
 
+// ---------- selection schedule (anonymous; 選課日程 widget) ----------
+
+export interface ScheduleEventDto {
+  /** Stable id ("first_round_1" .. "confirmation"; "event_N" for new labels). */
+  key: string;
+  /** Verbatim school wording (display text in zh). */
+  label: string;
+  kind: "window" | "instant";
+  /** ISO 8601 with +08:00 offset. */
+  start: string;
+  end: string | null;
+}
+
+export interface ScheduleResponse {
+  /** False only with no snapshot AND a failed live fetch - hide the widget. */
+  ok: boolean;
+  /** Last-good snapshot served past freshness after a failed refresh. */
+  stale: boolean;
+  fetched_at: string | null;
+  /** Verbatim school heading, e.g. 一佰一十五學年度第一學期選課日程. */
+  title: string | null;
+  events: ScheduleEventDto[];
+}
+
+export function fetchSchedule(signal?: AbortSignal): Promise<ScheduleResponse> {
+  return request<ScheduleResponse>("/api/schedule", signal !== undefined ? { signal } : {});
+}
+
 export function fetchCourseOutline(
   courseId: string,
   signal?: AbortSignal,
