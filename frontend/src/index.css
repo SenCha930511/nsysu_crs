@@ -1744,6 +1744,10 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.25rem;
   border-radius: var(--radius-full);
   width: fit-content;
+  /* cap + internal scroll: nowrap tab rows (/me has 4 with icons, ~420px) must
+     NOT grow the page; they clip here and scroll inside the pill instead. */
+  max-width: 100%;
+  overflow-x: auto;
   margin-bottom: 1.25rem;
 }
 
