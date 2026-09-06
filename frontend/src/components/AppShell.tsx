@@ -71,10 +71,10 @@ function AppShell() {
           <div className="d-flex align-items-center gap-2 gap-sm-3 flex-shrink-0 floating-navbar-brand">
             <NavLink to="/" className="brand-badge-logo me-1">
               <div className="brand-icon-box p-0 overflow-hidden">
-                <img src="/logo.png" alt={tx("中山選課 Studio logo", "NSYSU Course Studio logo")} className="brand-logo-img" />
+                <img src="/logo.png" alt={tx("中山學生 Studio logo", "NSYSU Student Studio logo")} className="brand-logo-img" />
               </div>
-              <span className="d-none d-sm-inline">{tx("中山選課 Studio", "NSYSU Course Studio")}</span>
-              <span className="d-sm-none">{tx("選課 Studio", "Course Studio")}</span>
+              <span className="d-none d-sm-inline">{tx("中山學生 Studio", "NSYSU Student Studio")}</span>
+              <span className="d-sm-none">{tx("學生 Studio", "Student Studio")}</span>
             </NavLink>
             {semester !== null && <span className="semester-pill ms-1">{semester}</span>}
           </div>

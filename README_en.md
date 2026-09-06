@@ -1,4 +1,4 @@
-# NSYSU Course Wrapper (English)
+# NSYSU Student Studio (中山學生 Studio)
 
 [繁體中文 (Traditional Chinese)](README.md) | **English**
 
@@ -7,7 +7,7 @@
 > [!TIP]
 > 🌐 **Live Website Available**: [https://nsysucrs.senchaaa.com](https://nsysucrs.senchaaa.com)
 
-A modern course selection wrapper and planning system designed for National Sun Yat-sen University (NSYSU). It provides an intuitive catalog browser with multi-dimensional filtering, an interactive weekly timetable with real-time clash and credit validation, direct syllabus links, PNG timetable export, and school selection synchronization. Under strict **human-in-the-loop confirmation** and high-standard security guardrails, it supports asynchronous proxy course add/drop submissions.
+A one-stop student companion designed for National Sun Yat-sen University (NSYSU). Catalog browsing with multi-dimensional filtering, an interactive weekly timetable with real-time clash and credit validation, an in-app syllabus detail overlay (course names deep-link to the official school outline), PNG timetable export plus **iCalendar (.ics) export**, and school selection synchronization. Signed-in extras: one-tap grade-history sync with change diff, live tuition-fee status with **receipt PDF download**, Certificate of Enrollment download, and a **current-term registration checklist**. Under strict **human-in-the-loop confirmation** and high-standard security guardrails, it supports asynchronous proxy course add/drop submissions.
 
 FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / Caddy
 
@@ -32,8 +32,8 @@ FastAPI / Vite + React 18 + TypeScript + Bootstrap 5 / PostgreSQL 16 + Redis / C
 | Access Tier | Target Audience | Overview |
 |---|---|---|
 | **Public Browser** | Anyone (No login required) | Virtualized course catalog browsing for high-performance rendering, keyword search, **advanced multi-criteria filters** (department / grade / credits / compulsory or elective / EMI / available seats / weekday / period), direct links to official course syllabus pages (new tab), a **selection-schedule timeline** (live countdown for the current window, full schedule on toggle, snapshot-served when the school is down), and instant bilingual switching (Traditional Chinese ⇄ English). |
-| **Timetable Planner** | Guests / Anonymous | Local staging (localStorage), visual weekly timetable preview, real-time schedule conflict detection, automatic calculation of credits and hours, and high-resolution PNG timetable export. |
-| **Student Zone** | Enrolled Students (SSO2 Authentication) | Real-time synchronization of current enrolled courses, staged add/drop submission (with priority support), submission preview and **two-factor password re-confirmation**, asynchronous background queue processing (Redis Queue + Background Worker), and live job tracking with verbatim school feedback (e.g. "Violation of course restriction", with student IDs automatically masked). **Me area**: one-tap grade-history sync (session-scoped snapshot, purged on sign-out), live tuition-fee payment status (never persisted), and Certificate of Enrollment PDF download (streamed through server memory — no cache, no disk) — campus subsystem connections are established once in the background at sign-in, and any per-subsystem failure never blocks the sign-in itself. |
+| **Timetable Planner** | Guests / Anonymous | Local staging (localStorage), visual weekly timetable preview, real-time schedule conflict detection, automatic calculation of credits and hours, high-resolution PNG timetable export, and **iCalendar (.ics) export** (drops straight into Apple/Google calendars). |
+| **Student Zone** | Enrolled Students (SSO2 Authentication) | Real-time synchronization of current enrolled courses, staged add/drop submission (with priority support), submission preview and **two-factor password re-confirmation**, asynchronous background queue processing (Redis Queue + Background Worker), and live job tracking with verbatim school feedback (e.g. "Violation of course restriction", with student IDs automatically masked). **Me area**: one-tap grade-history sync (session-scoped snapshot, purged on sign-out; each sync reports an added/removed/unchanged summary), live tuition-fee payment status (never persisted) with **receipt PDF download**, Certificate of Enrollment PDF download (streamed through server memory — no cache, no disk), and a **current-term registration checklist** (incomplete items called out) — campus subsystem connections are established once in the background at sign-in, and any per-subsystem failure never blocks the sign-in itself. |
 
 ---
 
