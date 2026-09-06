@@ -60,6 +60,22 @@ def _selections_key(session_id: str) -> str:
     return f"selections:{session_id}"
 
 
+def _regweb_key(session_id: str) -> str:
+    return f"regweb:{session_id}"
+
+
+def _regweb_hard_key(session_id: str) -> str:
+    return f"regweb_hard:{session_id}"
+
+
+def _stusco_key(session_id: str) -> str:
+    return f"stusco:{session_id}"
+
+
+def _stusco_hard_key(session_id: str) -> str:
+    return f"stusco_hard:{session_id}"
+
+
 async def create_site_session(redis: AuthRedis, student_no: str) -> str:
     """Mint a fresh site session id and store its owner (7d sliding)."""
     session_id = uuid.uuid4().hex
@@ -82,12 +98,17 @@ async def delete_site_session(redis: AuthRedis, session_id: str) -> None:
 
     Includes the todo-9 selections snapshot: session-scoped cache only,
     purged here (or by its own TTL) - never left to outlive the session.
+    Same story for the two stu_enroll jar families (plan §5.3).
     """
     await redis.delete(
         _site_key(session_id),
         _selcrs_key(session_id),
         _selcrs_hard_key(session_id),
         _selections_key(session_id),
+        _regweb_key(session_id),
+        _regweb_hard_key(session_id),
+        _stusco_key(session_id),
+        _stusco_hard_key(session_id),
     )
 
 
@@ -122,3 +143,84 @@ async def load_selcrs(redis: AuthRedis, session_id: str, *, sliding_ttl: int) ->
         return None
     await redis.expire(key, sliding_ttl)
     return payload
+
+
+async def _store_jar_pair(
+    redis: AuthRedis,
+    key: str,
+    hard_key: str,
+    jar_payload: str,
+    *,
+    sliding_ttl: int,
+    hard_ttl: int,
+) -> None:
+    """Family jar at login: sliding freshness; NX hard cap anchored at issuance."""
+    await redis.set(key, jar_payload, ex=sliding_ttl)
+    await redis.set(hard_key, "1", nx=True, ex=hard_ttl)
+
+
+async def _load_jar_pair(
+    redis: AuthRedis, key: str, hard_key: str, *, sliding_ttl: int
+) -> str | None:
+    """Family jar for a school call; None when sliding lapsed or hard cap died
+    (the jar is then dropped eagerly). Survivors refresh sliding only."""
+    if await redis.get(hard_key) is None:
+        await redis.delete(key)
+        return None
+    payload = await redis.get(key)
+    if payload is None:
+        return None
+    await redis.expire(key, sliding_ttl)
+    return payload
+
+
+async def store_regweb(
+    redis: AuthRedis,
+    session_id: str,
+    jar_payload: str,
+    *,
+    sliding_ttl: int,
+    hard_ttl: int,
+) -> None:
+    """Park the regweb jar (stu_enroll chain; covers tfstu/verify relays)."""
+    await _store_jar_pair(
+        redis,
+        _regweb_key(session_id),
+        _regweb_hard_key(session_id),
+        jar_payload,
+        sliding_ttl=sliding_ttl,
+        hard_ttl=hard_ttl,
+    )
+
+
+async def load_regweb(redis: AuthRedis, session_id: str, *, sliding_ttl: int) -> str | None:
+    """Regweb jar for a tfstu/verify-bound call, or None when expired."""
+    return await _load_jar_pair(
+        redis, _regweb_key(session_id), _regweb_hard_key(session_id), sliding_ttl=sliding_ttl
+    )
+
+
+async def store_stusco(
+    redis: AuthRedis,
+    session_id: str,
+    jar_payload: str,
+    *,
+    sliding_ttl: int,
+    hard_ttl: int,
+) -> None:
+    """Park the sco jar (own interactive login; covers the grade queries)."""
+    await _store_jar_pair(
+        redis,
+        _stusco_key(session_id),
+        _stusco_hard_key(session_id),
+        jar_payload,
+        sliding_ttl=sliding_ttl,
+        hard_ttl=hard_ttl,
+    )
+
+
+async def load_stusco(redis: AuthRedis, session_id: str, *, sliding_ttl: int) -> str | None:
+    """sco jar for a grade-query call, or None when expired."""
+    return await _load_jar_pair(
+        redis, _stusco_key(session_id), _stusco_hard_key(session_id), sliding_ttl=sliding_ttl
+    )

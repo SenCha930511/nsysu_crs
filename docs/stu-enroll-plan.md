@@ -150,7 +150,7 @@ M0 後的實際 jar 地圖：**regweb jar**（經 stu_enroll 3 跳鏈免費拿�
 |---|---|---|
 | **M0** ✅ 2026-09-04 | 受監督探針（本計畫 §4） | 全鏈路打通（regweb/sco/tfstu/verify）；verified-facts.md consolidated 段收錄定案；fixtures 齊全 |
 | **M1** | `app/stuenroll/` adapter＋分類器＋解析器 | 依 M0 fixture 的單元測試全綠；不查 fixture 不寫 parser |
-| **M2** | 登入 pipeline 兩家族 jar＋Redis store＋`/api/me/*` 端點＋`FEATURE_STU_ENROLL` flag（預設 off） | API 合約測試（比照 test_schedule_api／test_breaker_sitewide 模式）；全套 pytest 綠 |
+| **M2** 🔶 進行中（2026-09-06 前段完成） | 登入 pipeline 兩家族 jar＋Redis store＋`FEATURE_STU_ENROLL` flag（預設 off）✅；`/api/me/payment-status`＋`/api/me/enrollment-cert` ✅；`/api/me/grades` 待補抓歷年成績表 fixture | API 合約測試（比照 test_selections_api 模式）✅、fan-out/auth/sessions 測試綠、全套 pytest 綠；grades 端點合約測試待擷取輪 |
 | **M3** | 前端 `/me` 三卡＋i18n＋GPA 純函數 | vitest＋tsc 綠；feature flag 控制可見性 |
 | **M4** | QA 證據輪＋文件＋上線 | qa 證據腳本（比照 qa08/qa15 模式）跑綠；architecture.md、verified-facts.md、Privacy page 更新；README 功能表更新；灰度開 flag |
 

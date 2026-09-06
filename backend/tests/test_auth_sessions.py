@@ -12,9 +12,13 @@ from app.auth.sessions import (
     SITE_SESSION_TTL_SECONDS,
     create_site_session,
     delete_site_session,
+    load_regweb,
     load_selcrs,
+    load_stusco,
     resolve_site_session,
+    store_regweb,
     store_selcrs,
+    store_stusco,
 )
 from app.selcrs.jar import deserialize_cookies, serialize_cookies
 from tests.fake_redis import FakeRedis
@@ -111,3 +115,39 @@ async def test_selcrs_hard_anchor_is_nx_at_issuance():
     await store_selcrs(redis, sid, "two", sliding_ttl=1800, hard_ttl=7200)
     assert await redis.get(f"selcrs:{sid}") == "two"
     assert redis.remaining_ttl(f"selcrs_hard:{sid}") == 7200 - 3000
+
+
+@pytest.mark.anyio
+async def test_regweb_and_stusco_pairs_share_the_sliding_hard_contract():
+    clock, redis = _redis_with_clock()
+    sid = await create_site_session(redis, "M153000024")
+    await store_regweb(redis, sid, "[['r','1']]", sliding_ttl=1800, hard_ttl=7200)
+    await store_stusco(redis, sid, "[['s','1']]", sliding_ttl=1800, hard_ttl=7200)
+    assert redis.remaining_ttl(f"regweb:{sid}") == 1800
+    assert redis.remaining_ttl(f"regweb_hard:{sid}") == 7200
+    assert redis.remaining_ttl(f"stusco:{sid}") == 1800
+    assert redis.remaining_ttl(f"stusco_hard:{sid}") == 7200
+
+    clock.advance(1000)
+    assert await load_regweb(redis, sid, sliding_ttl=1800) == "[['r','1']]"
+    assert await load_stusco(redis, sid, sliding_ttl=1800) == "[['s','1']]"
+    assert redis.remaining_ttl(f"regweb:{sid}") == 1800
+
+    clock.advance(7200)  # past the hard cap measured from issuance
+    assert await load_regweb(redis, sid, sliding_ttl=1800) is None
+    assert await redis.get(f"regweb:{sid}") is None  # hard-expired jar is dropped
+    assert await load_stusco(redis, sid, sliding_ttl=1800) is None
+
+
+@pytest.mark.anyio
+async def test_logout_drops_both_stu_enroll_family_jars():
+    _, redis = _redis_with_clock()
+    sid = await create_site_session(redis, "M153000024")
+    await store_regweb(redis, sid, "[['r','1']]", sliding_ttl=1800, hard_ttl=7200)
+    await store_stusco(redis, sid, "[['s','1']]", sliding_ttl=1800, hard_ttl=7200)
+
+    await delete_site_session(redis, sid)
+    assert await redis.get(f"regweb:{sid}") is None
+    assert await redis.get(f"regweb_hard:{sid}") is None
+    assert await redis.get(f"stusco:{sid}") is None
+    assert await redis.get(f"stusco_hard:{sid}") is None

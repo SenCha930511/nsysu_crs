@@ -41,7 +41,9 @@ from app.auth.sessions import (
     cookie_secure,
     create_site_session,
     delete_site_session,
+    store_regweb,
     store_selcrs,
+    store_stusco,
 )
 from app.auth.students import record_successful_login
 from app.config import Settings
@@ -49,6 +51,7 @@ from app.selcrs.endpoints import Sso2Result, login_sso2
 from app.selcrs.errors import SelcrsUnavailable
 from app.selcrs.jar import serialize_cookies
 from app.selcrs.sso2 import Sso2Outcome
+from app.stuenroll.pipeline import LegError, fanout_subsystem_logins
 from app.write.csrf import csrf_cookie_name, mint_csrf_token, set_csrf_cookie
 
 router: Final = APIRouter()
@@ -145,13 +148,52 @@ async def post_login(
         sliding_ttl=settings.selcrs_session_ttl_sliding,
         hard_ttl=settings.selcrs_session_ttl_hard,
     )
+    # stu_enroll fan-out (plan §5.2 方案 A fail-soft; flag-gated): the same
+    # password window funds both subsystem logins. Never pre-gates on the
+    # breaker - fail-soft must not block site login - and breaker input is
+    # limited to school verdicts: ok -> classified, SCHOOL_UNAVAILABLE ->
+    # unknown; our-side failures (captcha budget, deadline, app bug) record
+    # nothing, so the fan-out can neither clear nor poison a real streak.
+    regweb_available = sco_available = False
+    if settings.feature_stu_enroll:
+        fanout = await fanout_subsystem_logins(
+            student_no, body.password.get_secret_value()
+        )
+        if fanout.regweb.jar is not None:
+            await store_regweb(
+                redis,
+                session_id,
+                serialize_cookies(fanout.regweb.jar),
+                sliding_ttl=settings.selcrs_session_ttl_sliding,
+                hard_ttl=settings.selcrs_session_ttl_hard,
+            )
+            regweb_available = True
+        if fanout.sco.jar is not None:
+            await store_stusco(
+                redis,
+                session_id,
+                serialize_cookies(fanout.sco.jar),
+                sliding_ttl=settings.selcrs_session_ttl_sliding,
+                hard_ttl=settings.selcrs_session_ttl_hard,
+            )
+            sco_available = True
+        for leg in (fanout.regweb, fanout.sco):
+            if leg.available:
+                await breaker.record_classified()
+            elif leg.error is LegError.SCHOOL_UNAVAILABLE:
+                await breaker.record_unknown()
     # CSRF (todo 14): fresh token every login (rotation); body echoes it
     # because the cookie itself is httpOnly and JS must echo it as
     # X-CSRF-Token on /api/write/* - a same-origin channel, never logged.
     csrf_token = mint_csrf_token()
     response = JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"student_no": student_no, "csrf_token": csrf_token},
+        content={
+            "student_no": student_no,
+            "csrf_token": csrf_token,
+            "regweb_available": regweb_available,
+            "sco_available": sco_available,
+        },
     )
     response.set_cookie(
         SESSION_COOKIE_NAME,

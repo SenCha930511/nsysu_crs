@@ -16,6 +16,7 @@ from app.api.ops import router as ops_router
 from app.api.schedule import router as schedule_router
 from app.api.selections import router as selections_router
 from app.api.stage import router as stage_router
+from app.api.stu_enroll import router as stu_enroll_router
 from app.api.write import router as write_router
 from app.api.write_jobs import router as write_jobs_router
 from app.api.write_submit import router as write_submit_router
@@ -69,6 +70,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(selections_router)
     app.include_router(stage_router)
+    app.include_router(stu_enroll_router)
     app.include_router(write_router)
     app.include_router(write_submit_router)
     app.include_router(write_jobs_router)

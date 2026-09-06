@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # Feature flags (todo 14/15).
     feature_first_round_write: bool = False
+    feature_stu_enroll: bool = False
 
     # Session / write-queue / auth limits (todos 8, 14, 15).
     selcrs_session_ttl_sliding: int = 1800

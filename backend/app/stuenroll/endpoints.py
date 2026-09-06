@@ -19,6 +19,12 @@ FORM_CONTENT_TYPE: Final = "application/x-www-form-urlencoded"
 FORM_TEXT_ENCODING: Final = "big5"
 STU_ENROLL_LOGIN_URL: Final = f"{SELCRS_BASE_URL}/stu_enroll/"
 SCO_LOGIN_URL: Final = f"{SELCRS_BASE_URL}/scoreqry/"
+REGWEB_BASE_URL: Final = "https://regweb.nsysu.edu.tw/webreg"
+TFSTU_RELAY_URL: Final = (
+    f"{REGWEB_BASE_URL}/WRegMain3.asp?act=71&out="
+    "https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp"
+)
+ENROLLCERT_RELAY_URL: Final = f"{REGWEB_BASE_URL}/WRegMain3.asp?act=71&out=print/enrollcert.asp"
 
 
 @dataclass(frozen=True, slots=True)
