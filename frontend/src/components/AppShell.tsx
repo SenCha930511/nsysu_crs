@@ -67,66 +67,20 @@ function AppShell() {
       <div className="studio-header-wrapper">
         <DegradeBanner />
         <header className="floating-navbar">
-          {/* Top Bar Row (Brand on Left, User / Auth on Right) */}
-          <div className="navbar-top-row">
-            {/* Left: Brand & Semester */}
-            <div className="d-flex align-items-center gap-2 gap-sm-3 flex-shrink-0 floating-navbar-brand">
-              <NavLink to="/" className="brand-badge-logo me-1">
-                <div className="brand-icon-box p-0 overflow-hidden">
-                  <img src="/logo.png" alt={tx("中山選課 Studio logo", "NSYSU Course Studio logo")} className="brand-logo-img" />
-                </div>
-                <span className="d-none d-sm-inline">{tx("中山選課 Studio", "NSYSU Course Studio")}</span>
-                <span className="d-sm-none">{tx("選課 Studio", "Course Studio")}</span>
-              </NavLink>
-              {semester !== null && <span className="semester-pill ms-1">{semester}</span>}
-            </div>
-
-            {/* Right: GitHub & User Auth */}
-            <div className="d-flex align-items-center justify-content-end flex-shrink-0 floating-navbar-auth" style={{ gap: "0.45rem" }}>
-              <div className="user-status-card">
-                <a
-                  href="https://github.com/SenCha930511/nsysu_crs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="navbar-action-btn navbar-action-btn-github"
-                  title={tx("GitHub 原始碼倉庫", "Source code on GitHub")}
-                  aria-label={tx("GitHub 原始碼倉庫", "Source code on GitHub")}
-                >
-                  <Github size={15} />
-                  <span className="d-none d-lg-inline">GitHub</span>
-                </a>
-                {status === "authed" && studentNo !== null ? (
-                  <>
-                    <div className="user-avatar-chip" data-testid="student-no">
-                      <PersonCircle size={15} className="text-teal-600 me-1 flex-shrink-0" />
-                      <span>{studentNo}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="navbar-action-btn navbar-action-btn-github navbar-action-btn-logout"
-                      onClick={onLogout}
-                      title={tx("登出系統", "Sign out of the system")}
-                      aria-label={tx("登出系統", "Sign out")}
-                    >
-                      <BoxArrowRight size={15} />
-                      <span className="d-none d-md-inline">{tx("登出", "Sign out")}</span>
-                    </button>
-                  </>
-                ) : status === "anon" ? (
-                  <NavLink
-                    to="/login"
-                    className="navbar-action-btn navbar-action-btn-login"
-                  >
-                    <PersonCircle size={15} />
-                    <span>{tx("登入", "Sign in")}</span>
-                  </NavLink>
-                ) : null}
+          {/* Left: Brand & Semester */}
+          <div className="d-flex align-items-center gap-2 gap-sm-3 flex-shrink-0 floating-navbar-brand">
+            <NavLink to="/" className="brand-badge-logo me-1">
+              <div className="brand-icon-box p-0 overflow-hidden">
+                <img src="/logo.png" alt={tx("中山選課 Studio logo", "NSYSU Course Studio logo")} className="brand-logo-img" />
               </div>
-            </div>
+              <span className="d-none d-sm-inline">{tx("中山選課 Studio", "NSYSU Course Studio")}</span>
+              <span className="d-sm-none">{tx("選課 Studio", "Course Studio")}</span>
+            </NavLink>
+            {semester !== null && <span className="semester-pill ms-1">{semester}</span>}
           </div>
 
-          {/* Center on Desktop only: Segmented Navigation Tabs */}
-          <nav className="studio-nav-pills d-none d-md-flex" aria-label={tx("主要選單", "Primary navigation")}>
+          {/* Center on Desktop: Segmented Navigation Tabs */}
+          <nav className="studio-nav-pills mx-auto d-none d-md-flex" aria-label={tx("主要選單", "Primary navigation")}>
             {NAV_LINKS.map((link) => {
               const Icon = link.icon;
               return (
@@ -138,12 +92,55 @@ function AppShell() {
                     `studio-nav-link${isActive ? " studio-nav-link-active" : ""}`
                   }
                 >
-                  <Icon size={15} />
+                  <Icon size={16} />
                   <span>{link.label}</span>
                 </NavLink>
               );
             })}
           </nav>
+
+          {/* Right: GitHub & User Auth */}
+          <div className="d-flex align-items-center justify-content-end flex-shrink-0 floating-navbar-auth" style={{ gap: "0.45rem" }}>
+            <div className="user-status-card">
+              <a
+                href="https://github.com/SenCha930511/nsysu_crs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="navbar-action-btn navbar-action-btn-github"
+                title={tx("GitHub 原始碼倉庫", "Source code on GitHub")}
+                aria-label={tx("GitHub 原始碼倉庫", "Source code on GitHub")}
+              >
+                <Github size={15} />
+                <span className="d-none d-lg-inline">GitHub</span>
+              </a>
+              {status === "authed" && studentNo !== null ? (
+                <>
+                  <div className="user-avatar-chip" data-testid="student-no">
+                    <PersonCircle size={15} className="text-teal-600 me-1 flex-shrink-0" />
+                    <span>{studentNo}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="navbar-action-btn navbar-action-btn-github navbar-action-btn-logout"
+                    onClick={onLogout}
+                    title={tx("登出系統", "Sign out of the system")}
+                    aria-label={tx("登出系統", "Sign out")}
+                  >
+                    <BoxArrowRight size={15} />
+                    <span className="d-none d-md-inline">{tx("登出", "Sign out")}</span>
+                  </button>
+                </>
+              ) : status === "anon" ? (
+                <NavLink
+                  to="/login"
+                  className="navbar-action-btn navbar-action-btn-login"
+                >
+                  <PersonCircle size={15} />
+                  <span>{tx("登入", "Sign in")}</span>
+                </NavLink>
+              ) : null}
+            </div>
+          </div>
         </header>
       </div>
 
