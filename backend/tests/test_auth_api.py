@@ -270,6 +270,25 @@ def test_login_fanout_school_unavailable_leg_feeds_the_breaker_once(
     assert harness.redis.peek("breaker:school:streak") == "1"
 
 
+def test_me_flags_track_parked_family_jars_after_login(monkeypatch, harness_factory):
+    # Given flag ON and both subsystem legs green at login
+    harness = harness_factory(_succeed, feature_stu_enroll=True)
+    stub = StubFanout(_fanout(regweb_ok=True, sco_ok=True))
+    monkeypatch.setattr("app.api.auth.fanout_subsystem_logins", stub)
+    sid = harness.session_id(harness.login())
+
+    # When /auth/me is queried later (page-reload semantics)
+    me = harness.client.get("/api/auth/me", cookies={"session_id": sid})
+
+    # Then the flags mirror the parked family jars
+    assert me.status_code == 200
+    assert me.json() == {
+        "student_no": "M153000024",
+        "regweb_available": True,
+        "sco_available": True,
+    }
+
+
 def test_https_transport_pins_secure_on_login_and_logout_cookies(harness_factory):
     harness = harness_factory(_succeed, base_url="https://testserver")
     response = harness.login()
@@ -303,7 +322,11 @@ def test_me_roundtrip_and_logout_clears_everything(harness_factory):
 
     # When me / logout / me again
     me = harness.client.get("/api/auth/me", cookies={"session_id": sid})
-    assert me.status_code == 200 and me.json() == {"student_no": "M153000024"}
+    assert me.status_code == 200 and me.json() == {
+        "student_no": "M153000024",
+        "regweb_available": False,
+        "sco_available": False,
+    }
     out = harness.client.post("/api/auth/logout", cookies={"session_id": sid})
     assert out.status_code == 200
     gone = harness.client.get("/api/auth/me", cookies={"session_id": sid})

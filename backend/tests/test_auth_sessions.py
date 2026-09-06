@@ -19,6 +19,7 @@ from app.auth.sessions import (
     store_regweb,
     store_selcrs,
     store_stusco,
+    subsystem_availability,
 )
 from app.selcrs.jar import deserialize_cookies, serialize_cookies
 from app.stuenroll.store import GradesSnapshot, store_grades_snapshot
@@ -154,3 +155,16 @@ async def test_logout_drops_both_stu_enroll_family_jars():
     assert await redis.get(f"stusco:{sid}") is None
     assert await redis.get(f"stusco_hard:{sid}") is None
     assert await redis.get(f"grades:{sid}") is None
+
+
+@pytest.mark.anyio
+async def test_subsystem_availability_tracks_parked_jars_singly():
+    _, redis = _redis_with_clock()
+    sid = await create_site_session(redis, "M153000024")
+    assert await subsystem_availability(redis, sid) == (False, False)
+
+    await store_regweb(redis, sid, "[['r','1']]", sliding_ttl=1800, hard_ttl=7200)
+    assert await subsystem_availability(redis, sid) == (True, False)
+
+    await store_stusco(redis, sid, "[['s','1']]", sliding_ttl=1800, hard_ttl=7200)
+    assert await subsystem_availability(redis, sid) == (True, True)

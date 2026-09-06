@@ -230,3 +230,12 @@ async def load_stusco(redis: AuthRedis, session_id: str, *, sliding_ttl: int) ->
     return await _load_jar_pair(
         redis, _stusco_key(session_id), _stusco_hard_key(session_id), sliding_ttl=sliding_ttl
     )
+
+
+async def subsystem_availability(redis: AuthRedis, session_id: str) -> tuple[bool, bool]:
+    """(regweb_available, sco_available) by jar presence for the /auth/me
+    response - a flag-off environment simply never parks them, so the UI
+    flags read unavailable with zero feature-flag plumbing."""
+    regweb_available = await redis.get(_regweb_key(session_id)) is not None
+    sco_available = await redis.get(_stusco_key(session_id)) is not None
+    return regweb_available, sco_available

@@ -29,6 +29,7 @@ cookie value ever enters a response body, log line, or the DB.
 from typing import Final
 
 from fastapi import APIRouter, Depends, Request, status
+from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
@@ -44,6 +45,7 @@ from app.auth.sessions import (
     store_regweb,
     store_selcrs,
     store_stusco,
+    subsystem_availability,
 )
 from app.auth.students import record_successful_login
 from app.config import Settings
@@ -73,6 +75,8 @@ class MeResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     student_no: str
+    regweb_available: bool
+    sco_available: bool
 
 def _client_ip(request: Request) -> str:
     """First X-Forwarded-For hop behind Caddy, else the direct peer."""
@@ -237,5 +241,19 @@ async def post_logout(
 
 
 @router.get("/api/auth/me", response_model=MeResponse)
-async def get_me(student_no: str = Depends(get_current_student)) -> MeResponse:
-    return MeResponse(student_no=student_no)
+async def get_me(
+    request: Request,
+    student_no: str = Depends(get_current_student),
+    redis: AuthRedis = Depends(get_redis),
+) -> MeResponse:
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id is None:  # unreachable: the auth dependency ran first
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="not_authenticated"
+        )
+    regweb_available, sco_available = await subsystem_availability(redis, session_id)
+    return MeResponse(
+        student_no=student_no,
+        regweb_available=regweb_available,
+        sco_available=sco_available,
+    )
