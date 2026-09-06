@@ -151,7 +151,7 @@ M0 後的實際 jar 地圖：**regweb jar**（經 stu_enroll 3 跳鏈免費拿�
 | **M0** ✅ 2026-09-04 | 受監督探針（本計畫 §4） | 全鏈路打通（regweb/sco/tfstu/verify）；verified-facts.md consolidated 段收錄定案；fixtures 齊全 |
 | **M1** | `app/stuenroll/` adapter＋分類器＋解析器 | 依 M0 fixture 的單元測試全綠；不查 fixture 不寫 parser |
 | **M2** ✅ 2026-09-06 | 登入 pipeline 兩家族 jar＋Redis store＋`FEATURE_STU_ENROLL` flag（預設 off）；`/api/me/payment-status`、`/api/me/enrollment-cert`、`/api/me/grades(+sync)`（rows 解析：本帳號 115-1 零列空殼實測為合法形狀；欄位化等 with-rows 擷取輪再長） | 全套 pytest 綠＋mypy 93 files＋ruff clean；合約測試比照 selections/auth 模式 |
-| **M3** | 前端 `/me` 三卡＋i18n＋GPA 純函數 | vitest＋tsc 綠；feature flag 控制可見性 |
+| **M3** ✅ 2026-09-06 | 前端 `/me` 三卡＋i18n（GPA 純函數延後——with-rows fixture 到位才有欄位語義可算；已改用 verbatim rows＋family-code soft-logout seam 純函數補上 vitest 覆蓋） | vitest 128/128＋tsc+vite build 綠；availability 旗標控制 per-card 可見與抓取；本機真實帳號 e2e 驗證（繳費實料、成績零列誠實態、cert 端點 200·1.87MB） |
 | **M4** | QA 證據輪＋文件＋上線 | qa 證據腳本（比照 qa08/qa15 模式）跑綠；architecture.md、verified-facts.md、Privacy page 更新；README 功能表更新；灰度開 flag |
 
 工期估計：M0（本人 10 分鐘）→ M1–M3（各一個工作段落）→ M4（半天含部署）。

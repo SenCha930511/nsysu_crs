@@ -26,7 +26,19 @@ const SECTIONS_ZH: LegalSection[] = [
       "學號：作為登入識別與擁有送單紀錄歸屬。",
       "「我的已選」同步結果：僅保存於你本次工作階段的範圍內（登出或工作階段到期即刪除），不持久保存於資料庫。",
       "課程目錄：來自學校公開查詢頁面，不含任何個人資料。",
-      "本站不收集姓名、電子郵件、電話、成績或任何校務資料；不使用 Google Analytics 或任何第三方分析／追蹤工具；不建立本站 email 註冊體系。",
+      "本站不收集姓名、電子郵件、電話；成績與繳費資料僅在你使用「我的專區」時自學校系統即時讀取、且僅存於本次工作階段（詳下節）；不使用 Google Analytics 或任何第三方分析／追蹤工具；不建立本站 email 註冊體系。",
+    ],
+  },
+  {
+    heading: "我的專區（成績・繳費・在學證明）的資料流",
+    paragraphs: [
+      "你登入本站的同一時間，系統會在不影響登入的前提下，嘗試以同一組帳密為你建立校內網路註冊系統與成績查詢系統的工作階段（任何一邊失敗都不影響你使用本站）。這些工作階段 cookie 比照 selcrs 管理：僅存 Redis、短效 TTL（滑動 30 分鐘、上限 2 小時）、登出一併刪除、永不寫入 Postgres 或任何日誌。",
+    ],
+    list: [
+      "歷年成績：僅在你按下「同步」時向學校讀取；結果僅保存於本次工作階段（Redis，7 天 TTL，登出即刪），不寫入資料庫，成績明細永不進入任何日誌。",
+      "繳費狀態：每次開啟時即時向學校讀取、直接回傳；不回寫、不快取、不落任何儲存。",
+      "在學證明（PDF）：由學校線上系統即時產生、本站以記憶體串流轉交你的瀏覽器；不落地、不快取（回應附 Cache-Control: no-store）；access log 只記錄路徑與狀態碼，不記內容。",
+      "校內系統進入上述頁面的過程會產生自動轉交表單中繼頁，此類頁面含校方回顯之純文字密碼——只存在請求生命週期的記憶體中，絕不成為 fixture、快照或任何日誌的一部份。",
     ],
   },
   {
@@ -75,6 +87,18 @@ const SECTIONS_EN: LegalSection[] = [
     ],
   },
   {
+    heading: "Me area (grades · payment · certificate) data flow",
+    paragraphs: [
+      "At sign-in, and without affecting your sign-in outcome in either direction, the site uses the same username and password once to create sessions with the school's enrollment-registration and grade-inquiry systems (a failure on either side never blocks this site). Those session cookies are governed like selcrs: Redis-only, short TTL (sliding 30 minutes, hard cap 2 hours), purged on sign-out, never written to Postgres or any log.",
+    ],
+    list: [
+      "Grades: fetched from the school only when you press Sync; the result lives in your current session (Redis, 7-day TTL, deleted on sign-out), is never written to any database, and grade details never enter any log.",
+      "Payment status: fetched live from the school each time you open the card and returned directly — never written back, cached, or stored.",
+      "Certificate of Enrollment (PDF): generated live by the school and streamed to your browser through server memory only — never persisted, never cached (Cache-Control: no-store); the access log records path and status code only, never content.",
+      "Relaying you into those pages produces auto-submit handoff pages containing the plaintext password the school itself echoes — such pages exist only in request-cycle memory and never become fixtures, snapshots, or any part of a log.",
+    ],
+  },
+  {
     heading: "Data minimization",
     paragraphs: [
       "We keep only the minimum data required to serve you, and most person-linked data expires automatically:",
@@ -83,7 +107,7 @@ const SECTIONS_EN: LegalSection[] = [
       "Student ID: identifies sign-in and owns your submission records.",
       "Synced “my selections”: scoped to your current session only (deleted on sign-out or expiry) — never persisted long-term.",
       "Course catalog: scraped from the school's public query pages and contains no personal data.",
-      "We do NOT collect names, emails, phone numbers, grades, or any school-records data; we use no Google Analytics or third-party tracking; there is no email registration system on this site.",
+      "We do NOT collect names, emails, or phone numbers; grades and payment data are fetched from the school only while you use the Me area and stay within your session (next section); we use no Google Analytics or third-party tracking; there is no email registration system on this site.",
     ],
   },
   {

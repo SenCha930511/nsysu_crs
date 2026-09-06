@@ -132,6 +132,7 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml run
 | `CATALOG_CRON_OFFPEAK` / `CATALOG_CRON_PEAK` | `7 * * * *` / `*/10 * * * *` | Ingest cadence; peak only on `CATALOG_PEAK_DATES`. Singleton-locked in Redis. |
 | `CATALOG_PEAK_DATES` | empty | Comma list of peak dates (`2026-08-28,...`); wrong date ⇒ off-peak cadence. |
 | `FEATURE_FIRST_ROUND_WRITE` | `false` | 初選志願 write flag. **Must stay false until the 115-2 window live-verifies** (milestone terms; enabling = v1.1.0 event). |
+| `FEATURE_STU_ENROLL` | `false` | stu_enroll M2/M3 switch: gates the login X-fan-out to the regweb/sco campus families and every `/api/me/*` endpoint (payment-status, enrollment-cert, grades+sync). OFF = endpoints answer 404 `not_found` and logins skip the fan-out entirely (zero added login latency). |
 | `SELCRS_SESSION_TTL_SLIDING` | `1800` | selcrs jar sliding TTL (s); refreshed on school activity. |
 | `SELCRS_SESSION_TTL_HARD` | `7200` | selcrs jar hard cap (s) from issuance; then 401 `SELCRS_EXPIRED`. |
 | `WRITE_QUEUE_DWELL_MAX` | `600` | Max queue dwell (s) before honest auto-cancel. |
