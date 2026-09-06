@@ -7,6 +7,7 @@ test_auth_db.py against compose Postgres).
 """
 
 import logging
+import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -185,8 +186,8 @@ def _fanout(*, regweb_ok: bool, sco_ok: bool, sco_err: LegError | None = None) -
     return FanoutResult(regweb=_leg(regweb_ok, None), sco=_leg(sco_ok, sco_err))
 
 
-def test_login_with_flag_runs_fanout_and_parks_both_family_jars(monkeypatch, harness_factory):
-    # Given flag ON and both subsystem legs succeeding
+def test_login_with_flag_schedules_fanout_and_returns_pending_flags(monkeypatch, harness_factory):
+    # Given flag ON and both subsystem legs succeeding in the (stub) background
     harness = harness_factory(_succeed, feature_stu_enroll=True)
     stub = StubFanout(_fanout(regweb_ok=True, sco_ok=True))
     monkeypatch.setattr("app.api.auth.fanout_subsystem_logins", stub)
@@ -194,13 +195,17 @@ def test_login_with_flag_runs_fanout_and_parks_both_family_jars(monkeypatch, har
     # When the student logs in
     response = harness.login()
 
-    # Then both availability flags ride the response and both jars park with
-    # the same sliding/hard TTL contract as selcrs
+    # Then the response arrives WITHOUT blocking on the fan-out: availability
+    # reads false, pending marks the background task is in flight
     assert response.status_code == 200
     body = response.json()
-    assert body["regweb_available"] is True
-    assert body["sco_available"] is True
+    assert body["regweb_available"] is False
+    assert body["sco_available"] is False
+    assert body["stu_enroll_pending"] is True
     sid = harness.session_id(response)
+
+    # And the background task lands both jars with the selcrs TTL contract
+    time.sleep(0.3)
     assert harness.redis.peek(f"regweb:{sid}") == '[["FAMILYJAR", "value"]]'
     assert harness.redis.peek(f"stusco:{sid}") == '[["FAMILYJAR", "value"]]'
     assert harness.redis.remaining_ttl(f"regweb:{sid}") == 1800
@@ -218,11 +223,13 @@ def test_login_with_flag_off_skips_fanout_entirely(monkeypatch, harness_factory)
     # When the student logs in
     response = harness.login()
 
-    # Then login behaves exactly as before: no fan-out call, no family keys,
-    # flags explicitly False in the body
+    # Then login behaves exactly as before: no fan-out task, no family keys,
+    # flags and pending all explicitly False in the body
     assert response.status_code == 200
     assert response.json()["regweb_available"] is False
     assert response.json()["sco_available"] is False
+    assert response.json()["stu_enroll_pending"] is False
+    time.sleep(0.2)
     assert stub.calls == []
     assert harness.redis.keys_with_prefix("regweb") == []
     assert harness.redis.keys_with_prefix("stusco") == []
@@ -239,13 +246,16 @@ def test_login_fanout_partial_failure_stays_fail_soft_and_never_feeds_breaker(
     # When the student logs in
     response = harness.login()
 
-    # Then login still succeeds 200, flags split honestly, only the regweb jar
-    # parks - and an OUR-side failure records NO breaker verdict at all
+    # Then the immediate response still succeeds 200 with pending semantics,
+    # and once the task lands only the regweb jar parks - an OUR-side failure
+    # records NO breaker verdict at all
     assert response.status_code == 200
     body = response.json()
-    assert body["regweb_available"] is True
+    assert body["regweb_available"] is False
     assert body["sco_available"] is False
+    assert body["stu_enroll_pending"] is True
     sid = harness.session_id(response)
+    time.sleep(0.3)
     assert harness.redis.peek(f"regweb:{sid}") is not None
     assert harness.redis.peek(f"stusco:{sid}") is None
     assert harness.redis.peek("breaker:school:streak") is None
@@ -264,9 +274,11 @@ def test_login_fanout_school_unavailable_leg_feeds_the_breaker_once(
     # When the student logs in
     response = harness.login()
 
-    # Then the exact-school-verdict rule fires once for that leg only
+    # Then the exact-school-verdict rule fires once for that leg only, in the
+    # background task (breaker state updates AFTER the response returned)
     assert response.status_code == 200
     assert response.json()["sco_available"] is False
+    time.sleep(0.3)
     assert harness.redis.peek("breaker:school:streak") == "1"
 
 
@@ -277,7 +289,9 @@ def test_me_flags_track_parked_family_jars_after_login(monkeypatch, harness_fact
     monkeypatch.setattr("app.api.auth.fanout_subsystem_logins", stub)
     sid = harness.session_id(harness.login())
 
-    # When /auth/me is queried later (page-reload semantics)
+    # When /auth/me is queried AFTER the background fan-out has landed its jars
+    # (page-reload semantics; the poll is how the frontend discovers this)
+    time.sleep(0.3)
     me = harness.client.get("/api/auth/me", cookies={"session_id": sid})
 
     # Then the flags mirror the parked family jars

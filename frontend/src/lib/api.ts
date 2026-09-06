@@ -312,6 +312,9 @@ export interface LoginResponse {
   regweb_available: boolean;
   /** SCO-family features (歷年成績 grades) are wired up. */
   sco_available: boolean;
+  /** Backend fan-out runs in the background; poll /api/auth/me for the flags
+   * to flip true (this keeps the login round-trip free of 2 captcha round-trips). */
+  stu_enroll_pending: boolean;
 }
 
 export function login(

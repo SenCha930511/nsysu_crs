@@ -26,6 +26,8 @@ access log carries method+path+status only); the password lives as a
 cookie value ever enters a response body, log line, or the DB.
 """
 
+import asyncio
+import logging
 from typing import Final
 
 from fastapi import APIRouter, Depends, Request, status
@@ -58,8 +60,61 @@ from app.write.csrf import csrf_cookie_name, mint_csrf_token, set_csrf_cookie
 
 router: Final = APIRouter()
 
+_logger = logging.getLogger(__name__)
+
 _ERR_TOO_MANY: Final = "too_many_attempts"
 _ERR_SCHOOL: Final = "school_unavailable"
+
+# Keepalive for in-flight background fan-outs (module scope: outlives any
+# single request; tasks self-discard on completion).
+_background_fanout: set[asyncio.Task[None]] = set()
+
+
+async def _run_fanout_and_store(
+    redis: AuthRedis,
+    session_id: str,
+    student_no: str,
+    password: str,
+    settings: Settings,
+) -> None:
+    """Background fan-out after a SUCCESSFUL site login (flag already gated).
+
+    Runs both subsystem logins, parks any family jars, then feeds the breaker
+    school verdicts ONLY: an available leg records classified, a
+    SCHOOL_UNAVAILABLE leg records unknown, and our-side failures (captcha
+    budget, deadline, app bug) record nothing - so this can neither clear nor
+    poison a genuine failure streak. Moving this behind the login response is
+    the login-latency fix: the site login no longer pays 2x captcha-OCR
+    round-trips before the student reaches the page.
+    """
+    try:
+        fanout = await fanout_subsystem_logins(student_no, password)
+        if fanout.regweb.jar is not None:
+            await store_regweb(
+                redis,
+                session_id,
+                serialize_cookies(fanout.regweb.jar),
+                sliding_ttl=settings.selcrs_session_ttl_sliding,
+                hard_ttl=settings.selcrs_session_ttl_hard,
+            )
+        if fanout.sco.jar is not None:
+            await store_stusco(
+                redis,
+                session_id,
+                serialize_cookies(fanout.sco.jar),
+                sliding_ttl=settings.selcrs_session_ttl_sliding,
+                hard_ttl=settings.selcrs_session_ttl_hard,
+            )
+        breaker = build_breaker(redis, settings)
+        for leg in (fanout.regweb, fanout.sco):
+            if leg.available:
+                await breaker.record_classified()
+            elif leg.error is LegError.SCHOOL_UNAVAILABLE:
+                await breaker.record_unknown()
+    except Exception:
+        _logger.exception(
+            "stu_enroll background fan-out failed (fail-soft; family jars may be absent)"
+        )
 
 
 class LoginRequest(BaseModel):
@@ -158,34 +213,25 @@ async def post_login(
     # limited to school verdicts: ok -> classified, SCHOOL_UNAVAILABLE ->
     # unknown; our-side failures (captcha budget, deadline, app bug) record
     # nothing, so the fan-out can neither clear nor poison a real streak.
-    regweb_available = sco_available = False
+    # Flag semantics changed for latency: the fan-out is SCHEDULED (its own
+    # internal budget + fail-soft semantics unchanged), so availability flags
+    # read false for THIS response and flip once the background task lands the
+    # jars - /api/auth/me derives them from jar presence, and the frontend
+    # re-polls it while stu_enroll_pending is true.
+    stu_enroll_pending = False
     if settings.feature_stu_enroll:
-        fanout = await fanout_subsystem_logins(
-            student_no, body.password.get_secret_value()
+        task = asyncio.create_task(
+            _run_fanout_and_store(
+                redis,
+                session_id,
+                student_no,
+                body.password.get_secret_value(),
+                settings,
+            )
         )
-        if fanout.regweb.jar is not None:
-            await store_regweb(
-                redis,
-                session_id,
-                serialize_cookies(fanout.regweb.jar),
-                sliding_ttl=settings.selcrs_session_ttl_sliding,
-                hard_ttl=settings.selcrs_session_ttl_hard,
-            )
-            regweb_available = True
-        if fanout.sco.jar is not None:
-            await store_stusco(
-                redis,
-                session_id,
-                serialize_cookies(fanout.sco.jar),
-                sliding_ttl=settings.selcrs_session_ttl_sliding,
-                hard_ttl=settings.selcrs_session_ttl_hard,
-            )
-            sco_available = True
-        for leg in (fanout.regweb, fanout.sco):
-            if leg.available:
-                await breaker.record_classified()
-            elif leg.error is LegError.SCHOOL_UNAVAILABLE:
-                await breaker.record_unknown()
+        _background_fanout.add(task)
+        task.add_done_callback(_background_fanout.discard)
+        stu_enroll_pending = True
     # CSRF (todo 14): fresh token every login (rotation); body echoes it
     # because the cookie itself is httpOnly and JS must echo it as
     # X-CSRF-Token on /api/write/* - a same-origin channel, never logged.
@@ -195,8 +241,9 @@ async def post_login(
         content={
             "student_no": student_no,
             "csrf_token": csrf_token,
-            "regweb_available": regweb_available,
-            "sco_available": sco_available,
+            "regweb_available": False,
+            "sco_available": False,
+            "stu_enroll_pending": stu_enroll_pending,
         },
     )
     response.set_cookie(

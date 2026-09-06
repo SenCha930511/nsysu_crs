@@ -114,6 +114,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => bindUnauthorizedHandler(null);
   }, []);
 
+  const pendingPollRef = useRef<number | null>(null);
+  const stopStuPendingPoll = useCallback(() => {
+    if (pendingPollRef.current !== null) {
+      window.clearInterval(pendingPollRef.current);
+      pendingPollRef.current = null;
+    }
+  }, []);
+  useEffect(() => stopStuPendingPoll, [stopStuPendingPoll]);
+
+  const startStuPendingPoll = useCallback(() => {
+    stopStuPendingPoll();
+    let ticks = 0;
+    pendingPollRef.current = window.setInterval(() => {
+      ticks += 1;
+      const exhausted = ticks >= 6;
+      void fetchMe()
+        .then((me) => {
+          setRegwebAvailable(me.regweb_available);
+          setScoAvailable(me.sco_available);
+          if (me.regweb_available && me.sco_available) stopStuPendingPoll();
+        })
+        .catch(() => {
+          // best-effort: flags stay false until the next successful probe boot
+        })
+        .finally(() => {
+          if (exhausted) stopStuPendingPoll();
+        });
+    }, 2500);
+  }, [stopStuPendingPoll]);
+
   const doLogin = useCallback(async (no: string, password: string) => {
     const body = await login(no.trim(), password);
     setStudentNo(body.student_no);
@@ -123,12 +153,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setScoAvailable(body.sco_available);
     setExpired(false);
     setStatus("authed");
-  }, []);
+    if (body.stu_enroll_pending) startStuPendingPoll();
+  }, [startStuPendingPoll]);
 
   const doLogout = useCallback(async () => {
     try {
       await logout();
     } finally {
+      stopStuPendingPoll();
       setStudentNo(null);
       setCsrfToken(null);
       storeCsrfToken(null);
@@ -137,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setExpired(false);
       setStatus("anon");
     }
-  }, []);
+  }, [stopStuPendingPoll]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
