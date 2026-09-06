@@ -90,6 +90,7 @@ export interface CatalogMeta {
   updated_at: string | null;
   row_count: number;
   source: string;
+  year_sem: string | null;
 }
 
 export interface CourseQuery {

@@ -31,13 +31,13 @@ from app.catalog.query import (
     CourseQueryError,
     fetch_page,
     parse_course_params,
-    resolve_year_sem,
 )
 from app.config import Settings
 from app.models.courses import Course
 from app.selcrs.decode import decode_body
 from app.selcrs.errors import SelcrsUnavailable
 from app.selcrs.http import build_client, request_school
+from app.semester import resolve_year_sem as resolve_current_year_sem
 
 router: Final = APIRouter()
 
@@ -123,12 +123,25 @@ class CoursePage(BaseModel):
 async def list_courses(
     request: Request,
     session: AsyncSession = Depends(get_session),
+    redis: AuthRedis = Depends(get_redis),
 ) -> CoursePage:
     settings: Settings = request.app.state.settings
     catalog_max = (
         await session.execute(select(func.max(Course.year_sem)))
     ).scalar_one()
-    default_sem = resolve_year_sem(catalog_max, settings.semester_year_sem)
+    # Stale-but-populated catalog wins over discovery (stale beats empty per
+    # the repo's snapshot philosophy); an EMPTY catalog falls to live
+    # resolution, and only then do we fail closed instead of guessing.
+    if catalog_max is not None:
+        default_sem = catalog_max
+    else:
+        resolved_sem = await resolve_current_year_sem(redis, settings)
+        if resolved_sem is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="school_unavailable",
+            )
+        default_sem = resolved_sem
     try:
         filt = parse_course_params(request.query_params, default_year_sem=default_sem)
     except CourseQueryError as exc:

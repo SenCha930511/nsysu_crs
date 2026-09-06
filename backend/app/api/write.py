@@ -29,6 +29,7 @@ from app.auth.sessions import SESSION_COOKIE_NAME, load_selcrs
 from app.config import Settings
 from app.selcrs.jar import deserialize_cookies
 from app.selections.store import item_identity, load_snapshot
+from app.semester import resolve_year_sem
 from app.stage.detect import VARIANT_SSFORM, VARIANT_STAGE5, is_writable
 from app.write.canonical import (
     CanonicalOp,
@@ -210,14 +211,20 @@ async def post_write_preview(
 
     _validate_ops(body.ops, limit=MAX_OPS_BY_VARIANT[variant])
 
+    year_sem = await resolve_year_sem(redis, settings)
+    if year_sem is None:
+        # Fail closed: write ops must NEVER guess the semester when neither
+        # an explicit override nor live discovery can provide one.
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL)
+
     targets, selected_codes = await _selection_targets(
-        db, year_sem=settings.semester_year_sem, redis=redis, session_id=session_id
+        db, year_sem=year_sem, redis=redis, session_id=session_id
     )
 
     resolved: list[ResolvedOp] = []
     for index, op_in in enumerate(body.ops):
         course = await resolve_course(
-            db, year_sem=settings.semester_year_sem, ident=op_in.course_id
+            db, year_sem=year_sem, ident=op_in.course_id
         )
         if op_in.action == "-" and course.code is None:
             # Drops identify THROUGH the student's own selections (authoritative

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     app_secret: str
 
     # Semester contract (todo 2+).
-    semester_year_sem: str = "1151"
+    semester_year_sem: str | None = None
     semester_start_date: date = date(2026, 9, 1)
     semester_end_date: date = date(2027, 1, 16)
 

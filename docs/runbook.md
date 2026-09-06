@@ -125,7 +125,7 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml run
 | `DATABASE_URL` | compose DSN | Postgres async DSN. Wrong → 503s (never leaks in responses); see `qa/01-bad-db.log`. |
 | `REDIS_URL` | compose DSN | Redis DSN. Down → login/write hard-fail, reads stay up (plan-pinned). |
 | `APP_SECRET` | — | Site secret: confirm-token HMAC, `/api/ops/state` admin gate. Rotate = invalidate all confirm tokens/sessions. Never commit a real value. |
-| `SEMESTER_YEAR_SEM` | `1151` | Catalog key `D0` = YYY+S (e.g. 1151 = 115-1). |
+| `SEMESTER_YEAR_SEM` | unset | Optional manual pin for the catalog key `D0` = YYY+S (e.g. 1151 = 115-1). Unset = live discovery from the school's YRSM page, Redis-cached 6h (`semester:current`); when neither override nor discovery yields a code the site refuses to guess (writes fail closed with 503). |
 | `SEMESTER_START_DATE` / `SEMESTER_END_DATE` | 2026-09-01 / 2027-01-16 | ICS window + plan logic; end date becomes ICS `UNTIL` (UTC DATE-TIME). |
 | `ALLOWED_ORIGINS` | localhost origins | Inert contract (no CORS middleware — same-origin posture; never `*`). |
 | `TZ` | `Asia/Taipei` | All containers + app clock; lockout day buckets, log timestamps. |

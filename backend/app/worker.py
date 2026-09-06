@@ -78,7 +78,7 @@ async def _run() -> None:
     logger.info(
         "worker started: semester=%s, catalog crons offpeak=%r peak=%r peak_dates=%r, "
         "write queue=%s dwell_max=%ss",
-        settings.semester_year_sem,
+        settings.semester_year_sem or "(auto via discovery)",
         settings.catalog_cron_offpeak,
         settings.catalog_cron_peak,
         settings.catalog_peak_dates or "(none)",

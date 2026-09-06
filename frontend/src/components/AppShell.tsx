@@ -7,15 +7,35 @@ import {
   PersonCircle,
   Send,
 } from "react-bootstrap-icons";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import DegradeBanner from "./DegradeBanner";
+import { fetchCatalogMeta } from "../lib/api";
 import { LangToggle, useI18n } from "../lib/i18n";
+import { formatSemesterLabel } from "../lib/semesterLabel";
 import { useAuth } from "../state/auth";
 
 function AppShell() {
   const { tx } = useI18n();
   const { status, studentNo, logout } = useAuth();
+  const [semester, setSemester] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchCatalogMeta()
+      .then((meta) => {
+        if (alive && meta.year_sem !== null) {
+          setSemester(formatSemesterLabel(meta.year_sem));
+        }
+      })
+      .catch(() => {
+        // Degrade by absence: an unreachable meta endpoint hides the pill.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const NAV_LINKS = [
     { to: "/", label: tx("查課・課表", "Courses • Timetable"), icon: CalendarWeek, end: true },
@@ -45,7 +65,7 @@ function AppShell() {
                 <span className="d-none d-sm-inline">{tx("中山選課 Studio", "NSYSU Course Studio")}</span>
                 <span className="d-sm-none">{tx("選課 Studio", "Course Studio")}</span>
               </NavLink>
-              <span className="semester-pill ms-1">115-1</span>
+              {semester !== null && <span className="semester-pill ms-1">{semester}</span>}
             </div>
 
             {/* Right: GitHub & User Auth */}

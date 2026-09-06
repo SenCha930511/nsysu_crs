@@ -47,6 +47,7 @@ from app.selections.store import (
     load_snapshot,
     store_snapshot,
 )
+from app.semester import resolve_year_sem
 
 router: Final = APIRouter()
 
@@ -123,9 +124,9 @@ async def post_selections_sync(
         ) from exc
     await breaker.record_classified()
 
-    items = await attach_course_matches(
-        db, year_sem=settings.semester_year_sem, items=items
-    )
+    year_sem = await resolve_year_sem(redis, settings)
+    if year_sem is not None:
+        items = await attach_course_matches(db, year_sem=year_sem, items=items)
     previous = await load_snapshot(redis, session_id)
     added, removed, unchanged = diff_items(previous.items if previous else [], items)
     synced_at = _now_iso(settings)

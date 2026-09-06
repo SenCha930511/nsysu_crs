@@ -8,6 +8,7 @@ const healthyMeta: CatalogMeta = {
   updated_at: "2026-08-28T00:52:22.378510Z",
   row_count: 1234,
   source: "self-scrape",
+  year_sem: "1151",
 };
 
 const failedMeta: CatalogMeta = {
@@ -15,6 +16,7 @@ const failedMeta: CatalogMeta = {
   updated_at: "2026-08-27T12:00:00.000000Z",
   row_count: 1200,
   source: "self-scrape",
+  year_sem: "1151",
 };
 
 function opsWith(state: string): OpsState {

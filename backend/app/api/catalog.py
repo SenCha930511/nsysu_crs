@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 from redis.exceptions import RedisError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_redis, get_session
@@ -36,6 +36,7 @@ class CatalogMetaResponse(BaseModel):
     updated_at: datetime | None
     row_count: int | None
     source: str
+    year_sem: str | None = None
 
 
 def meta_payload(meta: CatalogMeta | None) -> CatalogMetaResponse:
@@ -56,7 +57,9 @@ def meta_payload(meta: CatalogMeta | None) -> CatalogMetaResponse:
 async def get_catalog_meta(
     session: AsyncSession = Depends(get_session),
 ) -> CatalogMetaResponse:
-    return meta_payload(await latest_catalog_meta(session))
+    payload = meta_payload(await latest_catalog_meta(session))
+    max_sem = (await session.execute(select(func.max(Course.year_sem)))).scalar_one()
+    return payload.model_copy(update={"year_sem": max_sem})
 
 
 class DeptsResponse(BaseModel):
