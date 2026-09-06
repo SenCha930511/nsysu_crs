@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   ArrowRepeat,
+  Award,
   Building,
   CashStack,
   CheckCircleFill,
@@ -416,7 +417,7 @@ function CertCard() {
       <div className="profile-card-header">
         <div className="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
           <CardIcon>
-            <FileEarmarkPdf size={18} />
+            <Award size={18} />
           </CardIcon>
           <div className="min-w-0">
             <h2 className="h6 fw-bold mb-0 text-dark text-truncate">{tx("在學證明", "Enrollment Certificate")}</h2>
