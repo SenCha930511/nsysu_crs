@@ -78,6 +78,7 @@ from scripts.capture.runtime import (
 BASE_URL: Final = SELCRS_BASE_URL
 LOGIN_URL: Final = f"{BASE_URL}/stu_enroll/"
 CAPTCHA_URL: Final = f"{BASE_URL}/stu_enroll/validcode.asp"
+SCO_URL: Final = f"{BASE_URL}/scoreqry/"
 
 MAX_LOGIN_ATTEMPTS: Final = 5
 MAX_CAPTCHA_FETCHES_PER_ATTEMPT: Final = 4
@@ -669,6 +670,27 @@ async def _async_main(args: argparse.Namespace) -> int:
             )
         )
 
+        # 2b. sco public login page (anonymous-reachable): the fixture the
+        #    fan-out tests replay the sco leg against, replacing the synthetic
+        #    construction in tests/test_stuenroll_pipeline.py.
+        sco_resp, jar = await _get(
+            ctx,
+            SCO_URL,
+            jar,
+            why="sco public login page (anonymous; separate subsystem)",
+        )
+        ctx.save_fixture("stuenroll_sco_login_live_1151", sco_resp.content)
+        sco_fields = {name for name, _type, _value in _scrape(decode_body(sco_resp.content)).inputs}
+        missing_sco = sorted({"SID", "PASSWD", "ValidCode"} - sco_fields)
+        results.append(
+            ProbeResult(
+                "sco login form shape",
+                "CONFIRMED" if not missing_sco else "UNVERIFIED",
+                f"fields {sorted(sco_fields)}; missing {missing_sco or 'none'}; "
+                "fixture stuenroll_sco_login_live_1151.html",
+            )
+        )
+
         if args.no_login:
             journal.log("anonymous round complete (no login POST performed).")
         else:
@@ -888,6 +910,30 @@ async def _async_main(args: argparse.Namespace) -> int:
                                 "CONFIRMED" if ok else "UNVERIFIED",
                                 f"landing {sco_base} + {len(frame_bodies) - 1} frame(s); "
                                 f"authed-shape={ok}; fixture stuenroll_grades_live_1151.html",
+                            )
+                        )
+                        # 6c+. history grades table (action=811&KIND=3): the page
+                        #    /api/me/grades will parse; the menu frame carries
+                        #    this relative link, so join against the frameset base.
+                        history_resp, jar = await _get(
+                            ctx,
+                            urljoin(sco_base, "sco_query.asp?action=811&KIND=3"),
+                            jar,
+                            why="pure GET of the history grades table "
+                            "(the menu frame's own 歷年成績查詢 link)",
+                        )
+                        ctx.save_fixture(
+                            "stuenroll_grades_history_live_1151", history_resp.content
+                        )
+                        history_html = decode_body(history_resp.content)
+                        results.append(
+                            ProbeResult(
+                                "sco history grades table (action=811&KIND=3)",
+                                "CONFIRMED"
+                                if "歷年" in history_html or "學期" in history_html
+                                else "UNVERIFIED",
+                                f"{len(history_resp.content)}B; "
+                                "fixture stuenroll_grades_history_live_1151.html",
                             )
                         )
 

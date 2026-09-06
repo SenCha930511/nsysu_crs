@@ -1,0 +1,129 @@
+
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+        <meta name="ProgId" content="FrontPage.Editor.Document">
+        <title>學生成績查詢 (Grades Inquiries)</title>
+
+        <Script Language="JavaScript" type="text/javascript" src="sco_query_login.js" ></Script>
+        <link rel="stylesheet" type="text/css" href="sco_query_login.css" />
+    </head>
+
+    <body ><center>
+
+    <form method="POST" action="sco_query_loginchk.asp" onSubmit="return FrontPage_Form1_Validator(this)" name="Studpassform">
+
+        <table border="0" width="580" cellspacing="0" cellpadding="3" >
+            <tr ><td width="100%" align="left" colspan="5" ><img border="0" src="images/main2.jpg" width="508" height="250" ></td></tr>
+            <tr ><td width="100%" class="login_td_01" width="100%" align="center" colspan="5" >Grades Inquiries</td></tr>
+            <tr ><td width="100%" height="10" colspan="5" ></td></tr>
+
+            <tr >
+                <td width="100%" align="middle" colspan="5" >
+                    <!-- <table border="1" width="100%" cellspacing="0" cellpadding="0" ><tr><td> -->
+
+                    <table border="0" width="95%" cellspacing="6" cellpadding="3" >
+
+                    <tr >
+                    <td class="login_td_g1" width="43%" align="left" valign="center" >&nbsp;&nbsp;學&nbsp;&nbsp;&nbsp;&nbsp;號&nbsp;&nbsp;(Student No.)</td>
+                    <td width="57%" align="left" valign="center" ><input class="login_input_01" type="text" name="SID" size="20" maxlength="20" ></td>
+                    </tr>
+
+                    <tr >
+                    <td class="login_td_g1" align="left" valign="center" >&nbsp;&nbsp;密&nbsp;&nbsp;&nbsp;&nbsp;碼&nbsp;&nbsp;(Password)</td>
+                    <td align="left" valign="center" >
+                    <input class="login_input_01" type="password" name="PASSWD" size="20" maxlength="20" >
+                    <input type=hidden name="ACTION" value="0" >
+                    <input type=hidden name="INTYPE" value="1" >
+                    </td>
+                    </tr>
+
+                    <tr >
+                    <td class="login_td_g1" align="left" valign="center" >&nbsp;&nbsp;驗證碼&nbsp;&nbsp;(Verified Code)</td>
+                    <td align="left" valign="center" >
+                    <input class="login_input_01" type="text" name="ValidCode" size="4" maxlength="4" >
+                    <img id="imgVC" name="imgVC" style="vertical-align:middle" src="validcode.asp?epoch=1468419307" onclick="this.src='validcode.asp?epoch=' + (new Date()).getTime()" >
+                    <input class="login_btn_02" type="button" value="Renew" onClick="javascript:document.getElementById('imgVC').src='validcode.asp?epoch='+(new Date()).getTime()" />
+                    </td>
+                    </tr>
+
+                    <tr >
+                    <td class="login_td_g1" align="left" valign="center" ></td>
+                    <td align="left" valign="center" ><input class="login_btn_01" type="submit" value="確定送出 (Enter)" name="B1" ></td>
+                    </tr>
+
+                    </table>
+
+                    <!-- </td></tr></table> -->
+                </td>
+            </tr>
+
+            <tr ><td width="100%" height="10" colspan="5"></td></tr>
+            <tr ><td align="left" width="100%" colspan="5" >
+                <table border="1" width="100%" cellspacing="0" cellpadding="10" ><tr><td align="middle" >
+                <table border="0" width="98%" cellspacing="0" cellpadding="0">
+    <tr ><td class="login_td_r1" width="100%" align="left" colspan="2">
+        ＜經九十三年六月十一日第一○○次教務會議決議通過＞ <br />
+        ※、92學年度 博士班 學生學號第一碼P改為D <br />
+        　　ex. P921050001改為D921050001 <br />
+        ※、92學年度 暑期碩士專班 學生學號第一碼O改為S <br />
+        　　ex. O921050001改為S921050001 <br /><br />
+    </td></tr>
+
+    <tr class="login_td_bu1" >
+        <td width="5%" align="middle" >一、</td>
+        <td width="95%" align="left" >
+        密碼同選課密碼。
+        </td>
+    </tr>
+    <tr class="login_td_bu1" >
+        <td width="5%" align="middle" >二、</td>
+        <td width="95%" align="left" >
+        91學年度（含）前畢業生密碼仍維持四碼(預設身分證末四碼)。
+        </td>
+    </tr>
+    <tr class="login_td_bu1" >
+        <td width="5%" align="middle" >三、</td>
+        <td width="95%" align="left" >
+        <!-- 密碼查詢，請至選課系統<a href=https://selcrs.nsysu.edu.tw/menu3/sqrypass.asp >密碼查詢</a>。 -->
+        <!-- 密碼查詢，請至選課系統<a target="_new" href="https://sso.nsysu.edu.tw/index.php/passport/forget" >密碼查詢</a>。 -->
+        密碼查詢，請至選課系統<a target="_new" href="https://selcrs.nsysu.edu.tw/" >密碼查詢</a>。
+        </td>
+    </tr>
+    <tr class="login_td_bu1" >
+        <td width="5%" height="20" align="left" ></td>
+        <td width="95%" align="left" ></td>
+    </tr>
+    <tr class="login_td_bu1" >
+        <td width="5%" align="middle" valign="top" >A.&nbsp;&nbsp;</td>
+        <td width="95%" align="left" >
+        Password is same as course selection (preset: last 6 digits of ROC ID)
+        </td>
+    </tr>
+    <tr class="login_td_bu1" >
+        <td width="5%" align="middle" valign="top" >B.&nbsp;&nbsp;</td>
+        <td width="95%" align="left" >
+        Password is 6 digits. Overseas Chinese /International students: birth date (4digits) + first 2 letter of your name (e.g. James Bond 1960/06/20, password: 0620JA)
+        </td>
+    </tr>
+    <tr class="login_td_bu1" >
+        <td width="5%" align="middle" valign="top" >C.&nbsp;&nbsp;</td>
+        <td width="95%" align="left" >
+        Forgot password? Go to the course selection system, or present your ID at the counter
+        </td>
+    </tr>
+    <tr class="login_td_bu1" >
+        <td width="5%" height="20" align="left" ></td>
+        <td width="95%" align="left" ></td>
+    </tr>
+</table>
+                </td></tr></table>
+            </td></tr>
+
+        </table>
+
+    </form>
+
+    </center></body>
+</html>

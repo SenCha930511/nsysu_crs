@@ -2,10 +2,11 @@
 
 URL-keyed routing (never shared FIFO queues) because the two legs run
 concurrently and POST order across families is nondeterministic. The sco
-leg's login/handoff pages are SYNTHETIC constructions from the M0
-live-verified facts (sco form fields SID/PASSWD/ValidCode + hidden
-ACTION/INTYPE, auto-form -> sco_query.asp 302) - no live sco login fixture
-exists yet; it is part of the pending capture round.
+leg's LOGIN page is the real 2026-09-06 anonymous capture
+(stuenroll_sco_login_live_1151: Studpassform -> sco_query_loginchk.asp,
+SID/PASSWD/ValidCode + hidden ACTION=0/INTYPE=1); the sco post-login
+HANDOFF remains a synthetic construction from the M0 live-verified facts
+(auto-form -> sco_query.asp 302) until the credentialed capture round.
 """
 
 import time
@@ -27,11 +28,7 @@ BMP = (FIXTURES / "stuenroll_validcode_live_1151.bmp").read_bytes()
 STUDENT = "M153000099"
 PASSWORD = "pw-synth-099"
 
-SCO_LOGIN_PAGE = b"""<html><body><form method="post" action="sco_loginchk.asp">
-<input type="hidden" name="ACTION" value="1"><input type="hidden" name="INTYPE" value="1">
-<input type="text" name="SID"><input type="password" name="PASSWD">
-<input type="text" name="ValidCode"><img src="validcode.asp">
-</form></body></html>"""
+SCO_LOGIN_PAGE = (FIXTURES / "stuenroll_sco_login_live_1151.html").read_bytes()
 
 SCO_HANDOFF_PAGE = b"""<html><body><form method="post" action="sco_query.asp?action=1">
 <input type="hidden" name="SID" value="***"><input type="hidden" name="PASSWD" value="***">
@@ -67,15 +64,15 @@ def _make_transport(
         if "validcode.asp" in url:
             return httpx.Response(200, content=BMP, headers={"Content-Type": "Image/BMP"})
         if request.method == "POST":
+            if "sco_query_loginchk" in url:
+                bodies["sco"].append(request.content)
+                return sco_queue.pop(0)
             if "stu_enroll_loginchk" in url:
                 bodies["stu"].append(request.content)
                 return stu_queue.pop(0)
-            if "sco_loginchk" in url:
-                bodies["sco"].append(request.content)
-                return sco_queue.pop(0)
             if "wregloginchk" in url:
                 return _resp(b"", status=302, location="wregmain3.asp?act=11")
-            if "sco_query" in url:
+            if "sco_query.asp" in url:
                 return _resp(b"", status=302, location="sco_query.asp?action=101")
             raise AssertionError(f"unscripted POST: {url}")
         if "wregmain3" in url:
@@ -114,7 +111,7 @@ async def test_fanout_both_legs_available_under_deadline() -> None:
     sco_body = bodies["sco"][0].decode("big5", errors="replace")
     assert f"SID={STUDENT}" in sco_body
     assert f"PASSWD={PASSWORD}" in sco_body
-    assert "ACTION=1" in sco_body  # verbatim hidden fields ride along
+    assert "ACTION=0" in sco_body  # verbatim hidden fields ride along (live: ACTION=0)
 
 
 @pytest.mark.anyio
