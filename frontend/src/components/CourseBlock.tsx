@@ -198,12 +198,8 @@ function CourseBlock({
         )}
       </div>
 
-      {/* Course Title */}
-      {readOnly ? (
-        <div className="course-block-title">
-          {name}
-        </div>
-      ) : course.url !== null ? (
+      {/* readOnly only locks edit affordances; title links stay interactive. */}
+      {course.url !== null ? (
         <a
           href={course.url}
           target="_blank"
