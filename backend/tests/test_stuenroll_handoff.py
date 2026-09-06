@@ -40,10 +40,24 @@ def test_wregloginchk_relay_targets_wregloginchk2_with_creds() -> None:
     assert {name for name, _value in form.fields} >= {"ID", "passwd"}
 
 
-def test_enrollcert_relay_targets_the_cert_printer() -> None:
+def test_login_success_handoff_targets_wregloginchk_with_masking() -> None:
+    form = read_handoff(_load("stuenroll_loginresp_attempt1_live_1151.html"))
+    assert form is not None
+    assert form.action.endswith("wregloginchk.asp")
+    assert {name for name, _value in form.fields} >= {"ID", "passwd"}
+
+
+def test_sco_post_login_handoff_targets_sco_query() -> None:
     form = read_handoff(_load("stuenroll_hop1_live_1151.html"))
     assert form is not None
-    assert form.action.endswith("print/enrollcert.asp")
+    assert form.action.endswith("sco_query.asp")
+    assert {name for name, _value in form.fields} >= {
+        "SID",
+        "PASSWD",
+        "ValidCode",
+        "ACTION",
+        "INTYPE",
+    }
 
 
 def test_interactive_login_page_is_not_a_handoff() -> None:

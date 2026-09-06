@@ -21,6 +21,7 @@ from app.auth.sessions import (
     store_stusco,
 )
 from app.selcrs.jar import deserialize_cookies, serialize_cookies
+from app.stuenroll.store import GradesSnapshot, store_grades_snapshot
 from tests.fake_redis import FakeRedis
 
 DAY = 24 * 3600
@@ -145,9 +146,11 @@ async def test_logout_drops_both_stu_enroll_family_jars():
     sid = await create_site_session(redis, "M153000024")
     await store_regweb(redis, sid, "[['r','1']]", sliding_ttl=1800, hard_ttl=7200)
     await store_stusco(redis, sid, "[['s','1']]", sliding_ttl=1800, hard_ttl=7200)
+    await store_grades_snapshot(redis, sid, GradesSnapshot(synced_at="t0", items=[["a"]]))
 
     await delete_site_session(redis, sid)
     assert await redis.get(f"regweb:{sid}") is None
     assert await redis.get(f"regweb_hard:{sid}") is None
     assert await redis.get(f"stusco:{sid}") is None
     assert await redis.get(f"stusco_hard:{sid}") is None
+    assert await redis.get(f"grades:{sid}") is None

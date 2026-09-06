@@ -60,6 +60,10 @@ def _selections_key(session_id: str) -> str:
     return f"selections:{session_id}"
 
 
+def _grades_key(session_id: str) -> str:
+    return f"grades:{session_id}"
+
+
 def _regweb_key(session_id: str) -> str:
     return f"regweb:{session_id}"
 
@@ -98,7 +102,8 @@ async def delete_site_session(redis: AuthRedis, session_id: str) -> None:
 
     Includes the todo-9 selections snapshot: session-scoped cache only,
     purged here (or by its own TTL) - never left to outlive the session.
-    Same story for the two stu_enroll jar families (plan §5.3).
+    Same story for the two stu_enroll jar families (plan §5.3) and the
+    grades snapshot (M2).
     """
     await redis.delete(
         _site_key(session_id),
@@ -109,6 +114,7 @@ async def delete_site_session(redis: AuthRedis, session_id: str) -> None:
         _regweb_hard_key(session_id),
         _stusco_key(session_id),
         _stusco_hard_key(session_id),
+        _grades_key(session_id),
     )
 
 

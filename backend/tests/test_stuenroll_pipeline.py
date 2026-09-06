@@ -1,12 +1,12 @@
 """Fan-out pipeline tests (M2) - both legs replay over one MockTransport.
 
 URL-keyed routing (never shared FIFO queues) because the two legs run
-concurrently and POST order across families is nondeterministic. The sco
-leg's LOGIN page is the real 2026-09-06 anonymous capture
-(stuenroll_sco_login_live_1151: Studpassform -> sco_query_loginchk.asp,
-SID/PASSWD/ValidCode + hidden ACTION=0/INTYPE=1); the sco post-login
-HANDOFF remains a synthetic construction from the M0 live-verified facts
-(auto-form -> sco_query.asp 302) until the credentialed capture round.
+concurrently and POST order across families is nondeterministic. Both sco
+pages are REAL captures now: the LOGIN page is the 2026-09-06 anonymous
+capture (stuenroll_sco_login_live_1151: Studpassform ->
+sco_query_loginchk.asp, SID/PASSWD/ValidCode + hidden ACTION=0/INTYPE=1)
+and the post-login HANDOFF is the same-day credentialed capture
+(stuenroll_hop1_live_1151: auto-form -> sco_query.asp, creds masked).
 """
 
 import time
@@ -30,11 +30,7 @@ PASSWORD = "pw-synth-099"
 
 SCO_LOGIN_PAGE = (FIXTURES / "stuenroll_sco_login_live_1151.html").read_bytes()
 
-SCO_HANDOFF_PAGE = b"""<html><body><form method="post" action="sco_query.asp?action=1">
-<input type="hidden" name="SID" value="***"><input type="hidden" name="PASSWD" value="***">
-<input type="hidden" name="ValidCode" value="0000"><input type="hidden" name="ACTION" value="1">
-<input type="hidden" name="INTYPE" value="1"></form>
-<script>document.forms[0].submit();</script></body></html>"""
+SCO_HANDOFF_PAGE = (FIXTURES / "stuenroll_hop1_live_1151.html").read_bytes()
 
 DRIFT_PAGE = b"<html><body>no form here</body></html>"
 

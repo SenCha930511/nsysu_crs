@@ -11,7 +11,9 @@ any cache, DB, or log - response no-store + attachment (plan §5.6). Neither
 the jar nor any cookie value ever enters a response body, log line, or DB.
 """
 
+from datetime import datetime
 from typing import Annotated, Final
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.exceptions import HTTPException
@@ -20,18 +22,29 @@ from pydantic import BaseModel, ConfigDict
 from app.api.deps import get_current_student, get_redis
 from app.auth.breaker import build_breaker
 from app.auth.redis_iface import AuthRedis
-from app.auth.sessions import SESSION_COOKIE_NAME, load_regweb
+from app.auth.sessions import SESSION_COOKIE_NAME, load_regweb, load_stusco
 from app.config import Settings
 from app.selcrs.decode import decode_body
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
 from app.selcrs.jar import deserialize_cookies
-from app.stuenroll.endpoints import ENROLLCERT_RELAY_URL, TFSTU_RELAY_URL
-from app.stuenroll.parse import parse_payment_bills
+from app.stuenroll.endpoints import (
+    ENROLLCERT_RELAY_URL,
+    SCO_HISTORY_URL,
+    TFSTU_RELAY_URL,
+)
+from app.stuenroll.parse import parse_grades_history, parse_payment_bills
 from app.stuenroll.relay import open_relay
+from app.stuenroll.store import (
+    GradesSnapshot,
+    diff_grade_rows,
+    load_grades_snapshot,
+    store_grades_snapshot,
+)
 
 router: Final = APIRouter()
 
 ERR_REGWEB_EXPIRED: Final = "REGWEB_EXPIRED"
+ERR_SCO_EXPIRED: Final = "SCO_EXPIRED"
 ERR_SCHOOL: Final = "school_unavailable"
 
 
@@ -60,6 +73,10 @@ def _session_id(request: Request) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED, detail="not_authenticated"
         )
     return session_id
+
+
+def _now_iso(settings: Settings) -> str:
+    return datetime.now(ZoneInfo(settings.tz)).isoformat(timespec="seconds")
 
 
 def _require_feature(settings: Settings) -> None:
@@ -162,4 +179,88 @@ async def get_enrollment_cert(
             "Cache-Control": "no-store",
             "Content-Disposition": 'attachment; filename="enrollment_cert.pdf"',
         },
+    )
+
+
+class GradesResponse(BaseModel):
+    """GET shape: last sync + verbatim row cells; empty (null time) pre-sync."""
+
+    model_config = ConfigDict(frozen=True)
+
+    synced_at: str | None
+    items: list[list[str]]
+
+
+class GradesSyncResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    synced_at: str
+    added: list[list[str]]
+    removed: list[list[str]]
+    unchanged: list[list[str]]
+    items: list[list[str]]
+
+
+@router.get("/api/me/grades", response_model=GradesResponse)
+async def get_grades(
+    request: Request,
+    _student: Annotated[str, Depends(get_current_student)],
+    redis: Annotated[AuthRedis, Depends(get_redis)],
+) -> GradesResponse:
+    """The cached grades snapshot only - school contact happens on /sync."""
+    settings: Settings = request.app.state.settings
+    _require_feature(settings)
+    snapshot = await load_grades_snapshot(redis, _session_id(request))
+    if snapshot is None:
+        return GradesResponse(synced_at=None, items=[])
+    return GradesResponse(synced_at=snapshot.synced_at, items=snapshot.items)
+
+
+@router.post("/api/me/grades/sync", response_model=GradesSyncResponse)
+async def post_grades_sync(
+    request: Request,
+    _student: Annotated[str, Depends(get_current_student)],
+    redis: Annotated[AuthRedis, Depends(get_redis)],
+) -> GradesSyncResponse:
+    """Mirror of the selections sync contract, on the sco jar family: session,
+    stusco jar (gone -> 401 SCO_EXPIRED), breaker gate (open -> 503 locally),
+    one relay to the action=811 history page, bounce -> 401, drift -> 503,
+    then identity diff and session-scoped snapshot replace (7d TTL)."""
+    settings: Settings = request.app.state.settings
+    _require_feature(settings)
+    session_id = _session_id(request)
+    payload = await load_stusco(
+        redis, session_id, sliding_ttl=settings.selcrs_session_ttl_sliding
+    )
+    if payload is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_SCO_EXPIRED)
+    breaker = build_breaker(redis, settings)
+    if not await breaker.admit():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        )
+    try:
+        landing = await open_relay(SCO_HISTORY_URL, deserialize_cookies(payload))
+        page = parse_grades_history(decode_body(landing.content, landing.content_type))
+    except SelcrsSessionExpired:
+        await breaker.record_classified()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_SCO_EXPIRED
+        ) from None
+    except SelcrsUnavailable as exc:
+        await breaker.record_unknown()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        ) from exc
+    await breaker.record_classified()
+
+    rows = [list(row) for row in page.rows]
+    previous = await load_grades_snapshot(redis, session_id)
+    added, removed, unchanged = diff_grade_rows(previous.items if previous else [], rows)
+    synced_at = _now_iso(settings)
+    await store_grades_snapshot(
+        redis, session_id, GradesSnapshot(synced_at=synced_at, items=rows)
+    )
+    return GradesSyncResponse(
+        synced_at=synced_at, added=added, removed=removed, unchanged=unchanged, items=rows
     )

@@ -6,6 +6,7 @@ import pytest
 
 from app.selcrs.errors import SelcrsUnavailable
 from app.stuenroll.parse import (
+    parse_grades_history,
     parse_payment_bills,
     parse_regweb_checklist,
     parse_sco_menu,
@@ -58,3 +59,23 @@ def test_drift_raises_instead_of_guessing() -> None:
         parse_sco_menu("<html><body>no anchors</body></html>")
     with pytest.raises(SelcrsUnavailable):
         parse_regweb_checklist("<html><body>no relays</body></html>")
+    with pytest.raises(SelcrsUnavailable):
+        parse_grades_history("<html><head><title>other page</title></head></html>")
+
+
+def test_grades_history_live_shell_is_legit_zero_rows() -> None:
+    page = parse_grades_history(_load("stuenroll_grades_history_live_1151.html"))
+    assert page.rows == ()
+
+
+def test_grades_history_rows_come_out_verbatim() -> None:
+    html = (
+        "<html><head><title>成績查詢</title>"
+        '<link rel="stylesheet" href="include/css/sco_qry_rpt.css" /></head>'
+        "<body><center><table>"
+        "<tr><th>課號</th><th>科目名稱</th></tr>"
+        "<tr><td>M5001</td><td>高等 演算法</td></tr>"
+        "</table></center></body></html>"
+    )
+    page = parse_grades_history(html)
+    assert page.rows == (("課號", "科目名稱"), ("M5001", "高等 演算法"))

@@ -16,7 +16,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.auth.breaker import build_breaker
-from app.auth.sessions import create_site_session, store_regweb
+from app.auth.sessions import create_site_session, store_regweb, store_stusco
 from app.config import Settings
 from app.main import create_app
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
@@ -89,11 +89,12 @@ class Harness:
     settings: Settings
     relay: StubRelay
 
-    async def seed_session(self, *, with_jar: bool = True) -> str:
-        """A live site session (with a parked regweb jar unless told otherwise)."""
+    async def seed_session(self, *, with_jar: bool = True, family: str = "regweb") -> str:
+        """A live site session (with a parked jar for the given family if asked)."""
         session_id = await create_site_session(self.redis, "M153000024")
         if with_jar:
-            await store_regweb(
+            store = store_regweb if family == "regweb" else store_stusco
+            await store(
                 self.redis,
                 session_id,
                 '[["ASPSESSIONIDX", "stubvalue"]]',
@@ -239,3 +240,141 @@ async def test_cert_passthrough_streams_pdf_with_no_store_headers(harness_factor
     assert response.headers["content-type"] == "application/pdf"
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["content-disposition"].startswith("attachment")
+
+
+GRADES_PATH = "/api/me/grades"
+GRADES_SYNC_PATH = "/api/me/grades/sync"
+HISTORY_SHELL = (FIXTURES / "stuenroll_grades_history_live_1151.html").read_bytes()
+RPT_WITH_ROWS = """<html><head><title>國立中山大學 成績查詢</title>
+<link rel="stylesheet" href="include/css/sco_qry_rpt.css" /></head><body><center>
+<table><tr><th>課號</th><th>科目名稱</th><th>學分</th><th>成績</th></tr>
+<tr><td>M5001</td><td>高等演算法</td><td>3</td><td>95</td></tr>
+<tr><td>M5002</td><td>高等資料庫</td><td>3</td><td>88</td></tr></table>
+</center></body></html>""".encode()
+
+
+def _history_shell(_url: str) -> ChainResult:
+    return _landing(HISTORY_SHELL, "text/html; charset=utf-8")
+
+
+def _rpt_with_rows(_url: str) -> ChainResult:
+    return _landing(RPT_WITH_ROWS, "text/html; charset=utf-8")
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("method,path", [("get", GRADES_PATH), ("post", GRADES_SYNC_PATH)])
+async def test_grades_flag_off_gives_404_with_zero_school_contact(harness_factory, method, path):
+    harness = harness_factory(_history_shell, flag=False)
+    sid = await harness.seed_session(family="stusco")
+
+    response = getattr(harness.client, method)(path, cookies={"session_id": sid})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "not_found"
+    assert harness.relay.calls == []
+
+
+@pytest.mark.anyio
+async def test_grades_get_is_empty_before_first_sync(harness_factory):
+    harness = harness_factory(_history_shell)
+    sid = await harness.seed_session(family="stusco")
+
+    response = harness.client.get(GRADES_PATH, cookies={"session_id": sid})
+    assert response.status_code == 200
+    assert response.json() == {"synced_at": None, "items": []}
+    assert harness.relay.calls == []  # reads never touch the school
+
+
+@pytest.mark.anyio
+async def test_grades_sync_anonymous_gets_401(harness_factory):
+    harness = harness_factory(_history_shell)
+    response = harness.client.post(GRADES_SYNC_PATH)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "not_authenticated"
+
+
+@pytest.mark.anyio
+async def test_grades_sync_missing_stusco_jar_gives_family_expired(harness_factory):
+    harness = harness_factory(_history_shell)
+    sid = await harness.seed_session(with_jar=False)
+
+    response = harness.client.post(GRADES_SYNC_PATH, cookies={"session_id": sid})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "SCO_EXPIRED"
+    assert harness.relay.calls == []
+
+
+@pytest.mark.anyio
+async def test_grades_sync_open_breaker_answers_503_without_school_contact(harness_factory):
+    harness = harness_factory(_history_shell)
+    sid = await harness.seed_session(family="stusco")
+    breaker = build_breaker(harness.redis, harness.settings)
+    for _ in range(harness.settings.breaker_failure_threshold):
+        await breaker.record_unknown()
+
+    response = harness.client.post(GRADES_SYNC_PATH, cookies={"session_id": sid})
+    assert response.status_code == 503
+    assert response.json()["detail"] == "school_unavailable"
+    assert harness.relay.calls == []
+
+
+@pytest.mark.anyio
+async def test_grades_sync_relay_bounce_gives_family_expired(harness_factory):
+    harness = harness_factory(_bounce)
+    sid = await harness.seed_session(family="stusco")
+
+    response = harness.client.post(GRADES_SYNC_PATH, cookies={"session_id": sid})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "SCO_EXPIRED"
+
+
+@pytest.mark.anyio
+async def test_grades_sync_unrecognized_school_behaviour_gives_503(harness_factory):
+    harness = harness_factory(_unknown)
+    sid = await harness.seed_session(family="stusco")
+
+    response = harness.client.post(GRADES_SYNC_PATH, cookies={"session_id": sid})
+    assert response.status_code == 503
+    assert response.json()["detail"] == "school_unavailable"
+
+
+@pytest.mark.anyio
+async def test_grades_sync_on_the_live_shell_caches_a_zero_rows_snapshot(harness_factory):
+    # Given the school landing on the REAL zero-rows rpt shell (115-1 account)
+    harness = harness_factory(_history_shell)
+    sid = await harness.seed_session(family="stusco")
+
+    # When the student syncs grades
+    response = harness.client.post(GRADES_SYNC_PATH, cookies={"session_id": sid})
+
+    # Then the honest empty result caches session-scoped at 7d TTL
+    assert response.status_code == 200
+    body = response.json()
+    assert body["synced_at"]
+    assert body["items"] == []
+    assert body["added"] == [] and body["removed"] == [] and body["unchanged"] == []
+    assert harness.redis.remaining_ttl(f"grades:{sid}") == 7 * 24 * 3600
+
+    # And GET serves the snapshot without another school call
+    got = harness.client.get(GRADES_PATH, cookies={"session_id": sid})
+    assert got.status_code == 200
+    assert got.json()["synced_at"] == body["synced_at"]
+    assert got.json()["items"] == []
+    assert len(harness.relay.calls) == 1
+
+
+@pytest.mark.anyio
+async def test_grades_sync_row_identity_diff_across_syncs(harness_factory):
+    harness = harness_factory(_rpt_with_rows)
+    sid = await harness.seed_session(family="stusco")
+
+    first = harness.client.post(GRADES_SYNC_PATH, cookies={"session_id": sid})
+    assert first.status_code == 200
+    assert len(first.json()["added"]) == 3  # header row + 2 data rows, verbatim
+    assert first.json()["removed"] == [] and first.json()["unchanged"] == []
+    assert first.json()["items"][1] == ["M5001", "高等演算法", "3", "95"]
+
+    second = harness.client.post(GRADES_SYNC_PATH, cookies={"session_id": sid})
+    assert second.status_code == 200
+    assert second.json()["added"] == [] and second.json()["removed"] == []
+    assert len(second.json()["unchanged"]) == 3
+    assert len(harness.relay.calls) == 2

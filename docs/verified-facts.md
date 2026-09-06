@@ -499,3 +499,18 @@ diff mode or a longer peak interval plus a meta announcement.
 - **sco grades subsystem (舊生成績查詢)**: CONFIRMED - landing https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101 + 2 frame(s); authed-shape=True; fixture stuenroll_grades_live_1151.html
 - **enrollcert (在學證明) relay outcome**: CONFIRMED - landing https://regweb.nsysu.edu.tw/webreg/print/enrollcert.asp; HTTP 200; content-type application/pdf; charset=utf-8; fixture stuenroll_enrollcert_live_1151 (pdf)
 - **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)
+
+### capture run 2026-09-06 16:22 (Asia/Taipei) - window stu_enroll M0
+
+- **stu_enroll login form shape**: CONFIRMED - action='stu_enroll_loginchk.asp'; fields ['ID', 'IDtmp', 'ValidCode', 'b1', 'passwd', 'passwdtmp']; missing none; fixture stuenroll_login_live_1151.html
+- **stu_enroll captcha ddddocr solve shape**: UNVERIFIED - 5/8 solves returned exactly 4 digits; fixture stuenroll_validcode_live_1151.bmp
+- **sco login form shape**: CONFIRMED - fields ['ACTION', 'B1', 'INTYPE', 'PASSWD', 'SID', 'ValidCode']; missing none; fixture stuenroll_sco_login_live_1151.html
+- **stu_enroll same-password login acceptance**: CONFIRMED - loginchk accepted the course-selection password; wire evidence + cookie names in qa/stuenroll-m0-probe.log
+- **stu_enroll login handoff chain to the real student system**: CONFIRMED - 2 auto-submit hop(s) followed; final landing https://regweb.nsysu.edu.tw/webreg/wregmain3.asp?act=11; each handoff page echoes the password in plaintext (masked in fixtures)
+- **stu_enroll tier-2 page captures (grades/payment/cert)**: CONFIRMED - captured: [('grades', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=76&item_no=401'), ('payment', 'https://regweb.nsysu.edu.tw/webreg/WRegMain3.asp?act=71&out=https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp')]
+- **verify subsystem (資料確認 / 在學證明 entry)**: CONFIRMED - verify landing captured; no cert link on it this round
+- **tfstu subsystem (繳費狀態)**: CONFIRMED - landing https://tfstu.nsysu.edu.tw/tfstu/tfstudata.asp?act=11; authed-shape=True; fixture stuenroll_payment_live_1151.html
+- **sco grades subsystem (舊生成績查詢)**: CONFIRMED - landing https://selcrs.nsysu.edu.tw/scoreqry/sco_query.asp?action=101 + 2 frame(s); authed-shape=True; fixture stuenroll_grades_live_1151.html
+- **sco history grades table (action=811&KIND=3)**: CONFIRMED (page shape; ZERO data rows for this account) - 337B rpt shell (title 國立中山大學 成績查詢 + sco_qry_rpt.css, empty `<center>`); matches the M0 default frame's empty-shell architecture (sco_query.css vs sco_qry_rpt.css), and the 115-1 first-semester account has no completed-semester grades, so 歷年 legitimately renders no rows; row-extraction for the parser ships with the first with-rows capture (not before - no fixture, no parser); fixture stuenroll_grades_history_live_1151.html
+- **enrollcert (在學證明) relay outcome**: UNVERIFIED - skipped by operator this round
+- **stu_enroll session TTL bound**: UNVERIFIED - t+0 landing authed-shape=True; longer bounds not probed by design (M0 scope)

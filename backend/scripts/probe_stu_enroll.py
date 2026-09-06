@@ -926,13 +926,21 @@ async def _async_main(args: argparse.Namespace) -> int:
                             "stuenroll_grades_history_live_1151", history_resp.content
                         )
                         history_html = decode_body(history_resp.content)
+                        # An EMPTY rpt shell is CONFIRMED too: the 115-1
+                        # first-semester account legitimately renders zero
+                        # rows; the shell is still the page's own shape
+                        # (title 成績查詢 + sco_qry_rpt.css), drift it is not.
+                        shell_ok = (
+                            "成績查詢" in history_html and "sco_qry_rpt.css" in history_html
+                        )
                         results.append(
                             ProbeResult(
                                 "sco history grades table (action=811&KIND=3)",
                                 "CONFIRMED"
-                                if "歷年" in history_html or "學期" in history_html
+                                if shell_ok or "歷年" in history_html or "學期" in history_html
                                 else "UNVERIFIED",
                                 f"{len(history_resp.content)}B; "
+                                f"rpt-shell={shell_ok} (empty shell = zero rows this account); "
                                 "fixture stuenroll_grades_history_live_1151.html",
                             )
                         )

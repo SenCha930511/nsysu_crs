@@ -16,19 +16,16 @@ def _load(name: str) -> str:
 
 
 def test_confirmed_wrong_code_answer_classifies_captcha_fail() -> None:
-    # Both attempt fixtures hold the 129B wrong-code answer (the 751B handoff
-    # from an early probe run was overwritten; relay handoffs live in hop*.html)
+    html = _load("stuenroll_loginresp_attempt2_live_1151.html")
+    assert is_captcha_fail(html) is True
+    assert classify_login_response(html) is LoginVerdict.CAPTCHA_FAIL
+
+
+def test_handoff_pages_classify_as_handoff() -> None:
+    # attempt1 = the loginchk SUCCESS relay (347B Studpassform->wregloginchk);
+    # hop1 = the sco post-login relay; hop2 = the wregloginchk->2 relay
     for name in (
         "stuenroll_loginresp_attempt1_live_1151.html",
-        "stuenroll_loginresp_attempt2_live_1151.html",
-    ):
-        html = _load(name)
-        assert is_captcha_fail(html) is True
-        assert classify_login_response(html) is LoginVerdict.CAPTCHA_FAIL
-
-
-def test_relay_handoff_pages_classify_as_handoff() -> None:
-    for name in (
         "stuenroll_hop1_live_1151.html",
         "stuenroll_hop2_live_1151.html",
     ):

@@ -19,6 +19,7 @@ FORM_CONTENT_TYPE: Final = "application/x-www-form-urlencoded"
 FORM_TEXT_ENCODING: Final = "big5"
 STU_ENROLL_LOGIN_URL: Final = f"{SELCRS_BASE_URL}/stu_enroll/"
 SCO_LOGIN_URL: Final = f"{SELCRS_BASE_URL}/scoreqry/"
+SCO_HISTORY_URL: Final = f"{SCO_LOGIN_URL}sco_query.asp?action=811&KIND=3"
 REGWEB_BASE_URL: Final = "https://regweb.nsysu.edu.tw/webreg"
 TFSTU_RELAY_URL: Final = (
     f"{REGWEB_BASE_URL}/WRegMain3.asp?act=71&out="

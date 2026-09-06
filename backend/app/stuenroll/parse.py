@@ -162,7 +162,7 @@ def parse_regweb_checklist(html: str) -> RegwebChecklist:
         period = cells[1].get_text(" ", strip=True)
         status_text = ""
         for cell in cells[2:]:
-            text = cell.get_text(" ", strip=True).replace(" ", " ")
+            text = cell.get_text(" ", strip=True).replace(" ", " ")
             if "完成" in text or "未完成" in text:
                 status_text = text.split("(")[0].strip()
                 break
@@ -174,3 +174,35 @@ def parse_regweb_checklist(html: str) -> RegwebChecklist:
     return RegwebChecklist(
         items=tuple(items), enrollcert_present=_ENROLLCERT_MARK in html
     )
+
+
+@dataclass(frozen=True, slots=True)
+class GradesPage:
+    """sco rpt-page rows as VERBATIM cell-text tuples (no column semantics are
+    assumed yet: with-rows fixtures ship in a later capture round, then this
+    parser grows field extraction). Empty for a legitimate zero-rows account -
+    the 115-1 shell (title 成績查詢 + sco_qry_rpt.css, empty <center>) is a
+    page shape, not drift.
+    """
+
+    rows: tuple[tuple[str, ...], ...]
+
+
+_GRADES_SHELL_TITLE_MARK: Final = "成績查詢"
+_GRADES_SHELL_CSS_MARK: Final = "sco_qry_rpt.css"
+
+
+def parse_grades_history(html: str) -> GradesPage:
+    """Parse sco_query.asp?action=811&KIND=3: shell markers gate recognition,
+    any present table's rows come out verbatim (header row included, if any)."""
+    soup = BeautifulSoup(html, "html.parser")
+    title = soup.title.get_text() if soup.title is not None else ""
+    if _GRADES_SHELL_TITLE_MARK not in title or _GRADES_SHELL_CSS_MARK not in html:
+        raise SelcrsUnavailable("sco history page lost its rpt-shell markers")
+    rows: list[tuple[str, ...]] = []
+    for table in soup.find_all("table"):
+        for row in table.find_all("tr"):
+            cells = [td.get_text(" ", strip=True) for td in row.find_all(["td", "th"])]
+            if cells:
+                rows.append(tuple(cells))
+    return GradesPage(rows=tuple(rows))
