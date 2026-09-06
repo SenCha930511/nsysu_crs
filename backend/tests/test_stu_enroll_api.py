@@ -20,7 +20,13 @@ from app.auth.sessions import create_site_session, store_regweb, store_stusco
 from app.config import Settings
 from app.main import create_app
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
+from app.stuenroll.endpoints import (
+    CHECKLIST_RELAY_URL,
+    RECEIPT_RELAY_PREFIX,
+    TFSTU_RELAY_URL,
+)
 from app.stuenroll.handoff import ChainResult
+from app.stuenroll.parse import PaymentPage
 from tests.fake_redis import FakeRedis
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -28,6 +34,9 @@ PAYMENT_PAGE = (FIXTURES / "stuenroll_payment_live_1151.html").read_bytes()
 PDF_BYTES = b"%PDF-1.4 synthetic-cert-bytes-m2"
 PAYMENT_PATH = "/api/me/payment-status"
 CERT_PATH = "/api/me/enrollment-cert"
+CHECKLIST_PATH = "/api/me/registration-checklist"
+RECEIPT_PATH = "/api/me/payment-receipt"
+CHECKLIST_PAGE = (FIXTURES / "stuenroll_regweb_main_live_1151.html").read_bytes()
 
 RelayScript = Callable[[str], ChainResult]
 
@@ -54,6 +63,18 @@ def _pdf(_url: str) -> ChainResult:
 
 def _html_not_pdf(_url: str) -> ChainResult:
     return _landing(b"<html>not a pdf</html>", "text/html; charset=utf-8")
+
+
+def _checklist_page(_url: str) -> ChainResult:
+    return _landing(CHECKLIST_PAGE, "text/html; charset=utf-8")
+
+
+def _payment_then_receipt_pdf(url: str) -> ChainResult:
+    # Two-hop dispatch: bills page on the receipt-envelope hop, PDF on the
+    # receipt href (contains 'tfstudata.asp').
+    if "tfstudata.asp" in url:
+        return _landing(PDF_BYTES, "application/pdf")
+    return _landing(PAYMENT_PAGE, "text/html; charset=utf-8")
 
 
 def _bounce(_url: str) -> ChainResult:
@@ -131,7 +152,7 @@ def harness_factory(monkeypatch):
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH])
+@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH, CHECKLIST_PATH, RECEIPT_PATH])
 async def test_flag_off_gives_404_and_never_touches_the_school(harness_factory, path):
     # Given the feature flag OFF and an otherwise-valid session + jar
     harness = harness_factory(_payment_page, flag=False)
@@ -147,7 +168,7 @@ async def test_flag_off_gives_404_and_never_touches_the_school(harness_factory, 
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH])
+@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH, CHECKLIST_PATH, RECEIPT_PATH])
 async def test_anonymous_gets_401(harness_factory, path):
     harness = harness_factory(_payment_page)
     response = harness.client.get(path)
@@ -156,7 +177,7 @@ async def test_anonymous_gets_401(harness_factory, path):
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH])
+@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH, CHECKLIST_PATH, RECEIPT_PATH])
 async def test_missing_regweb_jar_gives_family_expired(harness_factory, path):
     harness = harness_factory(_payment_page)
     sid = await harness.seed_session(with_jar=False)
@@ -168,7 +189,7 @@ async def test_missing_regweb_jar_gives_family_expired(harness_factory, path):
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH])
+@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH, CHECKLIST_PATH, RECEIPT_PATH])
 async def test_open_breaker_answers_503_with_zero_school_contact(harness_factory, path):
     harness = harness_factory(_payment_page)
     sid = await harness.seed_session()
@@ -183,7 +204,7 @@ async def test_open_breaker_answers_503_with_zero_school_contact(harness_factory
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH])
+@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH, CHECKLIST_PATH, RECEIPT_PATH])
 async def test_relay_bounce_gives_family_expired(harness_factory, path):
     harness = harness_factory(_bounce)
     sid = await harness.seed_session()
@@ -195,7 +216,7 @@ async def test_relay_bounce_gives_family_expired(harness_factory, path):
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH])
+@pytest.mark.parametrize("path", [PAYMENT_PATH, CERT_PATH, CHECKLIST_PATH, RECEIPT_PATH])
 async def test_unrecognized_school_behaviour_gives_503(harness_factory, path):
     harness = harness_factory(_unknown)
     sid = await harness.seed_session()
@@ -378,3 +399,54 @@ async def test_grades_sync_row_identity_diff_across_syncs(harness_factory):
     assert second.json()["added"] == [] and second.json()["removed"] == []
     assert len(second.json()["unchanged"]) == 3
     assert len(harness.relay.calls) == 2
+
+
+# ---------- registration checklist + payment receipt ----------
+
+
+@pytest.mark.anyio
+async def test_checklist_happy_path_returns_parsed_rows(harness_factory):
+    # Given the live regweb main page (16 checklist anchors, enrollcert button)
+    harness = harness_factory(_checklist_page)
+    sid = await harness.seed_session()
+    response = harness.client.get(CHECKLIST_PATH, cookies={"session_id": sid})
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["items"]) == 16
+    assert body["enrollcert_present"] is True
+    first = body["items"][0]
+    assert set(first) == {"title", "period", "status_text", "out_url"}
+    assert "確認個人基本資料" in first["title"]
+    assert any("已完成" in item["status_text"] for item in body["items"])
+    assert harness.relay.calls == [CHECKLIST_RELAY_URL]
+
+
+@pytest.mark.anyio
+async def test_receipt_happy_path_two_hops_to_pdf(harness_factory):
+    # Given the live bills page whose newest bill carries an onclick receipt href
+    harness = harness_factory(_payment_then_receipt_pdf)
+    sid = await harness.seed_session()
+    response = harness.client.get(RECEIPT_PATH, cookies={"session_id": sid})
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.headers["cache-control"] == "no-store"
+    assert "payment_receipt.pdf" in response.headers["content-disposition"]
+    assert response.content == PDF_BYTES
+    assert harness.relay.calls == [
+        TFSTU_RELAY_URL,
+        RECEIPT_RELAY_PREFIX + "tfstudata.asp?act=61&mst_sno=IM1151006292",
+    ]
+
+
+@pytest.mark.anyio
+async def test_receipt_without_link_answers_404(harness_factory, monkeypatch):
+    # Given a bills page parse that yields zero receipt hrefs
+    monkeypatch.setattr(
+        "app.api.stu_enroll.parse_payment_bills",
+        lambda _html: PaymentPage(dept="", bills=()),
+    )
+    harness = harness_factory(_payment_page)
+    sid = await harness.seed_session()
+    response = harness.client.get(RECEIPT_PATH, cookies={"session_id": sid})
+    assert response.status_code == 404
+    assert response.json()["detail"] == "receipt_not_available"

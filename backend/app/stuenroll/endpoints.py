@@ -26,6 +26,8 @@ TFSTU_RELAY_URL: Final = (
     "https://tfstu.nsysu.edu.tw/tfstu/tfstu_login_chk.asp"
 )
 ENROLLCERT_RELAY_URL: Final = f"{REGWEB_BASE_URL}/WRegMain3.asp?act=71&out=print/enrollcert.asp"
+CHECKLIST_RELAY_URL: Final = f"{REGWEB_BASE_URL}/WRegMain3.asp?act=71&out=WRegMain3.asp?act=11"
+RECEIPT_RELAY_PREFIX: Final = f"{REGWEB_BASE_URL}/WRegMain3.asp?act=71&out="
 
 
 @dataclass(frozen=True, slots=True)

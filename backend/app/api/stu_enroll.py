@@ -28,11 +28,17 @@ from app.selcrs.decode import decode_body
 from app.selcrs.errors import SelcrsSessionExpired, SelcrsUnavailable
 from app.selcrs.jar import deserialize_cookies
 from app.stuenroll.endpoints import (
+    CHECKLIST_RELAY_URL,
     ENROLLCERT_RELAY_URL,
+    RECEIPT_RELAY_PREFIX,
     SCO_HISTORY_URL,
     TFSTU_RELAY_URL,
 )
-from app.stuenroll.parse import parse_grades_history, parse_payment_bills
+from app.stuenroll.parse import (
+    parse_grades_history,
+    parse_payment_bills,
+    parse_regweb_checklist,
+)
 from app.stuenroll.relay import open_relay
 from app.stuenroll.store import (
     GradesSnapshot,
@@ -263,4 +269,118 @@ async def post_grades_sync(
     )
     return GradesSyncResponse(
         synced_at=synced_at, added=added, removed=removed, unchanged=unchanged, items=rows
+    )
+
+
+class ChecklistItemOut(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    title: str
+    period: str
+    status_text: str
+    out_url: str | None = None
+
+
+class ChecklistResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    items: list[ChecklistItemOut]
+    enrollcert_present: bool
+
+
+@router.get("/api/me/registration-checklist", response_model=ChecklistResponse)
+async def get_registration_checklist(
+    request: Request,
+    _student: Annotated[str, Depends(get_current_student)],
+    redis: Annotated[AuthRedis, Depends(get_redis)],
+) -> ChecklistResponse:
+    """WRegMain3 act=11 registration checklist rows, live per request (same
+    freshness rationale as the payment bills)."""
+    settings: Settings = request.app.state.settings
+    _require_feature(settings)
+    payload = await _load_regweb_payload(request, redis)
+    breaker = build_breaker(redis, settings)
+    if not await breaker.admit():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        )
+    try:
+        landing = await open_relay(CHECKLIST_RELAY_URL, deserialize_cookies(payload))
+        page = parse_regweb_checklist(decode_body(landing.content, landing.content_type))
+    except SelcrsSessionExpired:
+        await breaker.record_classified()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_REGWEB_EXPIRED
+        ) from None
+    except SelcrsUnavailable as exc:
+        await breaker.record_unknown()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        ) from exc
+    await breaker.record_classified()
+    return ChecklistResponse(
+        items=[
+            ChecklistItemOut(
+                title=item.title,
+                period=item.period,
+                status_text=item.status_text,
+                out_url=item.out_url,
+            )
+            for item in page.items
+        ],
+        enrollcert_present=page.enrollcert_present,
+    )
+
+
+@router.get("/api/me/payment-receipt")
+async def get_payment_receipt(
+    request: Request,
+    _student: Annotated[str, Depends(get_current_student)],
+    redis: Annotated[AuthRedis, Depends(get_redis)],
+) -> Response:
+    """Newest tfstudata bill that carries a receipt link, streamed back as PDF
+    with no-store (mirrors the enrollment-cert passthrough)."""
+    settings: Settings = request.app.state.settings
+    _require_feature(settings)
+    payload = await _load_regweb_payload(request, redis)
+    breaker = build_breaker(redis, settings)
+    if not await breaker.admit():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        )
+    try:
+        landing = await open_relay(TFSTU_RELAY_URL, deserialize_cookies(payload))
+        page = parse_payment_bills(decode_body(landing.content, landing.content_type))
+        receipt_href = next(
+            (bill.receipt_href for bill in page.bills if bill.receipt_href is not None),
+            None,
+        )
+        if receipt_href is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="receipt_not_available"
+            )
+        receipt_landing = await open_relay(
+            f"{RECEIPT_RELAY_PREFIX}{receipt_href.lstrip('/')}", deserialize_cookies(payload)
+        )
+        content_type = (receipt_landing.content_type or "").lower()
+        if "pdf" not in content_type and not receipt_landing.content.startswith(b"%PDF"):
+            raise SelcrsUnavailable("receipt relay did not land on a PDF")
+    except SelcrsSessionExpired:
+        await breaker.record_classified()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERR_REGWEB_EXPIRED
+        ) from None
+    except SelcrsUnavailable as exc:
+        await breaker.record_unknown()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=ERR_SCHOOL
+        ) from exc
+    await breaker.record_classified()
+    return Response(
+        content=receipt_landing.content,
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": 'attachment; filename="payment_receipt.pdf"',
+        },
     )
