@@ -27,13 +27,21 @@ async def attach_course_matches(
         if (item.course_no or item.code) is not None
     }
     matched: dict[str, str] = {}
+    matched_url: dict[str, str | None] = {}
     if wanted:
-        rows = await db.execute(
-            select(Course.id, Course.code).where(
-                Course.year_sem == year_sem, Course.code.in_(sorted(wanted))
-            )
+        # One pass only: sqlalchemy Result is single-consumption under 2.x, so
+        # materialize before building both maps.
+        rows = list(
+            (
+                await db.execute(
+                    select(Course.id, Course.code, Course.url).where(
+                        Course.year_sem == year_sem, Course.code.in_(sorted(wanted))
+                    )
+                )
+            ).all()
         )
-        matched = {code: str(course_id) for course_id, code in rows if code is not None}
+        matched = {code: str(course_id) for course_id, code, _url in rows if code is not None}
+        matched_url = {code: url for _id, code, url in rows if code is not None}
     return [
         item.model_copy(
             update={
@@ -43,6 +51,7 @@ async def attach_course_matches(
                     else None
                 ),
                 "unknown": (item.course_no or item.code) not in matched,
+                "url": matched_url.get(item.course_no or item.code or ""),
             }
         )
         for item in items

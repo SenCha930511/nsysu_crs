@@ -122,6 +122,7 @@ export interface SelectionItem {
   room: string | null;
   unknown: boolean;
   course_id: string | null;
+  url: string | null;
 }
 
 export interface SelectionsResponse {

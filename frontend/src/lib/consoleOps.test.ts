@@ -57,6 +57,7 @@ function sel(overrides: Partial<SelectionItem>): SelectionItem {
     room: "工EC 5012",
     unknown: false,
     course_id: null,
+    url: null,
     ...overrides,
   };
 }

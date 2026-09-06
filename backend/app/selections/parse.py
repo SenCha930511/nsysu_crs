@@ -96,6 +96,9 @@ class SelectionItem(BaseModel):
     # Catalog join results (unknown=True when the code is absent/unmatched).
     unknown: bool
     course_id: str | None
+    # Catalog join result: the school's outline URL for the matched course
+    # (None when unmatched or the catalog row has no url).
+    url: str | None = None
 
 
 def _clean(cell: Tag) -> str:

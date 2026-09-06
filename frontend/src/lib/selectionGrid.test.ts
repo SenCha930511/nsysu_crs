@@ -44,6 +44,7 @@ function sel(overrides: Partial<SelectionItem>): SelectionItem {
     room: "工EC 5012",
     unknown: false,
     course_id: null,
+    url: null,
     ...overrides,
   };
 }
@@ -79,6 +80,21 @@ describe("buildSelectionGridCourses", () => {
     ]);
     expect(courses).toHaveLength(0);
     expect(unplaced.map((u) => u.course_no)).toEqual(["CSE100", "CSE101"]);
+  });
+
+  it("propagates the school outline url (catalog-enriched) into the grid course", () => {
+    const outline = "https://selcrs.nsysu.edu.tw/menu5/showoutline.asp?CrsDat=X1";
+    const { courses } = buildSelectionGridCourses([
+      sel({ course_no: "CSE515", times: "三2,3,4", url: outline }),
+    ]);
+    expect(courses[0]?.url).toBe(outline);
+  });
+
+  it("leaves url null when the school row had no catalog match", () => {
+    const { courses } = buildSelectionGridCourses([
+      sel({ course_no: "CSE515", times: "三2,3,4", url: null }),
+    ]);
+    expect(courses[0]?.url).toBeNull();
   });
 
   it("prefers course_id, then code, then course_no, then name+teacher as the merge key", () => {

@@ -71,6 +71,7 @@ function selection(partial: Partial<SelectionItem>): SelectionItem {
     room: "工EC 5012",
     unknown: false,
     course_id: "uuid-drop-1",
+    url: null,
     ...partial,
   };
 }

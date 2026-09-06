@@ -71,7 +71,7 @@ function toCourseOut(item: SelectionItem, classTime: string[], id: string): Cour
     english: false,
     change: null,
     change_desc: null,
-    url: null,
+    url: item.url,
     ingested_at: "",
   };
 }
