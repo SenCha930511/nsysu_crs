@@ -113,6 +113,8 @@ export interface CourseBlockProps {
   /** Static preview mode (todo 12 export card): no hover effects, no delete
    * button - the block is a pure visual rendering of the course. */
   readOnly?: boolean;
+  /** Fires when the user wants the course's detail sheet (name click). */
+  onViewCourse?: ((course: CourseOut) => void) | undefined;
   /** Number of periods spanned in this contiguous block */
   spanCount?: number | undefined;
   /** Clock range string (e.g. "09:10-12:00") */
@@ -127,6 +129,7 @@ function CourseBlock({
   readOnly = false,
   spanCount = 1,
   timeRange,
+  onViewCourse,
 }: CourseBlockProps) {
   const { lang, tx } = useI18n();
   const name = course.name_zh ?? course.name_en ?? course.code ?? course.id;
@@ -196,9 +199,23 @@ function CourseBlock({
       </div>
 
       {/* Course Title */}
-      <div className="course-block-title">
-        {name}
-      </div>
+      {onViewCourse !== undefined ? (
+        <button
+          type="button"
+          className="course-block-title course-block-title-btn"
+          title={tx("檢視課程詳細資訊與大綱", "View course details and syllabus")}
+          onClick={(event) => {
+            event.stopPropagation();
+            onViewCourse(course);
+          }}
+        >
+          {name}
+        </button>
+      ) : (
+        <div className="course-block-title">
+          {name}
+        </div>
+      )}
 
       {/* Bottom Meta: Teacher & Classroom */}
       {(teacher !== "" || room !== "") && (

@@ -62,7 +62,7 @@ function AppShell() {
   };
 
   return (
-    <div className="min-vh-100 d-flex flex-column">
+    <div className="min-vh-100 d-flex flex-column w-100 overflow-x-hidden">
       {/* Top App Bar */}
       <div className="studio-header-wrapper">
         <DegradeBanner />
@@ -106,7 +106,7 @@ function AppShell() {
                 href="https://github.com/SenCha930511/nsysu_crs"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="navbar-action-btn navbar-action-btn-github"
+                className="navbar-action-btn navbar-action-btn-github d-none d-sm-inline-flex"
                 title={tx("GitHub 原始碼倉庫", "Source code on GitHub")}
                 aria-label={tx("GitHub 原始碼倉庫", "Source code on GitHub")}
               >

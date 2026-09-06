@@ -15,6 +15,8 @@ export interface ScheduleTableProps {
   readOnly?: boolean;
   /** Optional ghost preview of a hovered course from discovery list */
   previewCourse?: CourseOut | null;
+  /** Fires when the user wants a placed course's detail sheet (block name click). */
+  onViewCourse?: (course: CourseOut) => void;
 }
 
 interface CellItem {
@@ -53,6 +55,7 @@ function ScheduleTable({
   onCourseRemove,
   readOnly = false,
   previewCourse = null,
+  onViewCourse,
 }: ScheduleTableProps) {
   const { lang, tx } = useI18n();
   const [showWeekends, setShowWeekends] = useState(false);
@@ -226,18 +229,21 @@ function ScheduleTable({
         </div>
       </div>
 
-      <div className="table-responsive schedule-table-responsive">
+      <div className={`table-responsive schedule-table-responsive ${showWeekends ? "has-weekends" : "weekdays-only"}`}>
         <table className="studio-schedule-table table text-center align-middle mb-0">
           <colgroup>
-            <col />
+            <col className="timeslot-col" />
             {displayedWeekdays.map((day) => (
-              <col key={day.index} />
+              <col key={day.index} className="weekday-col" />
             ))}
           </colgroup>
           <thead>
             <tr>
               <th scope="col" className="studio-timeslot-header">
-                <div>{tx("時間 / 節次", "Time / Period")}</div>
+                <div className="d-none d-sm-block">{tx("時間 / 節次", "Time / Period")}</div>
+                <div className="d-sm-none" style={{ fontSize: "0.62rem", lineHeight: 1.1 }}>
+                  {tx("節次", "Slot")}
+                </div>
               </th>
               {displayedWeekdays.map((day) => (
                 <th
@@ -287,6 +293,7 @@ function ScheduleTable({
                           onHover={onCourseHover}
                           onRemove={onCourseRemove}
                           readOnly={readOnly}
+                          onViewCourse={onViewCourse}
                           spanCount={plan?.spanCount ?? 1}
                           timeRange={plan?.timeRange}
                         />

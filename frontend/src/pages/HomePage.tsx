@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRepeat,
   BookmarkCheck,
+  BoxArrowUpRight,
   CalendarCheck,
   CheckCircleFill,
   Download,
@@ -21,9 +22,11 @@ import {
   Search,
   Send,
   XCircleFill,
+  XLg,
 } from "react-bootstrap-icons";
 import { Link, useSearchParams } from "react-router-dom";
 
+import { WEEKDAYS, formatTimeTag, parseDayTimeString } from "../config/timeslots";
 import CourseBrowser from "../components/CourseBrowser";
 import ScheduleTable from "../components/ScheduleTable";
 import { ScheduleCard } from "../components/ScheduleCard";
@@ -80,6 +83,112 @@ function formatSyncedTime(isoStr: string | null): string {
   } catch {
     return isoStr;
   }
+}
+
+function CourseDetailOverlay({
+  course,
+  onClose,
+}: {
+  course: CourseOut;
+  onClose: () => void;
+}) {
+  const { lang, tx } = useI18n();
+  const name = course.name_zh ?? course.name_en ?? course.code ?? course.id;
+  const metaParts = [course.dept, course.class_, course.teacher, course.room].filter(
+    (part) => part !== null && part !== "",
+  );
+  const timeTags: string[] = [];
+  let timeInvalid = false;
+  WEEKDAYS.forEach((day) => {
+    const raw = course.class_time?.[day.index] ?? "";
+    if (raw === "") return;
+    try {
+      parseDayTimeString(raw);
+      timeTags.push(formatTimeTag(day.index, raw));
+    } catch {
+      timeInvalid = true;
+    }
+  });
+  const full = course.remaining !== null && course.remaining <= 0;
+
+  return (
+    <>
+      <div className="crs-modal-backdrop" onClick={onClose} />
+      <div className="crs-modal" role="dialog" aria-modal="true" aria-labelledby="course-detail-title">
+        <div className="crs-modal-card card shadow-lg border-0 rounded-4" style={{ maxWidth: "30rem", width: "100%" }}>
+          <div className="card-body p-4">
+            <div className="d-flex align-items-start justify-content-between gap-2 mb-1">
+              <h2 className="h5 fw-bold mb-0 text-dark" id="course-detail-title">{name}</h2>
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-secondary p-1 flex-shrink-0"
+                onClick={onClose}
+                aria-label={tx("關閉", "Close")}
+              >
+                <XLg size={14} />
+              </button>
+            </div>
+            {course.name_en !== null && course.name_en !== course.name_zh && (
+              <p className="text-muted small mb-2">{course.name_en}</p>
+            )}
+            <div className="d-flex align-items-center flex-wrap gap-1.5 mb-2">
+              {course.code !== null && (
+                <span className="badge text-bg-light border font-monospace">{course.code}</span>
+              )}
+              {course.credit !== null && (
+                <span className="badge bg-teal-50 text-teal-800 border border-teal-200">
+                  {lang === "en" ? `${course.credit} cr` : `${course.credit} 學分`}
+                </span>
+              )}
+              <span className={`badge ${course.compulsory ? "badge-compulsory" : "badge-elective"}`}>
+                {course.compulsory ? tx("必修", "Required") : tx("選修", "Elective")}
+              </span>
+              {course.english && <span className="badge badge-emi">EMI</span>}
+              {course.remaining !== null && (
+                <span className={`quota-status-pill ${full ? "quota-status-full" : "quota-status-available"}`}>
+                  {full ? tx("額滿", "Full") : tx(`餘 ${course.remaining}`, `${course.remaining} left`)}
+                </span>
+              )}
+            </div>
+            {metaParts.length > 0 && (
+              <p className="text-muted small mb-2">{metaParts.join(" · ")}</p>
+            )}
+            <div className="d-flex align-items-center flex-wrap gap-1 mb-3">
+              {timeTags.map((tag) => (
+                <span key={tag} className="card-time-tag">{tag}</span>
+              ))}
+              {timeTags.length === 0 && !timeInvalid && (
+                <span className="text-muted small">{tx("無固定時段", "No fixed time")}</span>
+              )}
+              {timeInvalid && (
+                <span className="badge text-bg-danger">{tx("時間異常", "Bad time data")}</span>
+              )}
+            </div>
+            <div className="d-flex justify-content-end gap-2">
+              {course.url !== null && (
+                <a
+                  href={course.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline-brand btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1"
+                >
+                  <BoxArrowUpRight size={12} />
+                  <span>{tx("學校課程大綱", "Syllabus")}</span>
+                </a>
+              )}
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                onClick={onClose}
+              >
+                {tx("關閉", "Close")}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
 
 function HomePage() {
@@ -147,6 +256,9 @@ function HomePage() {
   );
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
   const [previewCourse, setPreviewCourse] = useState<CourseOut | null>(null);
+  // detailCourse = name-click detail sheet; previewCourse stays the hover
+  // ghost - separate so hovering the catalog never pops the modal.
+  const [detailCourse, setDetailCourse] = useState<CourseOut | null>(null);
 
   // ---- png (parity with the previous home) ----
   const gridRef = useRef<HTMLDivElement>(null);
@@ -592,6 +704,7 @@ function HomePage() {
                   onCourseHover={setHoveredCourseId}
                   onCourseRemove={(course) => remove(course.id)}
                   previewCourse={previewCourse}
+                  onViewCourse={setDetailCourse}
                 />
               </div>
             </div>
@@ -644,6 +757,10 @@ function HomePage() {
               <span>{tx("查看課表", "View Table")}</span>
             </button>
           </div>
+        )}
+
+        {detailCourse !== null && (
+          <CourseDetailOverlay course={detailCourse} onClose={() => setDetailCourse(null)} />
         )}
       </div>
     );
@@ -778,6 +895,7 @@ function HomePage() {
                 onCourseRemove={() => undefined}
                 readOnly
                 previewCourse={previewCourse}
+                onViewCourse={setDetailCourse}
               />
             </div>
           </div>
@@ -1164,6 +1282,10 @@ function HomePage() {
             </>
           )}
         </div>
+      )}
+
+      {detailCourse !== null && (
+        <CourseDetailOverlay course={detailCourse} onClose={() => setDetailCourse(null)} />
       )}
 
       {/* confirm modal */}
