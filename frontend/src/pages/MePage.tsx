@@ -442,9 +442,9 @@ function CertCard() {
             <div className="d-flex align-items-center gap-3">
               <div
                 className="p-3 bg-white text-teal-700 rounded-3 border shadow-xs d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                style={{ width: "44px", height: "44px" }}
+                style={{ width: "52px", height: "52px" }}
               >
-                <FileEarmarkPdf size={22} />
+                <FileEarmarkPdf size={28} />
               </div>
               <div>
                 <h3 className="h6 fw-bold mb-1 text-dark">

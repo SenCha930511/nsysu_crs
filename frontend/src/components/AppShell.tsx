@@ -53,7 +53,7 @@ function AppShell() {
   const NAV_LINKS = [
     { to: "/", label: tx("查課・課表", "Courses • Timetable"), icon: CalendarWeek, end: true },
     { to: "/write", label: tx("紀錄", "Records"), icon: Send, end: false },
-    { to: "/me", label: tx("我的", "Me"), icon: PersonCircle, end: false },
+    { to: "/me", label: tx("我的資料", "Profile"), icon: PersonCircle, end: false },
   ];
   const navigate = useNavigate();
 
@@ -153,7 +153,7 @@ function AppShell() {
       <nav className="mobile-bottom-nav d-md-none" aria-label={tx("行動版底部導覽", "Mobile navigation")}>
         <NavLink
           to="/?view=browse"
-          className={`mobile-tab-item ${isBrowseActive ? "active" : ""}`}
+          className={() => `mobile-tab-item ${isBrowseActive ? "active" : ""}`}
           onClick={(e) => {
             if (location.pathname === "/") {
               e.preventDefault();
@@ -169,7 +169,7 @@ function AppShell() {
 
         <NavLink
           to="/?view=schedule"
-          className={`mobile-tab-item ${isScheduleActive ? "active" : ""}`}
+          className={() => `mobile-tab-item ${isScheduleActive ? "active" : ""}`}
           onClick={(e) => {
             if (location.pathname === "/") {
               e.preventDefault();
@@ -201,7 +201,7 @@ function AppShell() {
           <div className="mobile-tab-icon-wrapper">
             <PersonCircle size={18} />
           </div>
-          <span className="mobile-tab-label">{tx("我的", "Me")}</span>
+          <span className="mobile-tab-label">{tx("我的資料", "Profile")}</span>
         </NavLink>
       </nav>
 
