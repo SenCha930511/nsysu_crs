@@ -19,3 +19,30 @@
    headers honored: Cache-Control: no-store ; Content-Disposition: attachment; filename="enrollment_cert.pdf"
 
 Verdict: all four /api/me/* contracts verified end-to-end in production with the reference account.
+
+---
+
+## RWD fix wave 2026-09-06 17:40-18:10 (commit a6e5217, mobile 390px breakage)
+
+Scope: user-reported "手機版排版會跑掉". Audit (headless Chromium CDP, viewport 390x844):
+- / and /login docScrollW 493px (>390): shared header overflow (action button clipped, brand + semester pill wrapped)
+- logged-in /me and /write docScrollW 567px (user chip widens the same header)
+- /me payment table: no min-width inside its card, header cells wrapped one char per line
+- timetable grid: ~54px columns with two-line day headers; login label/hint pairs cramped; /write stats collapse ungracefully
+
+Implementation (delegated visual-engineering, then my own scope pass):
+wrap-based header fallback (auth cluster onto its own row only when it cannot share; nav pills scroll),
+GitHub label icon-only <576, semester pill nowrap, student chip truncate; payment table min-width 33rem + text-nowrap
+inside table-responsive (single-line headers, scroll contained in card); timetable min-column-width with horizontal
+scroll + single-label day headers; hero stats one-per-row; login hints stacked under labels. Delegate's /me tab
+restructure kept (genuinely better on small screens) with its one violation fixed (text-nowrap on tab labels);
+its unrequested copy renames (我的資料) reverted to shipped 我的/我的專區.
+
+Post-fix verification (my own CDP re-audit, all CSS px):
+- / 493 -> 384, /login 493 -> 384, /me 567 -> 384, /write 567 -> 384 (all <= vw+2)
+- /me at 414x896 -> 408 <= 416; visual pass A: header nothing clipped, nav label 我的, day headers single labels,
+  records stats one-per-row; visual pass B (/me): h1 我的專區, pills stacked one-per-line, tab labels single-line
+  with horizontal scroll, payment table headers single-line in card-contained scroll, footer clean.
+- Gates: vitest 128/128, tsc strict + vite build green (re-run after my own edits to the delegate's diff).
+
+Screenshots reviewed live during the pass and deleted after (ephemeral verification artifacts, not committed).
