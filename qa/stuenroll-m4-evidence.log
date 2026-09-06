@@ -1,0 +1,21 @@
+# stu_enroll M4 live e2e evidence (prod, flag ON) — 2026-09-06 17:05 Asia/Taipei
+# account: M153****24 (masked); host: https://nsysucrs.senchaaa.com; server HEAD: fc01e14
+# hygiene: creds used in-memory for the login POST only; no cookie/session value recorded;
+# cert PDF byte count + md5 recorded, file itself deleted immediately after.
+
+1. POST /api/auth/login            -> 200 (3.32s)
+   regweb_available=True | sco_available=True
+   (login fan-out to regweb + sco live confirmed working from the server against the real school, zero login blockage)
+
+2. GET  /api/me/payment-status     -> 200
+   dept: 資訊工程學系碩士班
+   bills: [('1151學雜費', '14,155', '繳費成功', '2026/08/31', True)]
+
+3. POST /api/me/grades/sync        -> 200 ; GET /api/me/grades -> 200
+   snapshot synced_at: 2026-09-06T17:05:45+08:00 | items: 0 rows
+   (zero rows = confirmed legitimate account state for 115-1 first-semester; empty UI state is the primary deliberate one)
+
+4. GET  /api/me/enrollment-cert    -> 200 | application/pdf | 1,865,701 bytes | md5 7028a664b2924ad9861b3a5f3f6d78b9
+   headers honored: Cache-Control: no-store ; Content-Disposition: attachment; filename="enrollment_cert.pdf"
+
+Verdict: all four /api/me/* contracts verified end-to-end in production with the reference account.
