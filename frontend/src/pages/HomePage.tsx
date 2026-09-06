@@ -14,6 +14,7 @@ import {
   BookmarkCheck,
   BoxArrowUpRight,
   CalendarCheck,
+  CalendarPlus,
   CheckCircleFill,
   Download,
   Eraser,
@@ -32,6 +33,8 @@ import ScheduleTable from "../components/ScheduleTable";
 import { ScheduleCard } from "../components/ScheduleCard";
 import {
   ApiError,
+  exportPlanIcs,
+  fetchCourseOutline,
   fetchSelections,
   fetchStage,
   fetchWriteJob,
@@ -40,6 +43,7 @@ import {
   syncSelections,
 } from "../lib/api";
 import type {
+  CourseOutline,
   CourseOut,
   JobView,
   PreviewResponse,
@@ -53,7 +57,7 @@ import {
   toWriteOps,
 } from "../lib/consoleOps";
 import type { StagedAdd } from "../lib/consoleOps";
-import { downloadGridPng } from "../lib/export";
+import { downloadBlob, downloadGridPng } from "../lib/export";
 import { useI18n } from "../lib/i18n";
 import { buildSelectionGridCourses } from "../lib/selectionGrid";
 import { totalCreditsAndHours } from "../lib/totals";
@@ -85,6 +89,15 @@ function formatSyncedTime(isoStr: string | null): string {
   }
 }
 
+function OutlineSection({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="mb-2">
+      <h3 className="small fw-bold text-dark mb-1">{title}</h3>
+      <p className="small text-muted mb-0" style={{ whiteSpace: "pre-wrap" }}>{body}</p>
+    </div>
+  );
+}
+
 function CourseDetailOverlay({
   course,
   onClose,
@@ -110,6 +123,26 @@ function CourseDetailOverlay({
     }
   });
   const full = course.remaining !== null && course.remaining <= 0;
+
+  // The sheet only mounts on a non-null detailCourse, so this runs once per
+  // open; closing unmounts and the abort keeps late responses away.
+  const [outline, setOutline] = useState<CourseOutline | null>(null);
+  const [outlineState, setOutlineState] = useState<"loading" | "done" | "error">("loading");
+  useEffect(() => {
+    const controller = new AbortController();
+    setOutline(null);
+    setOutlineState("loading");
+    fetchCourseOutline(course.id, controller.signal)
+      .then((body) => {
+        setOutline(body);
+        setOutlineState("done");
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setOutlineState("error");
+      });
+    return () => controller.abort();
+  }, [course.id]);
 
   return (
     <>
@@ -162,6 +195,53 @@ function CourseDetailOverlay({
               )}
               {timeInvalid && (
                 <span className="badge text-bg-danger">{tx("時間異常", "Bad time data")}</span>
+              )}
+            </div>
+            <div className="border-top pt-3 mb-3">
+              {outlineState === "loading" && (
+                <p className="text-muted small mb-0">{tx("載入大綱中…", "Loading syllabus…")}</p>
+              )}
+              {outlineState === "error" && (
+                <p className="text-muted small mb-0">
+                  {tx("大綱暫時無法載入，可在學校原始頁檢視", "The syllabus couldn't be loaded right now — view it on the school's page instead")}
+                </p>
+              )}
+              {outlineState === "done" && outline !== null && (
+                <>
+                  {outline.evaluation !== null && (
+                    <OutlineSection title={tx("評量方式", "Evaluation")} body={outline.evaluation} />
+                  )}
+                  {outline.objectives !== null && (
+                    <OutlineSection title={tx("課程目標", "Objectives")} body={outline.objectives} />
+                  )}
+                  {outline.teaching_methods !== null && (
+                    <OutlineSection title={tx("教學方式", "Teaching methods")} body={outline.teaching_methods} />
+                  )}
+                  {outline.references !== null && (
+                    <OutlineSection title={tx("使用教材/教科書", "Textbooks & materials")} body={outline.references} />
+                  )}
+                  {outline.syllabus !== null && (
+                    <details className="mb-2">
+                      <summary className="small fw-semibold text-dark" style={{ cursor: "pointer" }}>
+                        {tx("課程大綱全文", "Full syllabus")}
+                      </summary>
+                      <p className="small text-muted mt-1 mb-0" style={{ whiteSpace: "pre-wrap" }}>
+                        {outline.syllabus}
+                      </p>
+                    </details>
+                  )}
+                  <p className="text-muted mb-0" style={{ fontSize: "0.74rem" }}>
+                    {tx("資料來源：", "Source: ")}
+                    <a
+                      href={outline.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted text-decoration-underline"
+                    >
+                      {tx("學校課程大綱", "school syllabus page")}
+                    </a>
+                  </p>
+                </>
               )}
             </div>
             <div className="d-flex justify-content-end gap-2">
@@ -265,6 +345,10 @@ function HomePage() {
   const [pngState, setPngState] = useState<"idle" | "busy">("idle");
   const [pngError, setPngError] = useState<string | null>(null);
 
+  // ---- ics export ----
+  const [icsBusy, setIcsBusy] = useState(false);
+  const [icsError, setIcsError] = useState<string | null>(null);
+
   // ---- stage + send flow ----
   const [stage, setStage] = useState<StageInfo | null>(null);
   const [phase, setPhase] = useState<SendPhase>("idle");
@@ -345,6 +429,13 @@ function HomePage() {
   const heldItems = useMemo(
     () => items.filter((item) => item.state === "選上"),
     [items],
+  );
+  const heldCourseIds = useMemo(
+    () =>
+      heldItems
+        .map((item) => item.course_id)
+        .filter((v): v is string => v !== null),
+    [heldItems],
   );
   const { courses: selectedCourses, unplaced } = useMemo(
     () => buildSelectionGridCourses(items),
@@ -487,6 +578,29 @@ function HomePage() {
       )
       .finally(() => setPngState("idle"));
   };
+
+  // ---- ics ----
+  const onIcs = () => {
+    if (icsBusy) return;
+    const ids = authed ? heldCourseIds : selected.map((c) => c.id);
+    if (ids.length === 0) return;
+    setIcsError(null);
+    setIcsBusy(true);
+    exportPlanIcs(tx("我的課表", "My Timetable"), ids)
+      .then((blob) => downloadBlob(blob, "timetable.ics"))
+      .catch((err: unknown) =>
+        setIcsError(
+          err instanceof ApiError
+            ? err.detail
+            : tx("匯出失敗，請稍後再試", "Export failed. Please try again shortly"),
+        ),
+      )
+      .finally(() => setIcsBusy(false));
+  };
+  const icsEmptyTooltip = tx(
+    "課表是空的——先加入課程再下載行事曆",
+    "Your timetable is empty — add courses first to download the calendar",
+  );
 
   // ---- send flow ----
   const stagedCount = stagedAdds.length + stagedDrops.length;
@@ -696,6 +810,9 @@ function HomePage() {
             {pngError !== null && (
               <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{pngError}</div>
             )}
+            {icsError !== null && (
+              <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{icsError}</div>
+            )}
             <div className="schedule-grid-scroll-container">
               <div ref={gridRef} className="w-100">
                 <ScheduleTable
@@ -721,16 +838,29 @@ function HomePage() {
                   "This sketch stays in this browser only.",
                 )}
               </span>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
-                style={{ fontSize: "0.84rem", gap: "0.55rem" }}
-                onClick={onPng}
-                disabled={pngState === "busy" || guestVisualCount === 0}
-              >
-                <Download size={14} />
-                <span>{pngState === "busy" ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}</span>
-              </button>
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
+                  style={{ fontSize: "0.84rem", gap: "0.55rem" }}
+                  onClick={onPng}
+                  disabled={pngState === "busy" || guestVisualCount === 0}
+                >
+                  <Download size={14} />
+                  <span>{pngState === "busy" ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
+                  style={{ fontSize: "0.84rem", gap: "0.55rem" }}
+                  onClick={onIcs}
+                  disabled={icsBusy || selected.length === 0}
+                  title={selected.length === 0 ? icsEmptyTooltip : undefined}
+                >
+                  <CalendarPlus size={14} />
+                  <span>{icsBusy ? tx("匯出中…", "Exporting…") : tx("下載 .ics（行事曆）", "Download .ics (Calendar)")}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -831,6 +961,17 @@ function HomePage() {
                 <Download size={14} />
                 <span>{pngState === "busy" ? tx("匯出中…", "Exporting…") : tx("下載課表圖", "Download PNG")}</span>
               </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 d-inline-flex align-items-center fw-semibold shadow-xs"
+                style={{ fontSize: "0.84rem", gap: "0.55rem" }}
+                onClick={onIcs}
+                disabled={icsBusy || heldCourseIds.length === 0}
+                title={heldCourseIds.length === 0 ? icsEmptyTooltip : undefined}
+              >
+                <CalendarPlus size={14} />
+                <span>{icsBusy ? tx("匯出中…", "Exporting…") : tx("下載 .ics（行事曆）", "Download .ics (Calendar)")}</span>
+              </button>
 
               <div className="d-flex align-items-center" style={{ gap: "0.75rem" }}>
                 <span className="text-muted d-none d-sm-inline" style={{ fontSize: "0.78rem" }} role="status">
@@ -856,6 +997,9 @@ function HomePage() {
           )}
           {pngError !== null && (
             <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{pngError}</div>
+          )}
+          {icsError !== null && (
+            <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{icsError}</div>
           )}
 
           {/* Mobile phone switcher between Timetable & Selections */}

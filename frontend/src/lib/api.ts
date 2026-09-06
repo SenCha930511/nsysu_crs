@@ -282,6 +282,51 @@ export function fetchCourseOutline(
   );
 }
 
+// ---------- timetable .ics export (anonymous; raw bytes, not JSON) ----------
+
+/**
+ * POST /api/plans/export.ics answers text/calendar, so it cannot ride
+ * request<T> (which always parses JSON). The error path mirrors request()
+ * exactly - same detail/extras extraction, same 401 seam - so callers face
+ * the identical ApiError surface.
+ */
+export async function exportPlanIcs(
+  planName: string | null,
+  courseIds: string[],
+): Promise<Blob> {
+  const response = await fetch("/api/plans/export.ics", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      Accept: "text/calendar",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ plan_name: planName, course_ids: courseIds }),
+  });
+  if (!response.ok) {
+    let detail = response.statusText;
+    let extras: Record<string, unknown> = {};
+    try {
+      const body: unknown = await response.json();
+      if (typeof body === "object" && body !== null) {
+        const record = body as Record<string, unknown>;
+        if (typeof record.detail === "string") {
+          detail = record.detail;
+          const { detail: _dropped, ...rest } = record;
+          extras = rest;
+        }
+      }
+    } catch {
+      // keep statusText
+    }
+    if (response.status === 401) {
+      unauthorizedHandler?.(detail, "/api/plans/export.ics");
+    }
+    throw new ApiError(response.status, detail, extras);
+  }
+  return response.blob();
+}
+
 // ---------- ops posture (anonymous; todo 17 breaker banner seam) ----------
 
 /** Public shape of GET /api/ops/state (gated admin fields are absent here). */
@@ -400,8 +445,33 @@ export function fetchPaymentStatus(): Promise<PaymentStatusResponse> {
   return request("/api/me/payment-status");
 }
 
+export interface ChecklistItem {
+  title: string;
+  period: string;
+  status_text: string;
+  /** School-relay URL that resolves only inside the server-side session —
+   * reference text for the user, never a navigation target. */
+  out_url: string | null;
+}
+
+export interface RegistrationChecklist {
+  items: ChecklistItem[];
+  /** False while the school has not opened this term's enrollment cert. */
+  enrollcert_present: boolean;
+}
+
+export function fetchRegistrationChecklist(
+  signal?: AbortSignal,
+): Promise<RegistrationChecklist> {
+  return request<RegistrationChecklist>(
+    "/api/me/registration-checklist",
+    signal !== undefined ? { signal } : {},
+  );
+}
+
 // 在學證明 has no JSON client fn: GET /api/me/enrollment-cert is a raw PDF
 // download that the page opens in a new tab via window.open.
+// GET /api/me/payment-receipt rides the exact same new-tab pattern.
 
 // ---------- stage probe (session-gated; no CSRF - read-only) ----------
 

@@ -13,6 +13,7 @@ import {
   ArrowRepeat,
   Award,
   Building,
+  CardChecklist,
   CashStack,
   CheckCircleFill,
   Clock,
@@ -27,10 +28,20 @@ import {
   Receipt,
 } from "react-bootstrap-icons";
 
-import { fetchGrades, fetchPaymentStatus, syncGrades } from "../lib/api";
-import type { GradesResponse, PaymentStatusResponse } from "../lib/api";
+import {
+  fetchGrades,
+  fetchPaymentStatus,
+  fetchRegistrationChecklist,
+  syncGrades,
+} from "../lib/api";
+import type {
+  GradesResponse,
+  PaymentStatusResponse,
+  RegistrationChecklist,
+} from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { meFeatureErrorKind } from "../lib/meErrors";
+import { checklistStatusTone, gradesDiffText } from "../lib/meExtras";
 import { useAuth } from "../state/auth";
 
 /** RecordsPage-style local timestamp (YYYY/MM/DD HH:mm:ss); "—" fallback. */
@@ -95,6 +106,35 @@ function CardErrorLine({ text }: { text: string }) {
   );
 }
 
+/** New-tab PDF open plus the popup-blocker hint (cert and receipt share it). */
+function usePdfOpenNote(): { openNote: string | null; openPdf: (path: string) => void } {
+  const { tx } = useI18n();
+  const [openNote, setOpenNote] = useState<string | null>(null);
+  const openPdf = useCallback(
+    (path: string) => {
+      window.open(path, "_blank");
+      setOpenNote(
+        tx(
+          "檔案已在新分頁開啟下載；若沒有反應，請確認已允許瀏覽器的彈出式視窗。",
+          "The file is opening in a new tab. If nothing appears, please check your browser's pop-up blocker.",
+        ),
+      );
+    },
+    [tx],
+  );
+  return { openNote, openPdf };
+}
+
+function OpenNoteAlert({ note }: { note: string | null }) {
+  if (note === null) return null;
+  return (
+    <div className="alert alert-info py-2 px-3 small rounded-3 mt-3 mb-0 d-flex align-items-center gap-2" role="status">
+      <InfoCircleFill size={14} className="flex-shrink-0 text-cyan-600" />
+      <span>{note}</span>
+    </div>
+  );
+}
+
 function CardIcon({ children }: { children: ReactNode }) {
   return (
     <div
@@ -107,12 +147,14 @@ function CardIcon({ children }: { children: ReactNode }) {
 }
 
 function GradesCard() {
-  const { tx } = useI18n();
+  const { tx, lang } = useI18n();
   const { scoAvailable } = useAuth();
   const [data, setData] = useState<GradesResponse | null>(null);
   const [loading, setLoading] = useState(scoAvailable);
   const [syncing, setSyncing] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
+  // Session-only diff note from the latest sync; remount clears it.
+  const [diffNote, setDiffNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!scoAvailable) {
@@ -147,9 +189,16 @@ function GradesCard() {
     if (syncing || !scoAvailable) return;
     setSyncing(true);
     setErrorText(null);
+    setDiffNote(null);
     syncGrades()
       .then((body) => {
         setData({ synced_at: body.synced_at, items: body.items });
+        const diff = gradesDiffText(
+          body.added.length,
+          body.removed.length,
+          body.unchanged.length,
+        );
+        setDiffNote(lang === "zh" ? diff.zh : diff.en);
       })
       .catch((err: unknown) => {
         setErrorText(
@@ -157,7 +206,7 @@ function GradesCard() {
         );
       })
       .finally(() => setSyncing(false));
-  }, [syncing, scoAvailable, tx]);
+  }, [syncing, scoAvailable, lang, tx]);
 
   return (
     <section className="profile-card" aria-label={tx("歷年成績", "Academic Transcript")}>
@@ -176,6 +225,15 @@ function GradesCard() {
 
         {scoAvailable && (
           <div className="d-flex align-items-center gap-2 card-header-actions">
+            {diffNote !== null && (
+              <span
+                className="studio-badge studio-badge-secondary text-truncate"
+                style={{ maxWidth: "260px" }}
+                role="status"
+              >
+                {diffNote}
+              </span>
+            )}
             {data?.synced_at && (
               <span className="profile-sync-stamp font-monospace text-muted d-none d-sm-inline-flex align-items-center" role="status">
                 <Clock size={12} className="text-slate-400 me-1" />
@@ -265,6 +323,7 @@ function PaymentCard() {
   const [data, setData] = useState<PaymentStatusResponse | null>(null);
   const [loading, setLoading] = useState(regwebAvailable);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const { openNote, openPdf } = usePdfOpenNote();
 
   useEffect(() => {
     if (!regwebAvailable) {
@@ -376,10 +435,22 @@ function PaymentCard() {
                         </td>
                         <td>
                           {bill.receipt_available ? (
-                            <span className="studio-badge studio-badge-indigo">
-                              <Receipt size={12} />
-                              <span>{tx("收據已開立", "Receipt Issued")}</span>
-                            </span>
+                            <div className="d-flex flex-column align-items-start gap-1">
+                              <span className="studio-badge studio-badge-indigo">
+                                <Receipt size={12} />
+                                <span>{tx("收據已開立", "Receipt Issued")}</span>
+                              </span>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-brand rounded-pill px-2.5 py-0.5 d-inline-flex align-items-center gap-1"
+                                style={{ fontSize: "0.72rem" }}
+                                onClick={() => openPdf("/api/me/payment-receipt")}
+                                data-testid={`receipt-download-${index}`}
+                              >
+                                <FileEarmarkPdf size={11} />
+                                <span>{tx("下載收據（PDF）", "Download Receipt (PDF)")}</span>
+                              </button>
+                            </div>
                           ) : (
                             <span className="text-muted small">—</span>
                           )}
@@ -392,6 +463,8 @@ function PaymentCard() {
             </div>
           </div>
         )}
+
+        <OpenNoteAlert note={openNote} />
       </div>
     </section>
   );
@@ -400,17 +473,9 @@ function PaymentCard() {
 function CertCard() {
   const { tx } = useI18n();
   const { regwebAvailable } = useAuth();
-  const [openNote, setOpenNote] = useState<string | null>(null);
+  const { openNote, openPdf } = usePdfOpenNote();
 
-  const onDownload = () => {
-    window.open("/api/me/enrollment-cert", "_blank");
-    setOpenNote(
-      tx(
-        "檔案已在新分頁開啟下載；若沒有反應，請確認已允許瀏覽器的彈出式視窗。",
-        "The file is opening in a new tab. If nothing appears, please check your browser's pop-up blocker.",
-      ),
-    );
-  };
+  const onDownload = () => openPdf("/api/me/enrollment-cert");
 
   return (
     <section className="profile-card" aria-label={tx("在學證明", "Enrollment Certificate")}>
@@ -475,11 +540,121 @@ function CertCard() {
           </div>
         )}
 
-        {openNote !== null && (
-          <div className="alert alert-info py-2 px-3 small rounded-3 mt-3 mb-0 d-flex align-items-center gap-2" role="status">
-            <InfoCircleFill size={14} className="flex-shrink-0 text-cyan-600" />
-            <span>{openNote}</span>
+        <OpenNoteAlert note={openNote} />
+      </div>
+    </section>
+  );
+}
+
+function ChecklistCard() {
+  const { tx } = useI18n();
+  const { regwebAvailable } = useAuth();
+  const [data, setData] = useState<RegistrationChecklist | null>(null);
+  const [loading, setLoading] = useState(regwebAvailable);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!regwebAvailable) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    fetchRegistrationChecklist()
+      .then((body) => {
+        if (!cancelled) setData(body);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setErrorText(
+          cardErrorText(
+            err,
+            tx,
+            "無法讀取註冊事項，請稍後再試",
+            "Couldn't load your registration checklist. Please try again shortly",
+          ),
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [regwebAvailable, tx]);
+
+  const hasOutUrl = data !== null && data.items.some((item) => item.out_url !== null);
+
+  return (
+    <section className="profile-card" aria-label={tx("註冊事項", "Registration Checklist")}>
+      <div className="profile-card-header">
+        <div className="d-flex align-items-center gap-2.5 min-w-0 flex-grow-1">
+          <CardIcon>
+            <CardChecklist size={18} />
+          </CardIcon>
+          <div className="min-w-0">
+            <h2 className="h6 fw-bold mb-0 text-dark text-truncate">{tx("註冊事項", "Registration Checklist")}</h2>
+            <span className="text-muted text-truncate d-block" style={{ fontSize: "0.78rem" }}>
+              {tx(
+                "網路註冊系統之註冊程序辦理狀態",
+                "Registration steps, live from the campus registration system",
+              )}
+            </span>
           </div>
+        </div>
+      </div>
+
+      <div className="profile-card-body">
+        {errorText !== null && <CardErrorLine text={errorText} />}
+
+        {!regwebAvailable ? (
+          <FeatureOffNote />
+        ) : loading && data === null ? (
+          <div className="p-4 text-center text-muted bg-light rounded-3">
+            <div className="spinner-border spinner-border-sm text-teal-600 me-2" role="status" aria-hidden />
+            <span className="fw-semibold">{tx("讀取註冊事項中…", "Loading registration checklist…")}</span>
+          </div>
+        ) : data === null ? null : (
+          <>
+            {data.items.length === 0 ? (
+              <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">
+                {tx("目前無註冊事項資料", "No registration items right now")}
+              </p>
+            ) : (
+              <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
+                {data.items.map((item, index) => (
+                  <li
+                    key={`${item.title}-${index}`}
+                    className="d-flex justify-content-between align-items-start gap-2 border rounded-3 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="fw-semibold small text-dark text-truncate">{item.title}</div>
+                      {item.period !== "" && (
+                        <div className="text-muted" style={{ fontSize: "0.74rem" }}>{item.period}</div>
+                      )}
+                    </div>
+                    <span
+                      className={`studio-badge studio-badge-${checklistStatusTone(item.status_text)} flex-shrink-0`}
+                    >
+                      {item.status_text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {hasOutUrl && (
+              <p className="text-muted mt-2 mb-0" style={{ fontSize: "0.74rem" }}>
+                {tx(
+                  "連結僅供參考（於校內系統開啟）",
+                  "Links are for reference only (they open inside the campus system)",
+                )}
+              </p>
+            )}
+            {!data.enrollcert_present && (
+              <p className="text-muted mt-2 mb-0" style={{ fontSize: "0.74rem" }}>
+                {tx("校方尚未開放在學證明", "The school hasn't opened this term's enrollment certificate yet")}
+              </p>
+            )}
+          </>
         )}
       </div>
     </section>
@@ -585,6 +760,7 @@ function MePage() {
         {(activeTab === "all" || activeTab === "grades") && <GradesCard />}
         {(activeTab === "all" || activeTab === "payment") && <PaymentCard />}
         {(activeTab === "all" || activeTab === "cert") && <CertCard />}
+        {(activeTab === "all" || activeTab === "cert") && <ChecklistCard />}
       </div>
     </div>
   );

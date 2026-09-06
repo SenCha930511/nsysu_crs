@@ -148,3 +148,11 @@ export async function downloadGridPng(
   triggerDownload(dataUrl, filename);
   return filename;
 }
+
+/** Blob download for server-streamed files (the timetable .ics). The object
+ * URL is revoked on the next tick, after the click has been dispatched. */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  triggerDownload(url, filename);
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
