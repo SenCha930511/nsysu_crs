@@ -74,3 +74,19 @@ Verification (real reference account):
   stu_enroll_pending=true; GET /api/auth/me ~7s later returned regweb_available=true, sco_available=true.
 - Test-isolation fix (found mid-work): Settings reads ../.env; a local flag-on leaked into tests spawning REAL
   background school calls - conftest pins FEATURE_* envs to false session-wide (monkeypatch.setenv).
+
+## RWD adoption wave + nit fixes (commit b8c37b0, 2026-09-06 ~18:40; origin-unknown local wave, user approved "A 留下修三瑕")
+
+Adopted: HomePage mobile segmented switcher (查課目錄/試排課表), navbar-top-row refactor with 1199/768
+breakpoint buckets, assorted RWD finishers across AppShell/ScheduleTable/index.css/MePage/CourseBrowser.
+Verified on arrival: vitest 128/128, tsc+vite build, / at 390 = 384 (already healthy before my fixes).
+
+My three measured fixes:
+1. 進階篩選 pill added text-nowrap + flex-shrink-0 (was squeezed into two lines) - verified single-line pill.
+2. Course titles: removed Bootstrap text-truncate from the 3 .card-course-name sites + en subtitle - the nowrap
+   had silently defeated the intended clamp; added -webkit-line-clamp:2. Computed-style verified post-fix:
+   display flow-root, lineClamp:2, whiteSpace:normal, height 41px ~= 2x line-height 20.332px.
+3. EMI chip audit: NOT a truncation bug - chips each have scrollW==w with no internal ellipsis; the visible
+   cut is the category-pill-rail's own overflow-x auto clipping. Left as designed scroll.
+
+Prod verification (HEAD b8c37b0, rebuilt): / at 390 = 384 <= 390+2 on https://nsysucrs.senchaaa.com/.
