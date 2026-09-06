@@ -1579,22 +1579,40 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Mobile & Tablet (< 768px / md) */
 @media (max-width: 767.98px) {
+  .studio-header-wrapper {
+    top: 0 !important;
+    margin-bottom: 0.65rem !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
   .studio-main-canvas {
-    padding-bottom: 2.5rem !important;
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   footer {
-    padding-bottom: 3.5rem !important;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  /* Refined, balanced 2-row header on mobile: Row 1 = Brand + Auth, Row 2 = Nav pills */
+  /* Sleek, edge-to-edge compact Top App Bar on mobile (Single Row) */
   .floating-navbar {
     display: flex !important;
-    flex-direction: column !important;
-    gap: 0.45rem !important;
-    padding: 0.55rem 0.75rem !important;
-    border-radius: var(--radius-lg) !important;
-    box-shadow: 0 3px 14px -2px rgba(15, 23, 42, 0.07) !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: 52px !important;
+    padding: 0 0.85rem !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04) !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
   }
 
   .navbar-top-row {
@@ -1617,8 +1635,9 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .brand-icon-box {
-    width: 30px !important;
-    height: 30px !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
   }
 
   .semester-pill {
@@ -1637,22 +1656,22 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .navbar-action-btn {
-    height: 32px !important;
+    height: 30px !important;
     padding: 0 0.65rem !important;
-    font-size: 0.78rem !important;
+    font-size: 0.76rem !important;
   }
 
   .navbar-action-btn-github,
   .navbar-action-btn-logout {
-    width: 32px !important;
-    min-width: 32px !important;
+    width: 30px !important;
+    min-width: 30px !important;
     padding: 0 !important;
   }
 
   .user-avatar-chip {
-    height: 32px !important;
+    height: 30px !important;
     padding: 0 0.55rem !important;
-    font-size: 0.76rem !important;
+    font-size: 0.74rem !important;
     max-width: 6.5rem !important;
   }
 
@@ -1662,35 +1681,176 @@ h1, h2, h3, h4, h5, h6 {
     white-space: nowrap;
   }
 
-  /* Row 2: full-width segmented tab bar */
+  /* Hide the top navbar tab pills completely on mobile phone */
   .studio-nav-pills {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    width: 100% !important;
-    padding: 0.2rem !important;
-    gap: 0.15rem !important;
-    background: #f1f5f9 !important;
-    border-radius: var(--radius-full) !important;
-    margin: 0 !important;
+    display: none !important;
   }
 
-  .studio-nav-link {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0.3rem !important;
-    padding: 0.36rem 0.15rem !important;
+  .studio-degrade-wrapper {
+    padding: 0.25rem 0.75rem 0;
+    width: 100%;
+  }
+
+  .studio-degrade-pill {
+    max-width: 100%;
+    word-break: break-word;
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.75rem !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Compact Course Card */
+  .studio-course-card {
+    margin: 0.45rem 0.15rem !important;
+    padding: 0.75rem 0.85rem !important;
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  .card-course-name {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+    color: #0f172a !important;
+  }
+
+  .card-meta-line {
+    font-size: 0.76rem !important;
+  }
+
+  .btn-card-toggle {
+    min-height: 32px !important;
+    padding: 0.25rem 0.7rem !important;
+    font-size: 0.78rem !important;
+    border-radius: var(--radius-full) !important;
+  }
+
+  .course-discovery-pane {
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  }
+
+  .discovery-search-header {
+    padding: 0.65rem 0.75rem 0.45rem !important;
+  }
+
+  .studio-search-bar {
+    margin-bottom: 0.45rem !important;
+  }
+
+  .category-pill-rail {
+    gap: 0.35rem !important;
+    padding-bottom: 0.15rem !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .category-pill-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-chip {
+    padding: 0.28rem 0.7rem !important;
     font-size: 0.78rem !important;
     border-radius: var(--radius-full) !important;
     white-space: nowrap !important;
   }
 
-  .studio-nav-link span {
-    font-size: 0.78rem !important;
+  .studio-schedule-card-strip {
+    padding: 0.45rem 0.75rem !important;
+    border-radius: var(--radius-md) !important;
+    font-size: 0.8rem !important;
   }
 }
 
-/* Mobile Segmented Tab Controls (HomePage < xl) */
+/* Mobile Native-Style Bottom Tab Bar */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(54px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 1040;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 -3px 16px rgba(15, 23, 42, 0.06);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: stretch;
+}
+
+.mobile-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0.35rem 0.15rem;
+}
+
+.mobile-tab-item:active {
+  opacity: 0.75;
+}
+
+.mobile-tab-item.active {
+  color: var(--crs-brand, #0d9488);
+}
+
+.mobile-tab-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-tab-item.active .mobile-tab-icon-wrapper {
+  transform: scale(1.1);
+  color: var(--crs-brand, #0d9488);
+}
+
+.mobile-tab-badge {
+  position: absolute;
+  top: -4px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--crs-brand, #0d9488);
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 1px 4px rgba(13, 148, 136, 0.35);
+}
+
+.mobile-tab-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.mobile-tab-item.active .mobile-tab-label {
+  font-weight: 700;
+  color: var(--crs-brand, #0d9488);
+}
+
+/* Tablet Segmented Tab Controls (HomePage md to xl) */
 .mobile-view-tabs {
   display: flex;
   align-items: center;
@@ -1750,9 +1910,9 @@ h1, h2, h3, h4, h5, h6 {
 /* Mobile Staging / Quick Action Floating Bar */
 .mobile-staging-float-bar {
   position: fixed;
-  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-  left: 1rem;
-  right: 1rem;
+  bottom: calc(54px + env(safe-area-inset-bottom, 0px) + 0.85rem) !important;
+  left: 0.75rem;
+  right: 0.75rem;
   max-width: 520px;
   margin: 0 auto;
   z-index: 1025;
@@ -1761,7 +1921,7 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: var(--radius-full);
-  padding: 0.5rem 0.95rem;
+  padding: 0.45rem 0.85rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1869,10 +2029,14 @@ thead th.studio-timeslot-header {
 
 /* Small phones (<sm, 576px): Floor Layout & Touch targets */
 @media (max-width: 575.98px) {
-  .studio-header-wrapper,
+  .studio-header-wrapper {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
   .studio-main-canvas {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
   }
 
   .studio-timeslot-header {
@@ -1916,19 +2080,19 @@ thead th.studio-timeslot-header {
   }
 
   .studio-course-card {
-    margin: 0.5rem 0.65rem;
+    margin: 0.45rem 0.15rem;
     padding: 0.75rem 0.85rem;
-    min-height: 110px;
+    min-height: auto;
   }
 
   .card-course-name {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
   }
 
   .btn-card-toggle {
-    min-height: 38px;
-    padding: 0.35rem 0.85rem;
-    font-size: 0.82rem;
+    min-height: 32px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.78rem;
   }
 
   .crs-modal {

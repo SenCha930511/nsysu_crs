@@ -363,13 +363,13 @@ export default function CourseBrowser({
             }
           }}
         >
-          {/* Row 1: Title, Badges & Quota Pill */}
-          <div className="d-flex align-items-center justify-content-between gap-2 min-w-0">
-            <div className="d-flex align-items-center gap-2 min-w-0 flex-grow-1 overflow-hidden">
+          {/* Row 1: Title (Prominent) & Quota Pill */}
+          <div className="d-flex align-items-start justify-content-between gap-2 min-w-0">
+            <div className="min-w-0 flex-grow-1">
               {onViewCourse !== undefined ? (
                 <button
                   type="button"
-                  className="card-course-name me-1 btn-link text-decoration-none border-0 bg-transparent p-0 text-start"
+                  className="card-course-name btn-link text-decoration-none border-0 bg-transparent p-0 text-start"
                   title={tx("檢視課程詳細資訊與大綱", "View course details and syllabus")}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -383,7 +383,7 @@ export default function CourseBrowser({
                   href={course.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="card-course-name me-1 text-decoration-none"
+                  className="card-course-name text-decoration-none"
                   title={tx("在學校原始頁開啟課程大綱", "Open the syllabus on the school's original page")}
                   aria-label={tx(`開啟 ${courseName(course)} 的學校大綱頁`, `Open the school outline page for ${courseName(course)}`)}
                   onClick={(e) => e.stopPropagation()}
@@ -391,30 +391,11 @@ export default function CourseBrowser({
                   {courseName(course)}
                 </a>
               ) : (
-                <span className="card-course-name me-1">{courseName(course)}</span>
-              )}
-              {course.dept && (
-                <span className="card-course-dept flex-shrink-0">{course.dept}</span>
-              )}
-              {course.credit !== null && (
-                <span className="badge bg-teal-50 text-teal-800 border border-teal-200 flex-shrink-0" style={{ fontSize: "0.68rem" }}>
-                  {lang === "en" ? `${course.credit} cr` : `${course.credit}學分`}
-                </span>
-              )}
-              <span
-                className={`badge flex-shrink-0 ${
-                  course.compulsory ? "badge-compulsory" : "badge-elective"
-                }`}
-                style={{ fontSize: "0.68rem" }}
-              >
-                {course.compulsory ? tx("必修", "Required") : tx("選修", "Elective")}
-              </span>
-              {course.english && (
-                <span className="badge badge-emi flex-shrink-0" style={{ fontSize: "0.65rem" }}>EMI</span>
+                <span className="card-course-name">{courseName(course)}</span>
               )}
             </div>
 
-            <div className="card-quota-bar-wrapper flex-shrink-0">
+            <div className="card-quota-bar-wrapper flex-shrink-0 pt-0.5">
               <span className={`quota-status-pill ${full ? "quota-status-full" : "quota-status-available"}`}>
                 {full ? tx("額滿", "Full") : tx(`餘 ${num(remaining)}`, `${num(remaining)} left`)}
               </span>
@@ -424,11 +405,36 @@ export default function CourseBrowser({
             </div>
           </div>
 
-          {/* Row 2: Teacher, Class, Room & English Title */}
-          <div className="card-meta-line text-truncate">
-            {metaParts.length > 0 ? metaParts.join(" · ") : tx("無詳細開課資訊", "No details available")}
+          {/* Row 2: Badges, Teacher, Class, Room & English Title */}
+          <div className="card-meta-line d-flex align-items-center flex-wrap gap-1.5 pt-0.5">
+            {course.dept && (
+              <span className="card-course-dept flex-shrink-0">{course.dept}</span>
+            )}
+            {course.credit !== null && (
+              <span className="badge bg-teal-50 text-teal-800 border border-teal-200 flex-shrink-0" style={{ fontSize: "0.68rem" }}>
+                {lang === "en" ? `${course.credit} cr` : `${course.credit}學分`}
+              </span>
+            )}
+            <span
+              className={`badge flex-shrink-0 ${
+                course.compulsory ? "badge-compulsory" : "badge-elective"
+              }`}
+              style={{ fontSize: "0.68rem" }}
+            >
+              {course.compulsory ? tx("必修", "Required") : tx("選修", "Elective")}
+            </span>
+            {course.english && (
+              <span className="badge badge-emi flex-shrink-0" style={{ fontSize: "0.65rem" }}>EMI</span>
+            )}
+            {metaParts.length > 0 && (
+              <span className="text-muted small ms-0.5" style={{ fontSize: "0.76rem" }}>
+                {metaParts.join(" · ")}
+              </span>
+            )}
             {course.name_en && (
-              <span className="text-muted ms-1 opacity-75">· {course.name_en}</span>
+              <span className="text-muted opacity-75 small text-truncate d-none d-md-inline" style={{ fontSize: "0.72rem", maxWidth: "200px" }}>
+                · {course.name_en}
+              </span>
             )}
           </div>
 

@@ -22,7 +22,7 @@ import {
   Send,
   XCircleFill,
 } from "react-bootstrap-icons";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import CourseBrowser from "../components/CourseBrowser";
 import ScheduleTable from "../components/ScheduleTable";
@@ -106,8 +106,45 @@ function HomePage() {
   const [failedCodes, setFailedCodes] = useState<Set<string>>(new Set());
 
   // ---- tabs / browse ----
-  const [tab, setTab] = useState<Tab>("browse");
-  const [mobileTab, setMobileTab] = useState<"browse" | "schedule" | "selections">("browse");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get("view");
+  const [tab, setTab] = useState<Tab>(() => (viewParam === "selections" ? "selections" : "browse"));
+  const [mobileTab, setMobileTab] = useState<"browse" | "schedule" | "selections">(() =>
+    viewParam === "schedule" || viewParam === "timetable"
+      ? "schedule"
+      : viewParam === "selections"
+        ? "selections"
+        : "browse",
+  );
+
+  useEffect(() => {
+    if (viewParam === "schedule" || viewParam === "timetable") {
+      setMobileTab("schedule");
+    } else if (viewParam === "selections") {
+      setMobileTab("selections");
+      setTab("selections");
+    } else if (viewParam === "browse") {
+      setMobileTab("browse");
+      setTab("browse");
+    }
+  }, [viewParam]);
+
+  const changeMobileTab = useCallback(
+    (nextTab: "browse" | "schedule" | "selections") => {
+      setMobileTab(nextTab);
+      if (nextTab === "selections") setTab("selections");
+      if (nextTab === "browse") setTab("browse");
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set("view", nextTab);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
   const [previewCourse, setPreviewCourse] = useState<CourseOut | null>(null);
 
@@ -500,13 +537,13 @@ function HomePage() {
       <div className="row g-3">
         <ScheduleCard />
 
-        {/* Mobile View Switcher (< xl breakpoint) */}
-        <div className="col-12 d-xl-none mb-1">
+        {/* Tablet View Switcher (md to xl breakpoint only, phone uses bottom nav) */}
+        <div className="col-12 d-none d-md-block d-xl-none mb-1">
           <div className="mobile-view-tabs" role="tablist" aria-label={tx("切換檢視", "Switch View")}>
             <button
               type="button"
               className={`mobile-view-tab-btn ${mobileTab === "browse" ? "active" : ""}`}
-              onClick={() => setMobileTab("browse")}
+              onClick={() => changeMobileTab("browse")}
             >
               <Search size={14} />
               <span>{tx("查課目錄", "Browse Courses")}</span>
@@ -514,7 +551,7 @@ function HomePage() {
             <button
               type="button"
               className={`mobile-view-tab-btn ${mobileTab === "schedule" ? "active" : ""}`}
-              onClick={() => setMobileTab("schedule")}
+              onClick={() => changeMobileTab("schedule")}
             >
               <CalendarCheck size={14} />
               <span>{tx("試排課表", "Timetable")}</span>
@@ -596,7 +633,7 @@ function HomePage() {
 
         {/* Mobile floating schedule pill for quick navigation */}
         {mobileTab === "browse" && guestTotals.courseCount > 0 && (
-          <div className="mobile-staging-float-bar d-xl-none" onClick={() => setMobileTab("schedule")} style={{ cursor: "pointer" }}>
+          <div className="mobile-staging-float-bar d-xl-none" onClick={() => changeMobileTab("schedule")} style={{ cursor: "pointer" }}>
             <div className="d-flex align-items-center gap-2">
               <CalendarCheck size={16} className="text-teal-400" />
               <span className="small fw-semibold">
@@ -616,16 +653,13 @@ function HomePage() {
     <div className="row g-3">
       <ScheduleCard />
 
-      {/* Mobile View Switcher (< xl breakpoint) */}
-      <div className="col-12 d-xl-none mb-1">
+      {/* Tablet View Switcher (md to xl breakpoint only, phone uses bottom nav) */}
+      <div className="col-12 d-none d-md-block d-xl-none mb-1">
         <div className="mobile-view-tabs" role="tablist" aria-label={tx("切換檢視", "Switch View")}>
           <button
             type="button"
             className={`mobile-view-tab-btn ${mobileTab === "browse" ? "active" : ""}`}
-            onClick={() => {
-              setMobileTab("browse");
-              setTab("browse");
-            }}
+            onClick={() => changeMobileTab("browse")}
           >
             <Search size={14} />
             <span>{tx("查課目錄", "Browse")}</span>
@@ -633,7 +667,7 @@ function HomePage() {
           <button
             type="button"
             className={`mobile-view-tab-btn ${mobileTab === "schedule" ? "active" : ""}`}
-            onClick={() => setMobileTab("schedule")}
+            onClick={() => changeMobileTab("schedule")}
           >
             <CalendarCheck size={14} />
             <span>{tx("週課表", "Timetable")}</span>
@@ -642,10 +676,7 @@ function HomePage() {
           <button
             type="button"
             className={`mobile-view-tab-btn ${mobileTab === "selections" ? "active" : ""}`}
-            onClick={() => {
-              setMobileTab("selections");
-              setTab("selections");
-            }}
+            onClick={() => changeMobileTab("selections")}
           >
             <BookmarkCheck size={14} />
             <span>{tx("已選課程", "Selections")}</span>
@@ -709,6 +740,34 @@ function HomePage() {
           {pngError !== null && (
             <div className="alert alert-warning py-1.5 px-3 mx-3 mt-2 small rounded-3" role="alert">{pngError}</div>
           )}
+
+          {/* Mobile phone switcher between Timetable & Selections */}
+          <div className="d-flex d-md-none align-items-center w-100 px-3 pt-1 pb-2">
+            <div className="d-flex align-items-center p-1 bg-slate-100 rounded-pill w-100" style={{ gap: "0.25rem" }}>
+              <button
+                type="button"
+                className={`btn btn-sm flex-fill rounded-pill py-1 fw-bold ${mobileTab === "schedule" ? "btn-brand shadow-xs" : "btn-light text-secondary border-0"}`}
+                style={{ fontSize: "0.8rem" }}
+                onClick={() => changeMobileTab("schedule")}
+              >
+                <CalendarCheck size={13} className="me-1" />
+                <span>{tx("週課表", "Timetable")}</span>
+                <span className="badge bg-white text-teal-800 rounded-pill ms-1" style={{ fontSize: "0.68rem" }}>{totals.courseCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm flex-fill rounded-pill py-1 fw-bold ${mobileTab === "selections" ? "btn-brand shadow-xs" : "btn-light text-secondary border-0"}`}
+                style={{ fontSize: "0.8rem" }}
+                onClick={() => changeMobileTab("selections")}
+              >
+                <BookmarkCheck size={13} className="me-1" />
+                <span>{tx("已選課程", "Selections")}</span>
+                {heldItems.length > 0 && (
+                  <span className="badge bg-white text-teal-800 rounded-pill ms-1" style={{ fontSize: "0.68rem" }}>{heldItems.length}</span>
+                )}
+              </button>
+            </div>
+          </div>
 
           <div className="schedule-grid-scroll-container">
             <div ref={gridRef} className="w-100">
@@ -939,7 +998,34 @@ function HomePage() {
         ) : (
           <section className="selections-pane-container" aria-label={tx("我的已選課程", "My selections")}>
             <div className="discovery-search-header">
-              <div className="pb-2">{segmentedTabs}</div>
+              {/* Mobile phone switcher between Timetable & Selections */}
+              <div className="d-flex d-md-none align-items-center w-100 pb-2">
+                <div className="d-flex align-items-center p-1 bg-slate-100 rounded-pill w-100" style={{ gap: "0.25rem" }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm flex-fill rounded-pill py-1.5 fw-bold btn-light text-secondary border-0"
+                    style={{ fontSize: "0.82rem" }}
+                    onClick={() => changeMobileTab("schedule")}
+                  >
+                    <CalendarCheck size={14} className="me-1" />
+                    <span>{tx("週課表", "Timetable")}</span>
+                    <span className="badge bg-white text-teal-800 rounded-pill ms-1" style={{ fontSize: "0.7rem" }}>{totals.courseCount}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm flex-fill rounded-pill py-1.5 fw-bold btn-brand shadow-xs"
+                    style={{ fontSize: "0.82rem" }}
+                  >
+                    <BookmarkCheck size={14} className="me-1" />
+                    <span>{tx("已選清單", "Selections")}</span>
+                    {heldItems.length > 0 && (
+                      <span className="badge bg-white text-teal-800 rounded-pill ms-1" style={{ fontSize: "0.7rem" }}>{heldItems.length}</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pb-2 d-none d-md-block">{segmentedTabs}</div>
               <div className="d-flex align-items-center justify-content-between pt-1">
                 <span className="fw-bold text-dark small">{tx("已選課程（同步自學校）", "Selections (synced from the school)")}</span>
                 <button
@@ -1023,7 +1109,7 @@ function HomePage() {
             <>
               <div
                 className="d-flex align-items-center gap-2"
-                onClick={() => setMobileTab("schedule")}
+                onClick={() => changeMobileTab("schedule")}
                 style={{ cursor: "pointer" }}
               >
                 <span className="badge bg-teal-500 text-dark rounded-pill font-monospace" style={{ fontSize: "0.72rem" }}>
@@ -1040,7 +1126,7 @@ function HomePage() {
                   type="button"
                   className="btn btn-sm btn-outline-light rounded-pill px-2.5 py-1"
                   style={{ fontSize: "0.76rem" }}
-                  onClick={() => setMobileTab("schedule")}
+                  onClick={() => changeMobileTab("schedule")}
                 >
                   {tx("看課表", "Table")}
                 </button>
@@ -1060,7 +1146,7 @@ function HomePage() {
             <>
               <div
                 className="d-flex align-items-center gap-2"
-                onClick={() => setMobileTab("schedule")}
+                onClick={() => changeMobileTab("schedule")}
                 style={{ cursor: "pointer" }}
               >
                 <CalendarCheck size={16} className="text-teal-400" />
@@ -1071,7 +1157,7 @@ function HomePage() {
               <button
                 type="button"
                 className="btn btn-sm btn-brand rounded-pill px-3 py-1 fw-bold shadow-xs"
-                onClick={() => setMobileTab("schedule")}
+                onClick={() => changeMobileTab("schedule")}
               >
                 <span>{tx("查看課表", "View Table")}</span>
               </button>

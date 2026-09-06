@@ -1,25 +1,38 @@
 import {
   BoxArrowRight,
+  CalendarCheck,
   CalendarWeek,
   Envelope,
   Github,
   Globe2,
   PersonCircle,
+  Search,
   Send,
 } from "react-bootstrap-icons";
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import DegradeBanner from "./DegradeBanner";
 import { fetchCatalogMeta } from "../lib/api";
 import { LangToggle, useI18n } from "../lib/i18n";
 import { formatSemesterLabel } from "../lib/semesterLabel";
 import { useAuth } from "../state/auth";
+import { useSelection } from "../state/selection";
 
 function AppShell() {
   const { tx } = useI18n();
   const { status, studentNo, logout } = useAuth();
+  const { selected } = useSelection();
   const [semester, setSemester] = useState<string | null>(null);
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  const viewParam = searchParams.get("view");
+  const isBrowseActive =
+    location.pathname === "/" && (viewParam === "browse" || !viewParam);
+  const isScheduleActive =
+    location.pathname === "/" &&
+    (viewParam === "schedule" || viewParam === "selections" || viewParam === "timetable");
 
   useEffect(() => {
     let alive = true;
@@ -112,8 +125,8 @@ function AppShell() {
             </div>
           </div>
 
-          {/* Center on Desktop / Row 2 on Mobile: Segmented Navigation Tabs */}
-          <nav className="studio-nav-pills" aria-label={tx("主要選單", "Primary navigation")}>
+          {/* Center on Desktop only: Segmented Navigation Tabs */}
+          <nav className="studio-nav-pills d-none d-md-flex" aria-label={tx("主要選單", "Primary navigation")}>
             {NAV_LINKS.map((link) => {
               const Icon = link.icon;
               return (
@@ -138,6 +151,62 @@ function AppShell() {
       <main className="studio-main-canvas flex-grow-1">
         <Outlet />
       </main>
+
+      {/* Mobile Native-Style Bottom Tab Bar (< md) */}
+      <nav className="mobile-bottom-nav d-md-none" aria-label={tx("行動版底部導覽", "Mobile navigation")}>
+        <NavLink
+          to="/?view=browse"
+          className={`mobile-tab-item ${isBrowseActive ? "active" : ""}`}
+          onClick={(e) => {
+            if (location.pathname === "/") {
+              e.preventDefault();
+              navigate("/?view=browse");
+            }
+          }}
+        >
+          <div className="mobile-tab-icon-wrapper">
+            <Search size={18} />
+          </div>
+          <span className="mobile-tab-label">{tx("查課", "Courses")}</span>
+        </NavLink>
+
+        <NavLink
+          to="/?view=schedule"
+          className={`mobile-tab-item ${isScheduleActive ? "active" : ""}`}
+          onClick={(e) => {
+            if (location.pathname === "/") {
+              e.preventDefault();
+              navigate("/?view=schedule");
+            }
+          }}
+        >
+          <div className="mobile-tab-icon-wrapper">
+            <CalendarCheck size={18} />
+            {selected.length > 0 && <span className="mobile-tab-badge">{selected.length}</span>}
+          </div>
+          <span className="mobile-tab-label">{tx("課表", "Timetable")}</span>
+        </NavLink>
+
+        <NavLink
+          to="/write"
+          className={({ isActive }) => `mobile-tab-item ${isActive ? "active" : ""}`}
+        >
+          <div className="mobile-tab-icon-wrapper">
+            <Send size={18} />
+          </div>
+          <span className="mobile-tab-label">{tx("紀錄", "Records")}</span>
+        </NavLink>
+
+        <NavLink
+          to="/me"
+          className={({ isActive }) => `mobile-tab-item ${isActive ? "active" : ""}`}
+        >
+          <div className="mobile-tab-icon-wrapper">
+            <PersonCircle size={18} />
+          </div>
+          <span className="mobile-tab-label">{tx("我的", "Me")}</span>
+        </NavLink>
+      </nav>
 
       {/* Footer */}
       <footer className="small text-muted text-center py-4 mt-4 border-top bg-white">
@@ -169,7 +238,7 @@ function AppShell() {
             GitHub
           </a>
         </div>
-        <div className="mb-1.5 d-flex align-items-center justify-content-center gap-1 text-muted" style={{ fontSize: "0.82rem" }}>
+        <div className="mb-1.5 d-flex align-items-center justify-content-center flex-wrap gap-1 px-3 text-muted" style={{ fontSize: "0.82rem" }}>
           <span>{tx("聯絡開發者：", "Contact me:")}</span>
           <a
             href="https://github.com/SenCha930511/nsysu_crs"
@@ -180,7 +249,7 @@ function AppShell() {
             <Github size={13} />
             <span>{tx("提 GitHub issue", "Open a GitHub issue")}</span>
           </a>
-          <span>·</span>
+          <span className="d-none d-sm-inline">·</span>
           <a
             href="mailto:sencha930511@gmail.com"
             className="text-muted text-decoration-none d-inline-flex align-items-center gap-1 hover-underline"

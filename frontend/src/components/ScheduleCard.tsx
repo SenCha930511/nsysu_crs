@@ -103,7 +103,7 @@ export function ScheduleCard() {
 
   return (
     <div className="col-12">
-      <div className="bg-white rounded-3 border shadow-sm px-3 py-2">
+      <div className="studio-schedule-card-strip bg-white rounded-3 border shadow-xs px-3 py-2">
         <div className="d-flex align-items-center justify-content-between flex-wrap" style={{ gap: "0.5rem" }}>
           <div className="d-flex align-items-center flex-wrap small" style={{ gap: "0.45rem" }}>
             <CalendarEvent size={14} className="text-teal-600" />
