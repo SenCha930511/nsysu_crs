@@ -46,3 +46,13 @@ Post-fix verification (my own CDP re-audit, all CSS px):
 - Gates: vitest 128/128, tsc strict + vite build green (re-run after my own edits to the delegate's diff).
 
 Screenshots reviewed live during the pass and deleted after (ephemeral verification artifacts, not committed).
+
+## RWD follow-up: /me tab-pill containment (commit a92577a, 2026-09-06 ~17:55)
+
+Post-a6e5217 prod re-audit (real account, 390x844): /me docScrollW 437 > 392 — the nowrap tab labels had made the
+shared .record-filter-nav (width:fit-content, no cap) grow to 420px and bleed the page (local 384 had been
+measured before the tab-label nowrap fix and visual PASS had misread the row's own clipping as contained scroll;
+prod evidence corrected it). Fix: max-width:100% + overflow-x:auto on the shared class (fit-content flex rows
+never clip by themselves). Verification on prod after rebuild (HEAD a92577a, real account): /me docScrollW 384
+<= 390+2, pill clientWidth 350 / scrollWidth 420 = clips and scrolls inside itself; payment table headers
+single-line in card-contained scroll throughout. All earlier prerequisites stay within bounds; flow continues.
