@@ -1,6 +1,7 @@
 /**
  * Routed app: the unified console at "/" (browse+selections+write), /login,
- * guarded /write (送單紀錄) and the public legal pages /privacy, /tos, /faq.
+ * guarded /write (送單紀錄) and /me (grades/payment/cert), and the public
+ * legal pages /privacy, /tos, /faq.
  * Provider nesting: Router > Auth > Selection.
  */
 
@@ -12,6 +13,7 @@ import { I18nProvider } from "./lib/i18n";
 import FaqPage from "./pages/FaqPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import MePage from "./pages/MePage";
 import PrivacyPage from "./pages/PrivacyPage";
 import RecordsPage from "./pages/RecordsPage";
 import TermsPage from "./pages/TermsPage";
@@ -36,6 +38,14 @@ function App() {
                   element={
                     <RequireAuth>
                       <RecordsPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="me"
+                  element={
+                    <RequireAuth>
+                      <MePage />
                     </RequireAuth>
                   }
                 />

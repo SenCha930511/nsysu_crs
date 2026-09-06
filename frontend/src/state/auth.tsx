@@ -50,6 +50,10 @@ export interface AuthContextValue {
   studentNo: string | null;
   /** CSRF token for /api/write/* (from the login body; null if unrecoverable). */
   csrfToken: string | null;
+  /** REGWEB-family features (payment, enrollment cert) connected on the account. */
+  regwebAvailable: boolean;
+  /** SCO-family features (歷年成績 grades) connected on the account. */
+  scoAvailable: boolean;
   login: (studentNo: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -61,6 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [expired, setExpired] = useState(false);
   const [studentNo, setStudentNo] = useState<string | null>(null);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  const [regwebAvailable, setRegwebAvailable] = useState(false);
+  const [scoAvailable, setScoAvailable] = useState(false);
   const statusRef = useRef(status);
   statusRef.current = status;
 
@@ -70,6 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then((body) => {
         if (cancelled) return;
         setStudentNo(body.student_no);
+        setRegwebAvailable(body.regweb_available);
+        setScoAvailable(body.sco_available);
         // A refresh survives via sessionStorage: the csrf cookie value is
         // unchanged by page reloads (the backend re-sets the SAME value).
         setCsrfToken(readStoredCsrfToken());
@@ -79,6 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setStudentNo(null);
         setCsrfToken(null);
+        setRegwebAvailable(false);
+        setScoAvailable(false);
         setStatus("anon");
       });
     return () => {
@@ -88,11 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Global 401 seam: soft logout; the guard turns the state into a route.
   useEffect(() => {
-    bindUnauthorizedHandler(() => {
-      if (!shouldSoftLogout(statusRef.current)) return;
+    bindUnauthorizedHandler((detail) => {
+      if (!shouldSoftLogout(statusRef.current, detail)) return;
       setStudentNo(null);
       setCsrfToken(null);
       storeCsrfToken(null);
+      setRegwebAvailable(false);
+      setScoAvailable(false);
       setStatus("anon");
       setExpired(true);
       logout().catch(() => {
@@ -107,6 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStudentNo(body.student_no);
     setCsrfToken(body.csrf_token);
     storeCsrfToken(body.csrf_token);
+    setRegwebAvailable(body.regweb_available);
+    setScoAvailable(body.sco_available);
     setExpired(false);
     setStatus("authed");
   }, []);
@@ -118,6 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStudentNo(null);
       setCsrfToken(null);
       storeCsrfToken(null);
+      setRegwebAvailable(false);
+      setScoAvailable(false);
       setExpired(false);
       setStatus("anon");
     }
@@ -129,10 +145,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       expired,
       studentNo,
       csrfToken,
+      regwebAvailable,
+      scoAvailable,
       login: doLogin,
       logout: doLogout,
     }),
-    [status, expired, studentNo, csrfToken, doLogin, doLogout],
+    [
+      status,
+      expired,
+      studentNo,
+      csrfToken,
+      regwebAvailable,
+      scoAvailable,
+      doLogin,
+      doLogout,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

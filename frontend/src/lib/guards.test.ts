@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   decideGuard,
+  isFamilyExpiredDetail,
   shouldSoftLogout,
   loginErrorText,
   loginNoticeText,
 } from "./guards";
 
 describe("decideGuard", () => {
-  it.each(["/write"])(
+  it.each(["/write", "/records", "/me"])(
     "redirects anonymous visitors of %s to /login?reason=required",
     (path) => {
       expect(decideGuard("anon", path)).toEqual({
@@ -53,9 +54,33 @@ describe("decideGuard", () => {
 
 describe("shouldSoftLogout", () => {
   it("fires only when the user WAS authed", () => {
-    expect(shouldSoftLogout("authed")).toBe(true);
-    expect(shouldSoftLogout("loading")).toBe(false);
-    expect(shouldSoftLogout("anon")).toBe(false);
+    expect(shouldSoftLogout("authed", "not_authenticated")).toBe(true);
+    expect(shouldSoftLogout("loading", "not_authenticated")).toBe(false);
+    expect(shouldSoftLogout("anon", "not_authenticated")).toBe(false);
+  });
+
+  it.each(["REGWEB_EXPIRED", "SCO_EXPIRED"])(
+    "never logs out on the per-family code %s (that feature stays in-page)",
+    (detail) => {
+      expect(shouldSoftLogout("authed", detail)).toBe(false);
+    },
+  );
+
+  it.each(["not_authenticated", "SELCRS_EXPIRED", "session_expired", ""])(
+    "still logs out on a site-session 401 like %j",
+    (detail) => {
+      expect(shouldSoftLogout("authed", detail)).toBe(true);
+    },
+  );
+});
+
+describe("isFamilyExpiredDetail", () => {
+  it("matches only the two per-family codes, case-sensitively", () => {
+    expect(isFamilyExpiredDetail("REGWEB_EXPIRED")).toBe(true);
+    expect(isFamilyExpiredDetail("SCO_EXPIRED")).toBe(true);
+    expect(isFamilyExpiredDetail("not_authenticated")).toBe(false);
+    expect(isFamilyExpiredDetail("regweb_expired")).toBe(false);
+    expect(isFamilyExpiredDetail("REGWEB_EXPIRED ")).toBe(false);
   });
 });
 

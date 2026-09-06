@@ -4,6 +4,8 @@
  *   POST /api/auth/login|logout, GET /api/auth/me - site session (todo 8)
  *   GET  /api/catalog/depts, /api/courses/{id}/outline - dept & syllabus reads
  *   GET  /api/me/selections, POST .../sync    - real selections (todo 9)
+ *   GET  /api/me/grades, POST .../sync, GET /api/me/payment-status
+ *                                              - me-page feature reads (M3)
  *   GET  /api/stage                           - live school stage probe (todo 13)
  *   POST /api/write/preview|submit, GET /api/write/jobs/{id} - write flow (todo 14/15/16)
  *
@@ -12,9 +14,12 @@
  * so the body echo is the only JS-readable channel).
  *
  * 401 policy seam: any non-login 401 means the site session is gone (or the
- * school jar expired - SELCRS_EXPIRED). The route layer registers one global
- * handler (soft logout + redirect to /login?reason=expired); it decides from
- * its own auth state whether the user was ever logged in, so a never-logged-in
+ * school jar expired - SELCRS_EXPIRED), EXCEPT the per-family codes
+ * REGWEB_EXPIRED / SCO_EXPIRED: only that feature's school session died, the
+ * site session is alive, and pages handle those in-place (lib/guards.ts'
+ * shouldSoftLogout decides). The route layer registers one global handler
+ * (soft logout + redirect to /login?reason=expired); it decides from its own
+ * auth state whether the user was ever logged in, so a never-logged-in
  * visitor's 401 (e.g. the initial /api/auth/me probe) does not redirect.
  */
 
@@ -303,6 +308,10 @@ export interface LoginResponse {
   student_no: string;
   /** Double-submit CSRF token for /api/write/* (rotates on every login). */
   csrf_token: string;
+  /** REGWEB-family features (payment status, enrollment cert) are wired up. */
+  regweb_available: boolean;
+  /** SCO-family features (歷年成績 grades) are wired up. */
+  sco_available: boolean;
 }
 
 export function login(
@@ -319,7 +328,13 @@ export function logout(): Promise<{ ok: boolean }> {
   return request("/api/auth/logout", { method: "POST" });
 }
 
-export function fetchMe(signal?: AbortSignal): Promise<{ student_no: string }> {
+export interface MeResponse {
+  student_no: string;
+  regweb_available: boolean;
+  sco_available: boolean;
+}
+
+export function fetchMe(signal?: AbortSignal): Promise<MeResponse> {
   return request("/api/auth/me", signal !== undefined ? { signal } : {});
 }
 
@@ -332,6 +347,56 @@ export function fetchSelections(): Promise<SelectionsResponse> {
 export function syncSelections(): Promise<SelectionSyncResponse> {
   return request("/api/me/selections/sync", { method: "POST" });
 }
+
+// ---------- me features: grades / payment (session-gated; no CSRF - reads) ----------
+
+/**
+ * Grade rows arrive as VERBATIM school-table cells (string[][]); the school's
+ * header row may or may not sit at items[0], so no column semantics or GPA
+ * math are assumed here on purpose - those ship after a later data round pins
+ * the school's row format.
+ */
+export interface GradesResponse {
+  synced_at: string | null;
+  items: string[][];
+}
+
+export interface GradesSyncResponse {
+  synced_at: string;
+  added: string[][];
+  removed: string[][];
+  unchanged: string[][];
+  items: string[][];
+}
+
+export function fetchGrades(): Promise<GradesResponse> {
+  return request("/api/me/grades");
+}
+
+export function syncGrades(): Promise<GradesSyncResponse> {
+  return request("/api/me/grades/sync", { method: "POST" });
+}
+
+export interface PaymentBill {
+  item: string;
+  amount: string;
+  status: string;
+  pay_date: string | null;
+  /** A receipt exists on the school's side (read URL ships later). */
+  receipt_available: boolean;
+}
+
+export interface PaymentStatusResponse {
+  dept: string;
+  bills: PaymentBill[];
+}
+
+export function fetchPaymentStatus(): Promise<PaymentStatusResponse> {
+  return request("/api/me/payment-status");
+}
+
+// 在學證明 has no JSON client fn: GET /api/me/enrollment-cert is a raw PDF
+// download that the page opens in a new tab via window.open.
 
 // ---------- stage probe (session-gated; no CSRF - read-only) ----------
 

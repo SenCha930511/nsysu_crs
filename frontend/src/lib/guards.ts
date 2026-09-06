@@ -12,7 +12,7 @@ export type AuthStatus = "loading" | "authed" | "anon";
 export const LOGIN_REASON_REQUIRED = "required";
 export const LOGIN_REASON_EXPIRED = "expired";
 
-const PROTECTED_PREFIXES = ["/records", "/write"];
+const PROTECTED_PREFIXES = ["/records", "/write", "/me"];
 
 export interface GuardDecision {
   allow: boolean;
@@ -39,10 +39,26 @@ export function decideGuard(
 }
 
 /**
+ * Per-family school-session death codes: only that feature's upstream jar
+ * (REGWEB = payment/cert, SCO = grades) expired; the SITE session is alive.
+ */
+export const FAMILY_EXPIRED_DETAILS: readonly string[] = [
+  "REGWEB_EXPIRED",
+  "SCO_EXPIRED",
+];
+
+export function isFamilyExpiredDetail(detail: string): boolean {
+  return FAMILY_EXPIRED_DETAILS.includes(detail);
+}
+
+/**
  * A backend 401 only means "expired" when the user WAS logged in; an
  * anonymous session's 401 (the boot /api/auth/me probe) must stay silent.
+ * Per-family codes never soft-log out: that feature's page renders an
+ * in-card "campus connection expired" note instead.
  */
-export function shouldSoftLogout(statusBefore: AuthStatus): boolean {
+export function shouldSoftLogout(statusBefore: AuthStatus, detail: string): boolean {
+  if (isFamilyExpiredDetail(detail)) return false;
   return statusBefore === "authed";
 }
 

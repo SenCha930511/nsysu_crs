@@ -20,6 +20,7 @@ function AppShell() {
   const NAV_LINKS = [
     { to: "/", label: tx("查課・課表", "Courses • Timetable"), icon: CalendarWeek, end: true },
     { to: "/write", label: tx("紀錄", "Records"), icon: Send, end: false },
+    { to: "/me", label: tx("我的", "Me"), icon: PersonCircle, end: false },
   ];
   const navigate = useNavigate();
 
