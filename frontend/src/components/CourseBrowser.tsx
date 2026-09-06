@@ -366,19 +366,7 @@ export default function CourseBrowser({
           {/* Row 1: Title (Prominent) & Quota Pill */}
           <div className="d-flex align-items-start justify-content-between gap-2 min-w-0">
             <div className="min-w-0 flex-grow-1">
-              {onViewCourse !== undefined ? (
-                <button
-                  type="button"
-                  className="card-course-name btn-link text-decoration-none border-0 bg-transparent p-0 text-start"
-                  title={tx("檢視課程詳細資訊與大綱", "View course details and syllabus")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewCourse(course);
-                  }}
-                >
-                  {courseName(course)}
-                </button>
-              ) : course.url !== null ? (
+              {course.url !== null ? (
                 <a
                   href={course.url}
                   target="_blank"
@@ -390,6 +378,18 @@ export default function CourseBrowser({
                 >
                   {courseName(course)}
                 </a>
+              ) : onViewCourse !== undefined ? (
+                <button
+                  type="button"
+                  className="card-course-name btn-link text-decoration-none border-0 bg-transparent p-0 text-start"
+                  title={tx("檢視課程詳細資訊與大綱", "View course details and syllabus")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewCourse(course);
+                  }}
+                >
+                  {courseName(course)}
+                </button>
               ) : (
                 <span className="card-course-name">{courseName(course)}</span>
               )}

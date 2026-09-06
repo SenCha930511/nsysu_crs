@@ -199,7 +199,23 @@ function CourseBlock({
       </div>
 
       {/* Course Title */}
-      {onViewCourse !== undefined ? (
+      {readOnly ? (
+        <div className="course-block-title">
+          {name}
+        </div>
+      ) : course.url !== null ? (
+        <a
+          href={course.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="course-block-title course-block-title-btn"
+          title={tx("在學校原始頁開啟課程大綱", "Open the syllabus on the school's original page")}
+          aria-label={tx(`開啟 ${name} 的學校大綱頁`, `Open the school outline page for ${name}`)}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {name}
+        </a>
+      ) : onViewCourse !== undefined ? (
         <button
           type="button"
           className="course-block-title course-block-title-btn"
