@@ -54,6 +54,11 @@ export interface AuthContextValue {
   regwebAvailable: boolean;
   /** SCO-family features (歷年成績 grades) connected on the account. */
   scoAvailable: boolean;
+  /** True when the server's stu_enroll family is enabled (from /api/auth/me). */
+  featureStuEnroll: boolean;
+  /** Ends the whole session (soft logout + expired notice) - used by guards
+   * and by the /me zombie-session detector. */
+  requireRelogin: () => void;
   login: (studentNo: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -67,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [regwebAvailable, setRegwebAvailable] = useState(false);
   const [scoAvailable, setScoAvailable] = useState(false);
+  const [featureStuEnroll, setFeatureStuEnroll] = useState(false);
   const statusRef = useRef(status);
   statusRef.current = status;
 
@@ -78,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStudentNo(body.student_no);
         setRegwebAvailable(body.regweb_available);
         setScoAvailable(body.sco_available);
+        setFeatureStuEnroll(body.feature_stu_enroll);
         // A refresh survives via sessionStorage: the csrf cookie value is
         // unchanged by page reloads (the backend re-sets the SAME value).
         setCsrfToken(readStoredCsrfToken());
@@ -96,23 +103,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const softLogout = useCallback(() => {
+    setStudentNo(null);
+    setCsrfToken(null);
+    storeCsrfToken(null);
+    setRegwebAvailable(false);
+    setScoAvailable(false);
+    setFeatureStuEnroll(false);
+    setStatus("anon");
+    setExpired(true);
+    logout().catch(() => {
+      // best-effort server-side cleanup; the session is already unusable
+    });
+  }, []);
+
   // Global 401 seam: soft logout; the guard turns the state into a route.
   useEffect(() => {
     bindUnauthorizedHandler((detail) => {
       if (!shouldSoftLogout(statusRef.current, detail)) return;
-      setStudentNo(null);
-      setCsrfToken(null);
-      storeCsrfToken(null);
-      setRegwebAvailable(false);
-      setScoAvailable(false);
-      setStatus("anon");
-      setExpired(true);
-      logout().catch(() => {
-        // best-effort server-side cleanup; the session is already unusable
-      });
+      softLogout();
     });
     return () => bindUnauthorizedHandler(null);
-  }, []);
+  }, [softLogout]);
 
   const pendingPollRef = useRef<number | null>(null);
   const stopStuPendingPoll = useCallback(() => {
@@ -133,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((me) => {
           setRegwebAvailable(me.regweb_available);
           setScoAvailable(me.sco_available);
+          setFeatureStuEnroll(me.feature_stu_enroll);
           if (me.regweb_available && me.sco_available) stopStuPendingPoll();
         })
         .catch(() => {
@@ -171,6 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [stopStuPendingPoll]);
 
+  const requireRelogin = softLogout;
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
@@ -179,8 +194,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       csrfToken,
       regwebAvailable,
       scoAvailable,
+      featureStuEnroll,
       login: doLogin,
       logout: doLogout,
+      requireRelogin,
     }),
     [
       status,
@@ -189,8 +206,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       csrfToken,
       regwebAvailable,
       scoAvailable,
+      featureStuEnroll,
       doLogin,
       doLogout,
+      requireRelogin,
     ],
   );
 

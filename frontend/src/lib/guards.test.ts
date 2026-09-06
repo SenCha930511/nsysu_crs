@@ -4,6 +4,7 @@ import {
   decideGuard,
   isFamilyExpiredDetail,
   shouldSoftLogout,
+  shouldForceRelogin,
   loginErrorText,
   loginNoticeText,
 } from "./guards";
@@ -60,9 +61,9 @@ describe("shouldSoftLogout", () => {
   });
 
   it.each(["REGWEB_EXPIRED", "SCO_EXPIRED"])(
-    "never logs out on the per-family code %s (that feature stays in-page)",
+    "also logs out on the per-family code %s (upstream jar death needs a full re-login)",
     (detail) => {
-      expect(shouldSoftLogout("authed", detail)).toBe(false);
+      expect(shouldSoftLogout("authed", detail)).toBe(true);
     },
   );
 
@@ -81,6 +82,18 @@ describe("isFamilyExpiredDetail", () => {
     expect(isFamilyExpiredDetail("not_authenticated")).toBe(false);
     expect(isFamilyExpiredDetail("regweb_expired")).toBe(false);
     expect(isFamilyExpiredDetail("REGWEB_EXPIRED ")).toBe(false);
+  });
+});
+
+describe("shouldForceRelogin", () => {
+  it("fires only for an authed zombie session while the feature is enabled", () => {
+    expect(shouldForceRelogin("authed", true, false, true)).toBe(true);
+    expect(shouldForceRelogin("authed", true, true, false)).toBe(true);
+    expect(shouldForceRelogin("authed", true, false, false)).toBe(true);
+    expect(shouldForceRelogin("authed", true, true, true)).toBe(false);
+    expect(shouldForceRelogin("authed", false, false, false)).toBe(false);
+    expect(shouldForceRelogin("anon", true, false, false)).toBe(false);
+    expect(shouldForceRelogin("loading", true, false, false)).toBe(false);
   });
 });
 

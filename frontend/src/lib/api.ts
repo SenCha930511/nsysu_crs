@@ -382,6 +382,8 @@ export interface MeResponse {
   student_no: string;
   regweb_available: boolean;
   sco_available: boolean;
+  /** True when the server's stu_enroll family is enabled in this deployment. */
+  feature_stu_enroll: boolean;
 }
 
 export function fetchMe(signal?: AbortSignal): Promise<MeResponse> {

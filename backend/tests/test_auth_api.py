@@ -300,6 +300,7 @@ def test_me_flags_track_parked_family_jars_after_login(monkeypatch, harness_fact
         "student_no": "M153000024",
         "regweb_available": True,
         "sco_available": True,
+        "feature_stu_enroll": True,
     }
 
 
@@ -340,6 +341,7 @@ def test_me_roundtrip_and_logout_clears_everything(harness_factory):
         "student_no": "M153000024",
         "regweb_available": False,
         "sco_available": False,
+        "feature_stu_enroll": False,
     }
     out = harness.client.post("/api/auth/logout", cookies={"session_id": sid})
     assert out.status_code == 200

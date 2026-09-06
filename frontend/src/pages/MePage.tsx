@@ -40,6 +40,7 @@ import type {
   RegistrationChecklist,
 } from "../lib/api";
 import { useI18n } from "../lib/i18n";
+import { shouldForceRelogin } from "../lib/guards";
 import { meFeatureErrorKind } from "../lib/meErrors";
 import { checklistStatusTone, gradesDiffText } from "../lib/meExtras";
 import { useAuth } from "../state/auth";
@@ -665,8 +666,23 @@ type ProfileTab = "all" | "grades" | "payment" | "cert";
 
 function MePage() {
   const { tx } = useI18n();
-  const { studentNo, scoAvailable, regwebAvailable } = useAuth();
+  const {
+    status,
+    studentNo,
+    scoAvailable,
+    regwebAvailable,
+    featureStuEnroll,
+    requireRelogin,
+  } = useAuth();
   const [activeTab, setActiveTab] = useState<ProfileTab>("all");
+
+  // Zombie session detector: logged in but the stu_enroll fan-out never
+  // connected (session predates the feature flip) -> full re-login.
+  useEffect(() => {
+    if (shouldForceRelogin(status, featureStuEnroll, regwebAvailable, scoAvailable)) {
+      requireRelogin();
+    }
+  }, [status, featureStuEnroll, regwebAvailable, scoAvailable, requireRelogin]);
 
   return (
     <div className="py-2 py-sm-3 pb-5" style={{ maxWidth: "1080px", margin: "0 auto" }}>

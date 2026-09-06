@@ -57,9 +57,22 @@ export function isFamilyExpiredDetail(detail: string): boolean {
  * Per-family codes never soft-log out: that feature's page renders an
  * in-card "campus connection expired" note instead.
  */
-export function shouldSoftLogout(statusBefore: AuthStatus, detail: string): boolean {
-  if (isFamilyExpiredDetail(detail)) return false;
+export function shouldSoftLogout(statusBefore: AuthStatus, _detail: string): boolean {
   return statusBefore === "authed";
+}
+
+/** /me-family zombie: logged in but the stu_enroll fan-out never connected
+ *  (e.g. session predates the feature flip) while the feature IS enabled —
+ *  bounced to logout so the user re-logs and re-fans-out cleanly. */
+export function shouldForceRelogin(
+  status: AuthStatus,
+  featureStuEnroll: boolean,
+  regwebAvailable: boolean,
+  scoAvailable: boolean,
+): boolean {
+  if (status !== "authed") return false;
+  if (!featureStuEnroll) return false;
+  return !regwebAvailable || !scoAvailable;
 }
 
 export function loginNoticeText(reason: string | null, lang: "zh" | "en" = "zh"): string | null {

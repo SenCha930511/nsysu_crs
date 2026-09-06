@@ -132,6 +132,7 @@ class MeResponse(BaseModel):
     student_no: str
     regweb_available: bool
     sco_available: bool
+    feature_stu_enroll: bool
 
 def _client_ip(request: Request) -> str:
     """First X-Forwarded-For hop behind Caddy, else the direct peer."""
@@ -299,8 +300,10 @@ async def get_me(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="not_authenticated"
         )
     regweb_available, sco_available = await subsystem_availability(redis, session_id)
+    settings: Settings = request.app.state.settings
     return MeResponse(
         student_no=student_no,
         regweb_available=regweb_available,
         sco_available=sco_available,
+        feature_stu_enroll=settings.feature_stu_enroll,
     )
