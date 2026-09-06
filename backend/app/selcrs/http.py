@@ -30,6 +30,12 @@ from typing import Final
 import anyio
 import httpx
 
+# Re-exported for app/stuenroll: the architecture guardrail confines httpx
+# imports to this adapter package, so sibling adapters consume jar/transport
+# TYPES through this seam while clients stay built here only.
+from httpx import AsyncBaseTransport as AsyncBaseTransport  # noqa: PLC0414
+from httpx import Cookies as Cookies  # noqa: PLC0414
+
 from app.selcrs.errors import SelcrsUnavailable
 
 # Observably generous timeouts: the school front-end sits behind a slow
