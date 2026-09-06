@@ -36,7 +36,7 @@
 | F7 | **成績在 sco（`selcrs.nsysu.edu.tw/scoreqry/`）**：獨立互動登入（SID/PASSWD/ValidCode＋自家 captcha）→ 自動表單 → `sco_query.asp` 302 → frameset；menu frame 有 **歷年成績查詢（action=811&KIND=3）、學期成績（700&KIND=2）、預警（817&KIND=5）** | `stuenroll_grades_frame_0_live_1151.html` |
 | F8 | **繳費在 tfstu**：`act=71&out=` relay → WregRedirect → 自動表單（relay 自己轉交憑證，**零互動登入**）→ `tfstu_login_chk.asp` 302 → `tfstudata.asp?act=11`（頁面含 金金額/狀態 欄位＋`tfstu_receipt_crd_us.asp` 收據連結） | `stuenroll_payment_live_1151.html` |
 | F9 | **資料確認在 verify**：relay → 自動表單(ssn1=idno & idno) → `verify_stu.asp`（80KB 確認表單，VACTION=1 是**寫操作**——不碰） | `stuenroll_verify_live_1151.html` |
-| F10 | **在學證明電子版：唯讀不可達**——資料確認「已完成」後，regweb 清單與 verify 頁都沒有任何證明書連結；產生很可能掛在確認表單送出（寫）或只在剛完成時出現。早期幾輪以為抓到的「cert」其實是**新生 newstu 頁的關鍵字誤路由**，已更正 | consolidated 段 |
+| F10 | **在學證明電子版：可達（PDF）**——regweb 清單上有「產生在學證明」**按鈕**（非錨點，早期 anchor 探索漏判）：`act=71&out=print/enrollcert.asp` → WregRedirect → 自動表單 → `print/enrollcert.asp` 回 **application/pdf**（實測 %PDF-1.4、1.87MB、md5 `7cfe3653…`） | consolidated 段更正條 |
 | F11 | TLS/編碼與 selcrs 同棧；各主機各自發 ASPSESSIONID* —— jar 是一袋多主機 | jar cookie-names 逐跳增長的 wire 紀錄 |
 
 ## 3. 未定案（UNVERIFIED）
@@ -44,7 +44,6 @@
 | # | 項目 | 目前評估 |
 |---|---|---|
 | U1 | 各子系統 session TTL（sliding/hard 界線） | t+0 全活；界線未探——先沿用 selcrs 的 1800/7200 設定，M2 觀察再調 |
-| U2 | 在學證明產生流程 | 唯讀不可達（F10）→ **本層改為導引卡**：深連結 verify/regweb + 說明，不做代理下載 |
 
 ---
 
@@ -127,17 +126,19 @@ M0 後的實際 jar 地圖：**regweb jar**（經 stu_enroll 3 跳鏈免費拿�
 |---|---|---|
 | `GET /api/me/grades` | sco 正規化成績列（歷年 action=811 優先；GPA 由前端算，server 保持薄） | Redis session-scoped 快照（比照 selections，7d TTL）＋ `POST /api/me/grades/sync` 手動刷新 |
 | `GET /api/me/payment-status` | tfstudata 金額・狀態區塊 | 短 TTL（例如 1h；或直接每次 live） |
-| ~~在學證明端點~~ | **改為純前端導引卡**（F10：唯讀不可達）：深連結 regweb 主頁＋說明，不設後端端點 | — |
+| `GET /api/me/enrollment-cert` | **PDF passthrough**：relay 鏈取 `print/enrollcert.asp`、串流回應 | **不快取、不落盤、即時產生即時丟棄** |
 
 錯誤語義沿用既有：`SELCRS_EXPIRED`-對應的各家族 401（前端全域 soft-logout seam 已存在；detail 用 `REGWEB_EXPIRED` / `SCO_EXPIRED` 讓前端分卡提示）；學校端異常 503。
 
-### 5.6 在學證明（改為導引，無隱私面）
+### 5.6 在學證明的隱私設計（最高敏感級）
 
-唯讀探查證明：完成資料確認後校內沒有任何純 GET 的證明書入口；產生流程掛在確認表單送出（寫）上——不做代理、不做下載，就不存在 PDF 隱私問題。若日後政策改變出現唯讀入口，再按「`no-store`＋`Content-Disposition: attachment`＋不快取不落盤」規格加回端點。導引卡文案需要說明官方路徑（網路註冊系統 → 個人基本資料確認 → 產生電子版）。
+- 證明書是使用者本人文件，可能含姓名／學號／身分證字號 → 回應 `Cache-Control: no-store`、`Content-Disposition: attachment`（配合現行 CSP `object-src 'none'`，不內嵌顯示）
+- PDF bytes **不進任何快取／DB／日誌**：relay 鏈即時取得、串流轉發、記憶體即放；access log 只記 path+status（既有）
+- relay 鏈的 handoff 頁面回顯明文密碼（F3）——跟隨器的記憶體中間頁面**不落任何 fixture / snapshot**；此類頁面只在請求生命週期內存在
 
 ### 5.7 前端
 
-- 新路由 `/me`（RequireAuth，從第一天就進受保護群）：三張卡 —— 成績（表格（表格＋學期/累計 GPA）、繳費狀態、在學證明**導引卡**（官方路徑說明＋深連結）
+- 新路由 `/me`（RequireAuth，從第一天就進受保護群）：三張卡 —— 成績（表格（表格＋學期/累計 GPA）、繳費狀態、在學證明（**下載按鈕**（打 `/api/me/enrollment-cert`，新分頁觸發）＋官方路徑說明）
 - `lib/stuEnroll.ts` 純函數層（GPA 計算、列分組）＋ vitest；i18n 比照既有 `tx()` 模式
 - session 狀態延伸：`regweb_available`、`sco_available` 兩個獨立旗標從登入回應帶出（A 方案的 fail-soft 對應 UI）
 

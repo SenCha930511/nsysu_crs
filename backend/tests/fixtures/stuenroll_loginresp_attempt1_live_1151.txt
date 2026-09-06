@@ -1,1 +1,1 @@
-<form name="f1" method="post" action="https://regweb.nsysu.edu.tw/webreg/wregloginchk.asp"><input type="hidden" name="ID" value="M153****24"><input type="hidden" name="passwd" value="********"><input type="hidden" name="cmd" value="newframe"><input type="hidden" name="action" value="stu"></form><script Language="JavaScript">f1.submit();</script>
+驗證碼錯誤。<br><br>Incorrect verified code!!<br/><br/><a href='index.asp'><font color='red'>回首頁&nbsp;Back</font></a>

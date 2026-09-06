@@ -116,7 +116,8 @@ class PageScrape(HTMLParser):
         self.action: str | None = None
         self.links: list[tuple[str, str]] = []  # (href, visible text)
         self.frames: list[str] = []
-        self.captcha_srcs: list[str] = []  # img srcs that look like captcha endpoints
+        self.captcha_srcs: list[str] = []  # img srcs that look like validcode endpoints
+        self.relay_urls: list[str] = []  # button onclick window.open() targets
         self._open_anchor: str | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
@@ -133,6 +134,10 @@ class PageScrape(HTMLParser):
             self.frames.append(values["src"])
         elif tag == "img" and values.get("src") and "validcode" in values["src"].lower():
             self.captcha_srcs.append(values["src"])
+        elif tag in ("button", "input"):
+            onclick = values.get("onclick", "")
+            for match in re.finditer(r"['\"]([^'\"]*\?[^'\"=]+=[^'\"]*)['\"]", onclick):
+                self.relay_urls.append(match.group(1))
 
     def handle_data(self, data: str) -> None:
         if self._open_anchor is not None and data.strip():
@@ -710,8 +715,11 @@ async def _async_main(args: argparse.Namespace) -> int:
                         "in plaintext (masked in fixtures)",
                     )
                 )
-                links: list[tuple[str, str]] = _scrape(landing_html).links
-                frames = _scrape(landing_html).frames
+                landing_scrape = _scrape(landing_html)
+                links: list[tuple[str, str]] = landing_scrape.links + [
+                    (url, "[button]") for url in landing_scrape.relay_urls
+                ]
+                frames = landing_scrape.frames
                 for index, src in enumerate(frames[:4]):
                     frame_url = urljoin(landing_base, src)
                     frame_resp, jar = await _get(
@@ -882,6 +890,62 @@ async def _async_main(args: argparse.Namespace) -> int:
                                 f"authed-shape={ok}; fixture stuenroll_grades_live_1151.html",
                             )
                         )
+
+                # 6d. enrollcert (在學證明產生): a BUTTON relay on the regweb
+                #    checklist (act=71&out=print/enrollcert.asp) - invisible to
+                #    anchor-only discovery, which is why earlier rounds judged
+                #    the cert "read-only unreachable". Follow the school's own
+                #    relay chain and record what the endpoint actually is.
+                cert_relay = _keyword_link(
+                    links, ("enrollcert", "產生在學證明"), base=landing_base
+                )
+                if cert_relay is None:
+                    # Fixture-anchored fallback: the button in the checklist's
+                    # 身分驗證及學雜費繳納 group cell (regweb_main_live_1151).
+                    cert_relay = urljoin(
+                        landing_base, "WRegMain3.asp?act=71&out=print/enrollcert.asp"
+                    )
+                ctx.slog(f"  enrollcert relay: {ctx.scrub(cert_relay)}")
+                if not args.with_cert or not confirm(
+                    "follow 產生在學證明 relay（純 GET chain；只跟 relay/302，不送出任何表單）"
+                ):
+                    results.append(
+                        ProbeResult(
+                            "enrollcert (在學證明) relay outcome",
+                            "UNVERIFIED",
+                            "skipped by operator this round",
+                        )
+                    )
+                else:
+                    relay_resp, jar = await _get(
+                        ctx,
+                        cert_relay,
+                        jar,
+                        why="regweb act=71 relay toward print/enrollcert.asp "
+                        "(pure GET of the checklist's own button link)",
+                    )
+                    cert_landing, jar, cert_base = await _finish_chain(
+                        ctx, jar, relay_resp, current_url=cert_relay
+                    )
+                    cert_type = cert_landing.headers.get("content-type", "").lower()
+                    if "pdf" in cert_type:
+                        ctx.save_fixture(
+                            "stuenroll_enrollcert_live_1151", cert_landing.content, ext="pdf"
+                        )
+                    else:
+                        ctx.save_fixture(
+                            "stuenroll_enrollcert_live_1151", cert_landing.content
+                        )
+                    results.append(
+                        ProbeResult(
+                            "enrollcert (在學證明) relay outcome",
+                            "CONFIRMED",
+                            f"landing {ctx.scrub(cert_base)}; HTTP "
+                            f"{cert_landing.status_code}; content-type {cert_type or 'unknown'}; "
+                            "fixture stuenroll_enrollcert_live_1151 "
+                            f"({'pdf' if 'pdf' in cert_type else 'html'})",
+                        )
+                    )
 
                 # 7. Immediate liveness note (t+0 TTL evidence).
                 alive = _looks_authed(landing_html)
