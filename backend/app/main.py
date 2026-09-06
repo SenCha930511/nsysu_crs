@@ -11,6 +11,7 @@ from redis.exceptions import RedisError
 from app.api.auth import router as auth_router
 from app.api.catalog import router as catalog_router
 from app.api.courses import router as courses_router
+from app.api.export import router as export_router
 from app.api.health import router as health_router
 from app.api.ops import router as ops_router
 from app.api.schedule import router as schedule_router
@@ -76,4 +77,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(write_jobs_router)
     app.include_router(ops_router)
     app.include_router(schedule_router)
+    app.include_router(export_router)
     return app
