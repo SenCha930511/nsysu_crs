@@ -11,21 +11,24 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   ArrowRepeat,
+  Building,
   CashStack,
+  CheckCircleFill,
+  Clock,
   Download,
   ExclamationCircleFill,
   FileEarmarkPdf,
   InfoCircleFill,
   Mortarboard,
   MortarboardFill,
+  PersonBadge,
   PersonCircle,
+  Receipt,
+  ShieldCheck,
 } from "react-bootstrap-icons";
 
 import { fetchGrades, fetchPaymentStatus, syncGrades } from "../lib/api";
-import type {
-  GradesResponse,
-  PaymentStatusResponse,
-} from "../lib/api";
+import type { GradesResponse, PaymentStatusResponse } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { meFeatureErrorKind } from "../lib/meErrors";
 import { useAuth } from "../state/auth";
@@ -71,8 +74,8 @@ function cardErrorText(
 function FeatureOffNote() {
   const { tx } = useI18n();
   return (
-    <div className="d-flex align-items-start gap-2 text-muted small bg-light rounded-3 p-3">
-      <InfoCircleFill size={15} className="flex-shrink-0 mt-0.5 text-slate-400" />
+    <div className="d-flex align-items-start gap-2 text-muted small bg-light rounded-3 p-3 border">
+      <InfoCircleFill size={16} className="flex-shrink-0 mt-0.5 text-slate-400" />
       <span>
         {tx(
           "此帳號尚未開通此功能，請重新登入試試",
@@ -85,18 +88,21 @@ function FeatureOffNote() {
 
 function CardErrorLine({ text }: { text: string }) {
   return (
-    <div className="alert alert-warning py-1.5 px-3 small rounded-3 mb-3" role="alert">
-      <ExclamationCircleFill size={14} className="me-1.5" />
-      {text}
+    <div className="alert alert-warning py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2" role="alert">
+      <ExclamationCircleFill size={15} className="flex-shrink-0 text-amber-600" />
+      <span>{text}</span>
     </div>
   );
 }
 
 function CardIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center">
+    <div
+      className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center"
+      style={{ width: "36px", height: "36px" }}
+    >
       {children}
-    </span>
+    </div>
   );
 }
 
@@ -143,8 +149,6 @@ function GradesCard() {
     setErrorText(null);
     syncGrades()
       .then((body) => {
-        // The sync response's added/removed/unchanged diff stays unrendered:
-        // only the fresh snapshot drives the view (per the M3 card spec).
         setData({ synced_at: body.synced_at, items: body.items });
       })
       .catch((err: unknown) => {
@@ -156,97 +160,100 @@ function GradesCard() {
   }, [syncing, scoAvailable, tx]);
 
   return (
-    <section className="card shadow-sm border-0 rounded-4" aria-label={tx("歷年成績", "Grades")}>
-      <div className="card-body p-4">
-        <div className="d-flex align-items-center justify-content-between flex-wrap" style={{ gap: "0.75rem" }}>
-          <h2 className="h6 fw-bold mb-0 text-dark d-flex align-items-center" style={{ gap: "0.6rem" }}>
-            <CardIcon>
-              <MortarboardFill size={16} />
-            </CardIcon>
-            <span>{tx("歷年成績", "Grades")}</span>
-          </h2>
-          {scoAvailable && (
-            <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
-              <span className="text-muted d-none d-sm-inline" style={{ fontSize: "0.78rem" }} role="status">
-                {data?.synced_at
-                  ? tx(`上次同步：${formatDateTime(data.synced_at)}`, `Last synced: ${formatDateTime(data.synced_at)}`)
-                  : tx("尚未同步", "Not synced yet")}
-              </span>
-              <button
-                type="button"
-                className="btn btn-sm btn-brand rounded-pill px-3 d-inline-flex align-items-center fw-semibold"
-                style={{ gap: "0.45rem" }}
-                onClick={onSync}
-                disabled={syncing}
-                data-testid="grades-sync"
-              >
-                {syncing ? (
-                  <span className="spinner-border spinner-border-sm" aria-hidden />
-                ) : (
-                  <ArrowRepeat size={13} />
-                )}
-                <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步歷年成績", "Sync grades")}</span>
-              </button>
-            </div>
-          )}
+    <section className="profile-card" aria-label={tx("歷年成績", "Academic Transcript")}>
+      <div className="profile-card-header">
+        <div className="d-flex align-items-center gap-2.5">
+          <CardIcon>
+            <MortarboardFill size={18} />
+          </CardIcon>
+          <div>
+            <h2 className="h6 fw-bold mb-0 text-dark">{tx("歷年成績", "Academic Transcript")}</h2>
+            <span className="text-muted" style={{ fontSize: "0.78rem" }}>
+              {tx("中山大學教務成績系統同步資料", "NSYSU Academic Affairs grade record snapshot")}
+            </span>
+          </div>
         </div>
 
-        <div className="mt-3">
-          {errorText !== null && <CardErrorLine text={errorText} />}
+        {scoAvailable && (
+          <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
+            {data?.synced_at && (
+              <span className="record-stat-chip py-1 px-2.5 font-monospace text-muted" style={{ fontSize: "0.78rem" }} role="status">
+                <Clock size={12} className="text-slate-400 me-1" />
+                {tx(`上次同步：${formatDateTime(data.synced_at)}`, `Last synced: ${formatDateTime(data.synced_at)}`)}
+              </span>
+            )}
+            <button
+              type="button"
+              className="btn btn-sm btn-brand rounded-pill px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center shadow-sm"
+              style={{ fontSize: "0.84rem", gap: "0.45rem" }}
+              onClick={onSync}
+              disabled={syncing}
+              data-testid="grades-sync"
+            >
+              <ArrowRepeat size={14} className={syncing ? "spin" : ""} />
+              <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步歷年成績", "Sync Grades")}</span>
+            </button>
+          </div>
+        )}
+      </div>
 
-          {!scoAvailable ? (
-            <FeatureOffNote />
-          ) : loading && data === null ? (
-            <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">
-              <span className="spinner-border spinner-border-sm me-2" aria-hidden />
-              {tx("讀取中…", "Loading…")}
-            </p>
-          ) : data === null ? null : data.items.length === 0 ? (
-            <div className="text-center text-muted py-4">
-              <div className="p-3 bg-slate-100 text-slate-400 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3" style={{ width: "64px", height: "64px" }}>
-                <Mortarboard size={28} />
-              </div>
-              <h3 className="h6 fw-bold text-dark mb-1">{tx("尚無成績資料", "No grade records yet")}</h3>
-              <p className="small mb-3" style={{ maxWidth: "26rem", margin: "0 auto" }}>
-                {tx(
-                  "按下「同步歷年成績」即可從學校教務系統讀取你的歷年成績。",
-                  "Hit “Sync grades” to pull your full grade history from the school system.",
-                )}
-              </p>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5"
-                onClick={onSync}
-                disabled={syncing}
-              >
-                {syncing ? (
-                  <span className="spinner-border spinner-border-sm" aria-hidden />
-                ) : (
-                  <ArrowRepeat size={14} />
-                )}
-                <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步歷年成績", "Sync grades")}</span>
-              </button>
+      <div className="profile-card-body">
+        {errorText !== null && <CardErrorLine text={errorText} />}
+
+        {!scoAvailable ? (
+          <FeatureOffNote />
+        ) : loading && data === null ? (
+          <div className="p-4 text-center text-muted bg-light rounded-3">
+            <div className="spinner-border spinner-border-sm text-teal-600 me-2" role="status" aria-hidden />
+            <span className="fw-semibold">{tx("讀取歷年成績中…", "Loading academic transcript…")}</span>
+          </div>
+        ) : data === null ? null : data.items.length === 0 ? (
+          <div className="text-center text-muted py-4">
+            <div
+              className="p-3 bg-slate-100 text-slate-400 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3"
+              style={{ width: "60px", height: "60px" }}
+            >
+              <Mortarboard size={26} />
             </div>
-          ) : (
-            // Rows render VERBATIM (string[][]); any header row is just
-            // items[0]. Column names / GPA math ship only after a later data
-            // round pins the school's row format - do not invent them here.
+            <h3 className="h6 fw-bold text-dark mb-1">{tx("尚無成績資料", "No grade records yet")}</h3>
+            <p className="small mb-3 text-muted" style={{ maxWidth: "26rem", margin: "0 auto" }}>
+              {tx(
+                "按下「同步歷年成績」即可從學校教務系統讀取你的完整歷年成績清單。",
+                "Hit “Sync Grades” to pull your full grade history from the school system.",
+              )}
+            </p>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-brand rounded-pill px-3.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5"
+              onClick={onSync}
+              disabled={syncing}
+            >
+              <ArrowRepeat size={14} className={syncing ? "spin" : ""} />
+              <span>{syncing ? tx("同步中…", "Syncing…") : tx("同步歷年成績", "Sync Grades")}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="profile-table-container">
             <div className="table-responsive">
-              <table className="table table-sm mb-0">
+              <table className="table table-hover table-sm mb-0 align-middle">
                 <tbody>
                   {data.items.map((row, rowIndex) => (
-                    // Verbatim rows are never reordered, so index keys are safe.
-                    <tr key={rowIndex}>
+                    <tr
+                      key={rowIndex}
+                      className={rowIndex === 0 ? "table-light fw-bold text-slate-800" : ""}
+                    >
                       {row.map((cell, cellIndex) => (
-                        <td key={cellIndex}>{cell}</td>
+                        <td key={cellIndex} className="py-2.5 px-3">
+                          {cell}
+                        </td>
                       ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -289,46 +296,64 @@ function PaymentCard() {
   }, [regwebAvailable, tx]);
 
   return (
-    <section className="card shadow-sm border-0 rounded-4" aria-label={tx("繳費狀態", "Payment")}>
-      <div className="card-body p-4">
-        <div className="d-flex align-items-center justify-content-between flex-wrap" style={{ gap: "0.75rem" }}>
-          <h2 className="h6 fw-bold mb-0 text-dark d-flex align-items-center" style={{ gap: "0.6rem" }}>
-            <CardIcon>
-              <CashStack size={16} />
-            </CardIcon>
-            <span>{tx("繳費狀態", "Payment")}</span>
-          </h2>
-          {data !== null && data.dept !== "" && (
-            <span className="text-muted small">
-              {tx("系所：", "Department: ")}{data.dept}
+    <section className="profile-card" aria-label={tx("繳費狀態", "Tuition & Billing")}>
+      <div className="profile-card-header">
+        <div className="d-flex align-items-center gap-2.5">
+          <CardIcon>
+            <CashStack size={18} />
+          </CardIcon>
+          <div>
+            <h2 className="h6 fw-bold mb-0 text-dark">{tx("繳費狀態", "Tuition & Billing")}</h2>
+            <span className="text-muted" style={{ fontSize: "0.78rem" }}>
+              {tx("學雜費、各項規費繳納紀錄及收據狀態", "Tuition, fees payment records, and official receipt status")}
             </span>
-          )}
+          </div>
         </div>
 
-        <div className="mt-3">
-          {errorText !== null && <CardErrorLine text={errorText} />}
+        {data !== null && data.dept !== "" && (
+          <div className="d-flex align-items-center gap-2">
+            <span className="studio-badge studio-badge-secondary">
+              <Building size={13} className="text-slate-500" />
+              <span>{tx("系所：", "Dept: ")}{data.dept}</span>
+            </span>
+          </div>
+        )}
+      </div>
 
-          {!regwebAvailable ? (
-            <FeatureOffNote />
-          ) : loading && data === null ? (
-            <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">
-              <span className="spinner-border spinner-border-sm me-2" aria-hidden />
-              {tx("讀取中…", "Loading…")}
+      <div className="profile-card-body">
+        {errorText !== null && <CardErrorLine text={errorText} />}
+
+        {!regwebAvailable ? (
+          <FeatureOffNote />
+        ) : loading && data === null ? (
+          <div className="p-4 text-center text-muted bg-light rounded-3">
+            <div className="spinner-border spinner-border-sm text-teal-600 me-2" role="status" aria-hidden />
+            <span className="fw-semibold">{tx("讀取繳費狀態中…", "Loading billing status…")}</span>
+          </div>
+        ) : data === null ? null : data.bills.length === 0 ? (
+          <div className="text-center text-muted py-4">
+            <div
+              className="p-3 bg-slate-100 text-slate-400 rounded-circle d-inline-flex align-items-center justify-content-center mx-auto mb-3"
+              style={{ width: "60px", height: "60px" }}
+            >
+              <CashStack size={26} />
+            </div>
+            <h3 className="h6 fw-bold text-dark mb-1">{tx("目前無任何待繳或繳費單據", "No bills on record")}</h3>
+            <p className="small mb-0 text-muted">
+              {tx("校內系統目前無需要繳納之款項或相關紀錄。", "There are currently no outstanding or historical bills in the campus system.")}
             </p>
-          ) : data === null ? null : data.bills.length === 0 ? (
-            <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">
-              {tx("目前沒有任何繳費單據", "No bills on record right now")}
-            </p>
-          ) : (
+          </div>
+        ) : (
+          <div className="profile-table-container">
             <div className="table-responsive">
-              <table className="table table-sm mb-0 align-middle">
+              <table className="table table-hover table-sm mb-0 align-middle text-nowrap payment-bills-table">
                 <thead>
                   <tr>
-                    <th scope="col">{tx("單據名稱", "Bill")}</th>
+                    <th scope="col">{tx("單據名稱", "Bill Item")}</th>
                     <th scope="col">{tx("應繳金額", "Amount")}</th>
                     <th scope="col">{tx("繳費狀態", "Status")}</th>
-                    <th scope="col">{tx("繳費日期", "Pay date")}</th>
-                    <th scope="col">{tx("收據", "Receipt")}</th>
+                    <th scope="col">{tx("繳費日期", "Pay Date")}</th>
+                    <th scope="col">{tx("收據狀態", "Receipt")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -336,16 +361,28 @@ function PaymentCard() {
                     const paid = bill.pay_date !== null && bill.pay_date !== "";
                     return (
                       <tr key={`${bill.item}-${index}`}>
-                        <td>{bill.item}</td>
-                        <td>{bill.amount}</td>
+                        <td className="fw-semibold text-dark">{bill.item}</td>
+                        <td className="font-monospace fw-bold text-slate-800">
+                          {bill.amount ? `$${bill.amount}` : "—"}
+                        </td>
                         <td>
-                          <span className={`studio-badge ${paid ? "studio-badge-success" : "studio-badge-secondary"}`}>
-                            {bill.status}
+                          <span className={`studio-badge ${paid ? "studio-badge-success" : "studio-badge-warning"}`}>
+                            {paid && <CheckCircleFill size={12} />}
+                            <span>{bill.status}</span>
                           </span>
                         </td>
-                        <td>{bill.pay_date !== null && bill.pay_date !== "" ? bill.pay_date : "—"}</td>
-                        <td className="text-muted small">
-                          {bill.receipt_available ? tx("收據已開立", "Receipt issued") : "—"}
+                        <td className="font-monospace text-slate-600">
+                          {bill.pay_date !== null && bill.pay_date !== "" ? bill.pay_date : "—"}
+                        </td>
+                        <td>
+                          {bill.receipt_available ? (
+                            <span className="studio-badge studio-badge-indigo">
+                              <Receipt size={12} />
+                              <span>{tx("收據已開立", "Receipt Issued")}</span>
+                            </span>
+                          ) : (
+                            <span className="text-muted small">—</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -353,8 +390,8 @@ function PaymentCard() {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -365,53 +402,81 @@ function CertCard() {
   const { regwebAvailable } = useAuth();
   const [openNote, setOpenNote] = useState<string | null>(null);
 
-  // window.open reports nothing about the HTTP result (PDF or error body),
-  // so the only pre-emptible failure is the flag-false case, handled above;
-  // the click note covers "nothing visibly happened" UX on the browser side.
   const onDownload = () => {
     window.open("/api/me/enrollment-cert", "_blank");
     setOpenNote(
       tx(
-        "檔案已在新分頁開啟下載；若沒有反應，請允許瀏覽器的彈出式視窗後再試一次。",
-        "The file downloads in a new tab. If nothing happened, allow pop-ups for this site and try again.",
+        "檔案已在新分頁開啟下載；若沒有反應，請確認已允許瀏覽器的彈出式視窗。",
+        "The file is opening in a new tab. If nothing appears, please check your browser's pop-up blocker.",
       ),
     );
   };
 
   return (
-    <section className="card shadow-sm border-0 rounded-4" aria-label={tx("在學證明", "Enrollment Certificate")}>
-      <div className="card-body p-4">
-        <h2 className="h6 fw-bold mb-0 text-dark d-flex align-items-center" style={{ gap: "0.6rem" }}>
+    <section className="profile-card" aria-label={tx("在學證明", "Enrollment Certificate")}>
+      <div className="profile-card-header">
+        <div className="d-flex align-items-center gap-2.5">
           <CardIcon>
-            <FileEarmarkPdf size={16} />
+            <FileEarmarkPdf size={18} />
           </CardIcon>
-          <span>{tx("在學證明", "Enrollment Certificate")}</span>
-        </h2>
+          <div>
+            <h2 className="h6 fw-bold mb-0 text-dark">{tx("在學證明", "Enrollment Certificate")}</h2>
+            <span className="text-muted" style={{ fontSize: "0.78rem" }}>
+              {tx("由教務處網路註冊系統即時簽證產出之官方在學證明", "Official PDF certificate live-generated from Academic Affairs system")}
+            </span>
+          </div>
+        </div>
 
-        <p className="text-muted small mt-3 mb-3" style={{ lineHeight: 1.6 }}>
-          {tx(
-            "由教務處線上系統即時產出的在學證明（PDF），下載內容不經本網站保存。",
-            "A certificate-of-enrollment PDF generated live by the school's registration system; the file is never stored on this site.",
-          )}
-        </p>
+        <span className="studio-badge studio-badge-info">
+          <CheckCircleFill size={12} />
+          <span>{tx("校方電子簽證", "Live Official E-Cert")}</span>
+        </span>
+      </div>
 
+      <div className="profile-card-body">
         {!regwebAvailable ? (
           <FeatureOffNote />
         ) : (
-          <div className="d-flex flex-column align-items-start" style={{ gap: "0.5rem" }}>
-            <button
-              type="button"
-              className="btn btn-brand rounded-pill px-4 py-2 d-inline-flex align-items-center shadow-sm fw-semibold"
-              style={{ fontSize: "0.88rem", gap: "0.6rem" }}
-              onClick={onDownload}
-              data-testid="cert-download"
-            >
-              <Download size={15} />
-              <span>{tx("下載在學證明（PDF）", "Download Certificate of Enrollment (PDF)")}</span>
-            </button>
-            {openNote !== null && (
-              <p className="text-muted small mb-0" role="status">{openNote}</p>
-            )}
+          <div className="cert-action-banner">
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="p-3 bg-white text-teal-700 rounded-3 border shadow-xs d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                style={{ width: "48px", height: "48px" }}
+              >
+                <FileEarmarkPdf size={24} />
+              </div>
+              <div>
+                <h3 className="h6 fw-bold mb-1 text-dark">
+                  {tx("國立中山大學在學證明書（PDF）", "NSYSU Certificate of Enrollment (PDF)")}
+                </h3>
+                <p className="text-muted small mb-0" style={{ lineHeight: 1.5 }}>
+                  {tx(
+                    "由教務處系統即時產出，包含學號、系所與最新學期註冊章，下載內容不經本網站伺服器儲存。",
+                    "Generated on-demand by the school registration system with official e-seal. Never stored on our servers.",
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="d-flex flex-column align-items-start align-items-sm-end gap-1.5 flex-shrink-0">
+              <button
+                type="button"
+                className="btn btn-brand rounded-pill px-4 py-2 d-inline-flex align-items-center shadow-sm fw-semibold"
+                style={{ fontSize: "0.88rem", gap: "0.55rem" }}
+                onClick={onDownload}
+                data-testid="cert-download"
+              >
+                <Download size={15} />
+                <span>{tx("下載在學證明（PDF）", "Download Certificate (PDF)")}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {openNote !== null && (
+          <div className="alert alert-info py-2 px-3 small rounded-3 mt-3 mb-0 d-flex align-items-center gap-2" role="status">
+            <InfoCircleFill size={14} className="flex-shrink-0 text-cyan-600" />
+            <span>{openNote}</span>
           </div>
         )}
       </div>
@@ -419,29 +484,120 @@ function CertCard() {
   );
 }
 
+type ProfileTab = "all" | "grades" | "payment" | "cert";
+
 function MePage() {
   const { tx } = useI18n();
+  const { studentNo, scoAvailable, regwebAvailable } = useAuth();
+  const [activeTab, setActiveTab] = useState<ProfileTab>("all");
+
   return (
-    <div className="py-3" style={{ maxWidth: "880px", margin: "0 auto" }}>
-      <div className="mb-3">
-        <h1 className="h4 fw-bold mb-2 text-dark d-flex align-items-center" style={{ gap: "0.85rem" }}>
-          <div className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center" style={{ width: "42px", height: "42px" }}>
-            <PersonCircle size={22} />
+    <div className="py-3" style={{ maxWidth: "1080px", margin: "0 auto" }}>
+      {/* Hero Header Card */}
+      <div className="records-hero-card">
+        <div className="d-flex align-items-center justify-content-between flex-wrap" style={{ gap: "1.25rem" }}>
+          <div>
+            <h1 className="h4 fw-bold mb-2 text-dark d-flex align-items-center" style={{ gap: "0.85rem" }}>
+              <div
+                className="p-2 rounded-3 bg-teal-50 text-teal-700 d-inline-flex align-items-center justify-content-center"
+                style={{ width: "42px", height: "42px" }}
+              >
+                <PersonCircle size={22} />
+              </div>
+              <span>{tx("我的專區", "My Records")}</span>
+            </h1>
+            <p className="text-muted mb-0" style={{ fontSize: "0.9rem", lineHeight: 1.6 }}>
+              {tx(
+                "歷年成績、繳費狀態與在學證明，皆由校內系統資料即時產生。",
+                "Your academic transcript, tuition billing records, and enrollment certificate — generated live from campus systems.",
+              )}
+            </p>
           </div>
-          <span>{tx("我的專區", "My Records")}</span>
-        </h1>
-        <p className="text-muted mb-0" style={{ fontSize: "0.9rem", lineHeight: 1.6 }}>
-          {tx(
-            "歷年成績、繳費狀態與在學證明，皆由校內系統資料即時產生。",
-            "Your grades, billing status, and enrollment certificate — generated live from the campus systems.",
+        </div>
+
+        <div
+          className="d-flex align-items-center flex-wrap"
+          style={{
+            gap: "0.75rem",
+            marginTop: "1.5rem",
+            paddingTop: "1.35rem",
+            borderTop: "1px solid #e2e8f0",
+          }}
+        >
+          {studentNo && (
+            <div className="record-stat-chip">
+              <PersonBadge size={15} className="text-teal-600" />
+              <span>{tx("學號：", "Student ID: ")}<strong className="font-monospace text-dark">{studentNo}</strong></span>
+            </div>
           )}
-        </p>
+
+          <div className="record-stat-chip">
+            <Mortarboard size={15} className={scoAvailable ? "text-emerald-600" : "text-slate-400"} />
+            <span>
+              {tx("歷年成績：", "Grades: ")}
+              <span className={scoAvailable ? "text-emerald-700 fw-bold" : "text-slate-500"}>
+                {scoAvailable ? tx("已連線", "Connected") : tx("未開通", "Offline")}
+              </span>
+            </span>
+          </div>
+
+          <div className="record-stat-chip">
+            <CashStack size={15} className={regwebAvailable ? "text-emerald-600" : "text-slate-400"} />
+            <span>
+              {tx("教務/繳費：", "Registration/Billing: ")}
+              <span className={regwebAvailable ? "text-emerald-700 fw-bold" : "text-slate-500"}>
+                {regwebAvailable ? tx("已連線", "Connected") : tx("未開通", "Offline")}
+              </span>
+            </span>
+          </div>
+
+          <div className="record-stat-chip">
+            <ShieldCheck size={15} className="text-teal-600" />
+            <span>{tx("端點即時讀取 · 離線不儲存", "Ephemeral · Zero storage")}</span>
+          </div>
+        </div>
       </div>
 
-      <div className="d-flex flex-column" style={{ gap: "1rem" }}>
-        <GradesCard />
-        <PaymentCard />
-        <CertCard />
+      {/* Filter Tabs */}
+      <div className="record-filter-nav text-nowrap" role="tablist" aria-label={tx("資料切換", "Profile tabs")}>
+        <button
+          type="button"
+          className={`record-filter-btn ${activeTab === "all" ? "active" : ""}`}
+          onClick={() => setActiveTab("all")}
+        >
+          <span>{tx("全部", "All")}</span>
+        </button>
+        <button
+          type="button"
+          className={`record-filter-btn ${activeTab === "grades" ? "active" : ""}`}
+          onClick={() => setActiveTab("grades")}
+        >
+          <Mortarboard size={14} />
+          <span>{tx("歷年成績", "Grades")}</span>
+        </button>
+        <button
+          type="button"
+          className={`record-filter-btn ${activeTab === "payment" ? "active" : ""}`}
+          onClick={() => setActiveTab("payment")}
+        >
+          <CashStack size={14} />
+          <span>{tx("繳費狀態", "Payment")}</span>
+        </button>
+        <button
+          type="button"
+          className={`record-filter-btn ${activeTab === "cert" ? "active" : ""}`}
+          onClick={() => setActiveTab("cert")}
+        >
+          <FileEarmarkPdf size={14} />
+          <span>{tx("在學證明", "Certificate")}</span>
+        </button>
+      </div>
+
+      {/* Profile Cards Content */}
+      <div className="d-flex flex-column" style={{ gap: "0.25rem" }}>
+        {(activeTab === "all" || activeTab === "grades") && <GradesCard />}
+        {(activeTab === "all" || activeTab === "payment") && <PaymentCard />}
+        {(activeTab === "all" || activeTab === "cert") && <CertCard />}
       </div>
     </div>
   );

@@ -35,15 +35,15 @@ function AppShell() {
         <DegradeBanner />
         <header className="floating-navbar">
           {/* Left: Brand & Semester & Active Plan */}
-          <div className="d-flex align-items-center gap-3 flex-shrink-0">
+          <div className="floating-navbar-brand d-flex align-items-center gap-2 gap-sm-3 flex-shrink-0">
             <NavLink to="/" className="brand-badge-logo me-1">
               <div className="brand-icon-box p-0 overflow-hidden">
                 <img src="/logo.png" alt={tx("中山選課 Studio logo", "NSYSU Course Studio logo")} className="brand-logo-img" />
               </div>
-              <span className="d-none d-sm-inline">{tx("中山選課 Studio", "NSYSU Course Studio")}</span>
-              <span className="d-sm-none">{tx("選課 Studio", "Course Studio")}</span>
+              <span className="d-none d-sm-inline text-nowrap">{tx("中山選課 Studio", "NSYSU Course Studio")}</span>
+              <span className="d-sm-none text-nowrap">{tx("選課 Studio", "Course Studio")}</span>
             </NavLink>
-            <span className="semester-pill ms-1">115-1</span>
+            <span className="semester-pill ms-1 text-nowrap">115-1</span>
 
           </div>
 
@@ -68,7 +68,7 @@ function AppShell() {
           </nav>
 
           {/* Right: GitHub & User Auth */}
-          <div className="d-flex align-items-center justify-content-end flex-shrink-0" style={{ gap: "0.75rem" }}>
+          <div className="floating-navbar-auth d-flex align-items-center justify-content-end flex-shrink-0" style={{ gap: "0.75rem" }}>
             <div className="user-status-card">
               <a
                 href="https://github.com/SenCha930511/nsysu_crs"
@@ -79,7 +79,7 @@ function AppShell() {
                 aria-label={tx("GitHub 原始碼倉庫", "Source code on GitHub")}
               >
                 <Github size={16} />
-                <span>GitHub</span>
+                <span className="d-none d-sm-inline">GitHub</span>
               </a>
               {status === "authed" && studentNo !== null ? (
                 <>

@@ -229,7 +229,7 @@ function ScheduleTable({
       <div className="table-responsive">
         <table className="studio-schedule-table table text-center align-middle mb-0">
           <colgroup>
-            <col style={{ width: "4.8rem" }} />
+            <col />
             {displayedWeekdays.map((day) => (
               <col key={day.index} />
             ))}

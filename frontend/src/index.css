@@ -1571,6 +1571,144 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Small phones (<sm, 576px): the floor layout. Rules here only compact and
+   re-wrap — nothing collapses into a drawer and nothing hides. */
+@media (max-width: 575.98px) {
+  /* Give phones a little more usable width inside the floating chrome */
+  .studio-header-wrapper,
+  .studio-main-canvas {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Header: the desktop grid cannot hold brand + pills + auth at 360px, so
+     it becomes a wrapping flex row. Brand + auth corner share row 1
+     (auth pushed right via margin-inline-start: auto; if one row still
+     cannot hold everything — e.g. a long student id — the whole auth
+     corner drops to its own right-aligned row instead of clipping), and
+     the pill nav always gets the full-width row at the bottom, scrolling
+     internally as before. */
+  .floating-navbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.45rem;
+    column-gap: 0.4rem;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .floating-navbar-brand {
+    order: 1;
+  }
+
+  .floating-navbar-auth {
+    order: 2;
+    margin-inline-start: auto;
+  }
+
+  .studio-nav-pills {
+    order: 3;
+    flex: 1 1 100%;
+    margin-inline: 0;
+  }
+
+  .brand-badge-logo {
+    gap: 0.4rem;
+  }
+
+  .brand-badge-logo > span {
+    font-size: 0.85rem;
+    letter-spacing: -0.01em;
+  }
+
+  .brand-icon-box {
+    width: 32px;
+    height: 32px;
+  }
+
+  .semester-pill {
+    padding: 0.15rem 0.5rem;
+  }
+
+  /* ≥40px tap targets for header actions */
+  .navbar-action-btn {
+    min-height: 40px;
+    padding: 0 0.9rem;
+  }
+
+  /* Icon-only circle actions: GitHub (label hidden <sm) and 登出 (label
+     hidden <md) share this class, so both become 40px icon buttons. */
+  .navbar-action-btn-github {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+  }
+
+  .user-status-card {
+    gap: 0.35rem;
+  }
+
+  /* Student-id chip keeps its text but truncates with a plain ellipsis */
+  .user-avatar-chip {
+    max-width: 6rem;
+    overflow: hidden;
+  }
+
+  .user-avatar-chip > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Comfortable pill tap targets inside the scrollable nav row */
+  .studio-nav-link {
+    padding: 0.45rem 0.75rem;
+  }
+
+  /* Timetable: scroll the grid horizontally instead of squeezing the day
+     columns below readability; the sub-line of the day header is dropped
+     so each header is a single short label (週一). */
+  .studio-schedule-table {
+    min-width: 34rem; /* timeslot column + ~68px per weekday column */
+  }
+
+  .studio-timeslot-header {
+    width: 3.2rem;
+    min-width: 3.2rem;
+    max-width: 3.2rem;
+  }
+
+  .day-header-title {
+    white-space: nowrap;
+  }
+
+  .schedule-day-header .day-header-sub {
+    display: none;
+  }
+
+  /* /me payment bills table: the table-responsive wrapper already exists,
+     so the table just needs a real min-width (th/td stay on one line via
+     the text-nowrap utility on the table element). */
+  .payment-bills-table {
+    min-width: 33rem; /* ≈560px for the five billing columns */
+  }
+
+  /* Summary stat chips (records + profile heroes): deliberate
+     one-per-row stack with a single-line, ellipsized value. Scoped to the
+     hero card so record-card header chrome (e.g. the grades sync chip)
+     keeps its proven inline layout. */
+  .records-hero-card .record-stat-chip {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .records-hero-card .record-stat-chip > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 /* ==========================================================================
    10. Records Page (Job History)
    ========================================================================== */
@@ -1803,5 +1941,82 @@ h1, h2, h3, h4, h5, h6 {
 .mb-1-5, .mb-1\.5 { margin-bottom: 0.45rem !important; }
 .mb-2-5, .mb-2\.5 { margin-bottom: 0.75rem !important; }
 .mb-3-5, .mb-3\.5 { margin-bottom: 1.25rem !important; }
+
+/* ==========================================================================
+   11. Me Area (My Records / 我的專區)
+   ========================================================================== */
+
+.profile-card {
+  background: #ffffff;
+  border: 1px solid var(--studio-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--studio-shadow-xs);
+  transition: var(--studio-transition);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.profile-card:hover {
+  box-shadow: var(--studio-shadow-sm);
+  border-color: #cbd5e1;
+}
+
+.profile-card-header {
+  padding: 1.15rem 1.45rem;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.profile-card-body {
+  padding: 1.35rem 1.45rem;
+}
+
+.profile-table-container {
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.profile-table-container table {
+  margin-bottom: 0;
+  font-size: 0.88rem;
+}
+
+.profile-table-container th {
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.65rem 1rem;
+}
+
+.profile-table-container td {
+  padding: 0.65rem 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.profile-table-container tr:last-child td {
+  border-bottom: none;
+}
+
+.cert-action-banner {
+  background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 100%);
+  border: 1px solid #ccfbf1;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
 
 

@@ -121,7 +121,7 @@ function LoginPage() {
           <form onSubmit={onSubmit}>
             {/* Student Number Input */}
             <div className="mb-3">
-              <label htmlFor="login-student-no" className="form-label small fw-bold text-dark mb-1.5 d-flex justify-content-between">
+              <label htmlFor="login-student-no" className="form-label small fw-bold text-dark mb-1.5 d-flex flex-column flex-sm-row justify-content-sm-between">
                 <span>{tx("學號 (Student ID)", "Student ID")}</span>
                 <span className="text-muted fw-normal" style={{ fontSize: "0.74rem" }}>{tx("如：B113040001", "e.g. B113040001")}</span>
               </label>
@@ -143,7 +143,7 @@ function LoginPage() {
 
             {/* Password Input */}
             <div className="mb-4">
-              <label htmlFor="login-password" className="form-label small fw-bold text-dark mb-1.5 d-flex justify-content-between">
+              <label htmlFor="login-password" className="form-label small fw-bold text-dark mb-1.5 d-flex flex-column flex-sm-row justify-content-sm-between">
                 <span>{tx("選課密碼 (Password)", "Course Password")}</span>
                 <span className="text-muted fw-normal" style={{ fontSize: "0.74rem" }}>{tx("與學校選課系統相同", "Same as the school's course-selection system")}</span>
               </label>
