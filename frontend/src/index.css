@@ -225,6 +225,10 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), var(--studio-shadow-xs);
 }
 
+.navbar-top-row {
+  display: contents;
+}
+
 .brand-badge-logo {
   display: inline-flex;
   align-items: center;
@@ -571,6 +575,12 @@ h1, h2, h3, h4, h5, h6 {
   color: #0f172a;
   line-height: 1.3;
   margin-right: 0.4rem;
+  /* Two-line soft clamp: long titles wrap once before any mid-word cut,
+     so single CJK prefix splits like 「糸」 stop happening on mobile. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-course-dept {
@@ -1549,109 +1559,101 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-@media (max-width: 767.98px) {
-  .floating-navbar {
-    padding: 0.4rem 0.6rem;
-    gap: 0.5rem;
+/* ==========================================================================
+   9. Responsive Breakpoints & Mobile RWD Design System
+   ========================================================================== */
+
+/* Large Tablets & Small Laptops (< 1200px / xl) */
+@media (max-width: 1199.98px) {
+  .course-discovery-pane,
+  .selections-pane-container {
+    height: calc(100dvh - 14rem);
+    min-height: 520px;
   }
-  .brand-badge-logo span {
-    font-size: 0.92rem;
-  }
-  .studio-nav-link {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.9rem;
-  }
-  .floating-stats-dock {
-    position: fixed;
-    bottom: 0.75rem;
-    max-width: calc(100% - 1.5rem);
-    font-size: 0.72rem;
-    gap: 0.35rem;
-    padding: 0.35rem 0.65rem;
+
+  .schedule-canvas-pane {
+    height: auto;
+    min-height: 520px;
   }
 }
 
-/* Small phones (<sm, 576px): the floor layout. Rules here only compact and
-   re-wrap — nothing collapses into a drawer and nothing hides. */
-@media (max-width: 575.98px) {
-  /* Give phones a little more usable width inside the floating chrome */
-  .studio-header-wrapper,
+/* Mobile & Tablet (< 768px / md) */
+@media (max-width: 767.98px) {
   .studio-main-canvas {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-bottom: 2.5rem !important;
   }
 
-  /* Header: the desktop grid cannot hold brand + pills + auth at 360px, so
-     it becomes a wrapping flex row. Brand + auth corner share row 1
-     (auth pushed right via margin-inline-start: auto; if one row still
-     cannot hold everything — e.g. a long student id — the whole auth
-     corner drops to its own right-aligned row instead of clipping), and
-     the pill nav always gets the full-width row at the bottom, scrolling
-     internally as before. */
+  footer {
+    padding-bottom: 3.5rem !important;
+  }
+
+  /* Refined, balanced 2-row header on mobile: Row 1 = Brand + Auth, Row 2 = Nav pills */
   .floating-navbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    row-gap: 0.45rem;
-    column-gap: 0.4rem;
-    padding: 0.45rem 0.6rem;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.45rem !important;
+    padding: 0.55rem 0.75rem !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: 0 3px 14px -2px rgba(15, 23, 42, 0.07) !important;
+  }
+
+  .navbar-top-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 0.4rem !important;
   }
 
   .floating-navbar-brand {
-    order: 1;
-  }
-
-  .floating-navbar-auth {
-    order: 2;
-    margin-inline-start: auto;
-  }
-
-  .studio-nav-pills {
-    order: 3;
-    flex: 1 1 100%;
-    margin-inline: 0;
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
   }
 
   .brand-badge-logo {
-    gap: 0.4rem;
-  }
-
-  .brand-badge-logo > span {
-    font-size: 0.85rem;
-    letter-spacing: -0.01em;
+    gap: 0.4rem !important;
+    font-size: 0.94rem !important;
   }
 
   .brand-icon-box {
-    width: 32px;
-    height: 32px;
+    width: 30px !important;
+    height: 30px !important;
   }
 
   .semester-pill {
-    padding: 0.15rem 0.5rem;
+    padding: 0.1rem 0.42rem !important;
+    font-size: 0.7rem !important;
+    margin-left: 0.2rem !important;
   }
 
-  /* ≥40px tap targets for header actions */
-  .navbar-action-btn {
-    min-height: 40px;
-    padding: 0 0.9rem;
-  }
-
-  /* Icon-only circle actions: GitHub (label hidden <sm) and 登出 (label
-     hidden <md) share this class, so both become 40px icon buttons. */
-  .navbar-action-btn-github {
-    width: 40px;
-    min-width: 40px;
-    padding: 0;
+  .floating-navbar-auth {
+    margin-inline-start: auto !important;
+    flex-shrink: 0 !important;
   }
 
   .user-status-card {
-    gap: 0.35rem;
+    gap: 0.35rem !important;
   }
 
-  /* Student-id chip keeps its text but truncates with a plain ellipsis */
+  .navbar-action-btn {
+    height: 32px !important;
+    padding: 0 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  .navbar-action-btn-github,
+  .navbar-action-btn-logout {
+    width: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+  }
+
   .user-avatar-chip {
-    max-width: 6rem;
-    overflow: hidden;
+    height: 32px !important;
+    padding: 0 0.55rem !important;
+    font-size: 0.76rem !important;
+    max-width: 6.5rem !important;
   }
 
   .user-avatar-chip > span {
@@ -1660,52 +1662,329 @@ h1, h2, h3, h4, h5, h6 {
     white-space: nowrap;
   }
 
-  /* Comfortable pill tap targets inside the scrollable nav row */
-  .studio-nav-link {
-    padding: 0.45rem 0.75rem;
+  /* Row 2: full-width segmented tab bar */
+  .studio-nav-pills {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    width: 100% !important;
+    padding: 0.2rem !important;
+    gap: 0.15rem !important;
+    background: #f1f5f9 !important;
+    border-radius: var(--radius-full) !important;
+    margin: 0 !important;
   }
 
-  /* Timetable: scroll the grid horizontally instead of squeezing the day
-     columns below readability; the sub-line of the day header is dropped
-     so each header is a single short label (週一). */
-  .studio-schedule-table {
-    min-width: 34rem; /* timeslot column + ~68px per weekday column */
+  .studio-nav-link {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.3rem !important;
+    padding: 0.36rem 0.15rem !important;
+    font-size: 0.78rem !important;
+    border-radius: var(--radius-full) !important;
+    white-space: nowrap !important;
+  }
+
+  .studio-nav-link span {
+    font-size: 0.78rem !important;
+  }
+}
+
+/* Mobile Segmented Tab Controls (HomePage < xl) */
+.mobile-view-tabs {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  padding: 0.3rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--studio-border);
+  box-shadow: var(--studio-shadow-xs);
+  width: 100%;
+  gap: 0.3rem;
+}
+
+.mobile-view-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.52rem 0.4rem;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: var(--studio-transition);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-view-tab-btn:hover:not(.active) {
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.mobile-view-tab-btn.active {
+  background: var(--crs-brand-gradient);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.32);
+}
+
+.mobile-view-tab-btn .tab-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.08rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.mobile-view-tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+/* Mobile Staging / Quick Action Floating Bar */
+.mobile-staging-float-bar {
+  position: fixed;
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  left: 1rem;
+  right: 1rem;
+  max-width: 520px;
+  margin: 0 auto;
+  z-index: 1025;
+  background: rgba(15, 23, 42, 0.94);
+  color: #ffffff;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--radius-full);
+  padding: 0.5rem 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  box-shadow: 0 8px 24px -2px rgba(15, 23, 42, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  animation: floatBarSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes floatBarSlideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Touch-optimized Timetable Grid with Freeze-Pane Sticky Columns */
+.schedule-table-responsive {
+  -webkit-overflow-scrolling: touch;
+}
+
+.studio-schedule-table {
+  min-width: 35rem;
+}
+
+.studio-timeslot-header {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: #f8fafc;
+  box-shadow: 2px 0 6px -2px rgba(15, 23, 42, 0.06);
+}
+
+thead th.studio-timeslot-header {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 22;
+  background: #f8fafc;
+}
+
+/* Profile / Me Page Compact Info Chips & Status Dots */
+.profile-info-chips-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.profile-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.32rem 0.72rem;
+  border-radius: var(--radius-full);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.status-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator-dot.online {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.status-indicator-dot.offline {
+  background: #94a3b8;
+}
+
+.profile-sync-stamp {
+  font-size: 0.74rem;
+  padding: 0.2rem 0.55rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-full);
+}
+
+/* Profile Segmented Filter Navigation */
+.profile-nav-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  width: 100% !important;
+  gap: 0.2rem !important;
+  background: #f1f5f9;
+  padding: 0.22rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 1.25rem;
+}
+
+.profile-nav-tabs .record-filter-btn {
+  justify-content: center;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.82rem;
+}
+
+/* Small phones (<sm, 576px): Floor Layout & Touch targets */
+@media (max-width: 575.98px) {
+  .studio-header-wrapper,
+  .studio-main-canvas {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   .studio-timeslot-header {
-    width: 3.2rem;
-    min-width: 3.2rem;
-    max-width: 3.2rem;
+    width: 3.4rem;
+    min-width: 3.4rem;
+    max-width: 3.4rem;
+  }
+
+  .timeslot-code-chip {
+    font-size: 0.82rem;
+  }
+
+  .timeslot-clock-sub {
+    font-size: 0.6rem;
   }
 
   .day-header-title {
     white-space: nowrap;
+    font-size: 0.85rem;
   }
 
   .schedule-day-header .day-header-sub {
     display: none;
   }
 
-  /* /me payment bills table: the table-responsive wrapper already exists,
-     so the table just needs a real min-width (th/td stay on one line via
-     the text-nowrap utility on the table element). */
-  .payment-bills-table {
-    min-width: 33rem; /* ≈560px for the five billing columns */
+  .secondary-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
   }
 
-  /* Summary stat chips (records + profile heroes): deliberate
-     one-per-row stack with a single-line, ellipsized value. Scoped to the
-     hero card so record-card header chrome (e.g. the grades sync chip)
-     keeps its proven inline layout. */
-  .records-hero-card .record-stat-chip {
+  .compact-filter-select {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 90px;
+    height: 2.2rem;
+    font-size: 0.82rem;
+  }
+
+  .compact-filter-select-dept {
     flex: 1 1 100%;
-    max-width: 100%;
   }
 
-  .records-hero-card .record-stat-chip > span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .studio-course-card {
+    margin: 0.5rem 0.65rem;
+    padding: 0.75rem 0.85rem;
+    min-height: 110px;
+  }
+
+  .card-course-name {
+    font-size: 0.92rem;
+  }
+
+  .btn-card-toggle {
+    min-height: 38px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .crs-modal {
+    padding: 0.75rem;
+  }
+
+  .crs-modal-card {
+    max-height: calc(100dvh - 2rem);
+    border-radius: var(--radius-lg);
+  }
+
+  .records-hero-card,
+  .profile-card-header,
+  .profile-card-body {
+    padding: 1rem;
+  }
+
+  /* Flexible, non-bulky stat chips */
+  .record-stat-chip {
+    flex: 0 1 auto;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.75rem;
+  }
+
+  .profile-badge-chip {
+    font-size: 0.78rem;
+    padding: 0.28rem 0.65rem;
+  }
+
+  /* 4-column profile nav tabs on extra small mobile screens */
+  .profile-nav-tabs .record-filter-btn {
+    padding: 0.38rem 0.15rem;
+    font-size: 0.75rem;
+    gap: 0.2rem;
+  }
+
+  .profile-nav-tabs .record-filter-btn svg {
+    display: none;
+  }
+
+  .card-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 0.25rem;
+  }
+
+  .cert-action-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 0.95rem 1rem;
+  }
+
+  .cert-action-banner button {
+    width: 100%;
+    justify-content: center;
   }
 }
 

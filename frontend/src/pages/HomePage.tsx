@@ -107,6 +107,7 @@ function HomePage() {
 
   // ---- tabs / browse ----
   const [tab, setTab] = useState<Tab>("browse");
+  const [mobileTab, setMobileTab] = useState<"browse" | "schedule" | "selections">("browse");
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
   const [previewCourse, setPreviewCourse] = useState<CourseOut | null>(null);
 
@@ -498,15 +499,40 @@ function HomePage() {
     return (
       <div className="row g-3">
         <ScheduleCard />
-        <div className="col-12 col-xl-7">
+
+        {/* Mobile View Switcher (< xl breakpoint) */}
+        <div className="col-12 d-xl-none mb-1">
+          <div className="mobile-view-tabs" role="tablist" aria-label={tx("切換檢視", "Switch View")}>
+            <button
+              type="button"
+              className={`mobile-view-tab-btn ${mobileTab === "browse" ? "active" : ""}`}
+              onClick={() => setMobileTab("browse")}
+            >
+              <Search size={14} />
+              <span>{tx("查課目錄", "Browse Courses")}</span>
+            </button>
+            <button
+              type="button"
+              className={`mobile-view-tab-btn ${mobileTab === "schedule" ? "active" : ""}`}
+              onClick={() => setMobileTab("schedule")}
+            >
+              <CalendarCheck size={14} />
+              <span>{tx("試排課表", "Timetable")}</span>
+              <span className="tab-badge">{guestTotals.courseCount}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Timetable Canvas */}
+        <div className={`col-12 col-xl-7 ${mobileTab === "schedule" ? "d-block" : "d-none d-xl-block"}`}>
           <div className="schedule-canvas-pane">
-            <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap py-2.5 px-3.5" style={{ gap: "1rem" }}>
-              <div className="d-flex align-items-center flex-wrap" style={{ gap: "1rem" }}>
+            <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap py-2.5 px-3.5" style={{ gap: "0.75rem" }}>
+              <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
                 <div className="schedule-canvas-title" style={{ gap: "0.55rem" }}>
                   <CalendarCheck size={18} className="text-teal-600" />
                   <span>{tx("查課・課表（未登入模式）", "Courses • Timetable (guest)")}</span>
                 </div>
-                <div className="d-inline-flex align-items-center px-3 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.82rem", gap: "0.6rem" }}>
+                <div className="d-inline-flex align-items-center px-2.5 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.78rem", gap: "0.5rem" }}>
                   <span>{tx(`已選 ${guestTotals.courseCount} 門`, `${guestTotals.courseCount} courses`)}</span>
                   <span className="text-slate-400">·</span>
                   <span>{tx(`${guestTotals.totalCredits} 學分`, `${guestTotals.totalCredits} cr`)}</span>
@@ -558,13 +584,30 @@ function HomePage() {
             </div>
           </div>
         </div>
-        <div className="col-12 col-xl-5">
+
+        {/* Course Browser */}
+        <div className={`col-12 col-xl-5 ${mobileTab === "browse" ? "d-block" : "d-none d-xl-block"}`}>
           <CourseBrowser
             hoveredCourseId={hoveredCourseId}
             onCourseHover={setHoveredCourseId}
             onCoursePreview={setPreviewCourse}
           />
         </div>
+
+        {/* Mobile floating schedule pill for quick navigation */}
+        {mobileTab === "browse" && guestTotals.courseCount > 0 && (
+          <div className="mobile-staging-float-bar d-xl-none" onClick={() => setMobileTab("schedule")} style={{ cursor: "pointer" }}>
+            <div className="d-flex align-items-center gap-2">
+              <CalendarCheck size={16} className="text-teal-400" />
+              <span className="small fw-semibold">
+                {tx(`已試排 ${guestTotals.courseCount} 門 · ${guestTotals.totalCredits} 學分`, `Selected ${guestTotals.courseCount} courses (${guestTotals.totalCredits} cr)`)}
+              </span>
+            </div>
+            <button type="button" className="btn btn-sm btn-brand rounded-pill px-3 py-1 fw-bold shadow-xs">
+              <span>{tx("查看課表", "View Table")}</span>
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -572,11 +615,50 @@ function HomePage() {
   return (
     <div className="row g-3">
       <ScheduleCard />
+
+      {/* Mobile View Switcher (< xl breakpoint) */}
+      <div className="col-12 d-xl-none mb-1">
+        <div className="mobile-view-tabs" role="tablist" aria-label={tx("切換檢視", "Switch View")}>
+          <button
+            type="button"
+            className={`mobile-view-tab-btn ${mobileTab === "browse" ? "active" : ""}`}
+            onClick={() => {
+              setMobileTab("browse");
+              setTab("browse");
+            }}
+          >
+            <Search size={14} />
+            <span>{tx("查課目錄", "Browse")}</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-view-tab-btn ${mobileTab === "schedule" ? "active" : ""}`}
+            onClick={() => setMobileTab("schedule")}
+          >
+            <CalendarCheck size={14} />
+            <span>{tx("週課表", "Timetable")}</span>
+            <span className="tab-badge">{totals.courseCount}</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-view-tab-btn ${mobileTab === "selections" ? "active" : ""}`}
+            onClick={() => {
+              setMobileTab("selections");
+              setTab("selections");
+            }}
+          >
+            <BookmarkCheck size={14} />
+            <span>{tx("已選課程", "Selections")}</span>
+            {heldItems.length > 0 && <span className="tab-badge">{heldItems.length}</span>}
+          </button>
+        </div>
+      </div>
+
       {/* LEFT: unified timetable canvas + send bar */}
-      <div className="col-12 col-xl-7">
+      <div className={`col-12 col-xl-7 ${mobileTab === "schedule" ? "d-block" : "d-none d-xl-block"}`}>
         <div className="schedule-canvas-pane">
-          <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap py-2.5 px-3.5" style={{ gap: "1rem" }}>
-            <div className="d-flex align-items-center flex-wrap" style={{ gap: "1rem" }}>
+          <div className="schedule-canvas-header d-flex align-items-center justify-content-between flex-wrap py-2.5 px-3.5" style={{ gap: "0.75rem" }}>
+            <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
               <div className="schedule-canvas-title" style={{ gap: "0.55rem" }}>
                 <CalendarCheck size={18} className="text-teal-600" />
                 <span>{tx("目前課表", "Current Timetable")}</span>
@@ -844,7 +926,7 @@ function HomePage() {
       </div>
 
       {/* RIGHT: two-tab side panel */}
-      <div className="col-12 col-xl-5">
+      <div className={`col-12 col-xl-5 ${mobileTab !== "schedule" ? "d-block" : "d-none d-xl-block"}`}>
         {tab === "browse" ? (
           <CourseBrowser
             hoveredCourseId={hoveredCourseId}
@@ -933,6 +1015,70 @@ function HomePage() {
           </section>
         )}
       </div>
+
+      {/* Mobile Staging / Quick Action Floating Bar */}
+      {mobileTab !== "schedule" && (
+        <div className="mobile-staging-float-bar d-xl-none">
+          {stagedCount > 0 ? (
+            <>
+              <div
+                className="d-flex align-items-center gap-2"
+                onClick={() => setMobileTab("schedule")}
+                style={{ cursor: "pointer" }}
+              >
+                <span className="badge bg-teal-500 text-dark rounded-pill font-monospace" style={{ fontSize: "0.72rem" }}>
+                  {stagedCount}
+                </span>
+                <span className="small fw-semibold text-truncate" style={{ maxWidth: "160px" }}>
+                  {stagedAdds.length > 0 && <span>＋{stagedAdds.length} </span>}
+                  {stagedDrops.length > 0 && <span>−{stagedDrops.length} </span>}
+                  <span className="opacity-75 ms-1">({stage?.writable ? tx("可送單", "Ready") : tx("暫存中", "Staged")})</span>
+                </span>
+              </div>
+              <div className="d-flex align-items-center gap-1.5 flex-shrink-0">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-light rounded-pill px-2.5 py-1"
+                  style={{ fontSize: "0.76rem" }}
+                  onClick={() => setMobileTab("schedule")}
+                >
+                  {tx("看課表", "Table")}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-brand rounded-pill px-3 py-1 fw-bold shadow-sm"
+                  style={{ fontSize: "0.78rem" }}
+                  onClick={onPreview}
+                  disabled={!canSend}
+                >
+                  <Send size={12} className="me-1" />
+                  <span>{tx("預覽送出", "Submit")}</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div
+                className="d-flex align-items-center gap-2"
+                onClick={() => setMobileTab("schedule")}
+                style={{ cursor: "pointer" }}
+              >
+                <CalendarCheck size={16} className="text-teal-400" />
+                <span className="small fw-semibold">
+                  {tx(`已排 ${totals.courseCount} 門 · ${totals.totalCredits} 學分`, `${totals.courseCount} courses (${totals.totalCredits} cr)`)}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-brand rounded-pill px-3 py-1 fw-bold shadow-xs"
+                onClick={() => setMobileTab("schedule")}
+              >
+                <span>{tx("查看課表", "View Table")}</span>
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* confirm modal */}
       {phase === "confirm" && preview !== null && preview.confirm_token !== null && (

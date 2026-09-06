@@ -226,7 +226,7 @@ function ScheduleTable({
         </div>
       </div>
 
-      <div className="table-responsive">
+      <div className="table-responsive schedule-table-responsive">
         <table className="studio-schedule-table table text-center align-middle mb-0">
           <colgroup>
             <col />

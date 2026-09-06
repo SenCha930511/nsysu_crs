@@ -369,7 +369,7 @@ export default function CourseBrowser({
               {onViewCourse !== undefined ? (
                 <button
                   type="button"
-                  className="card-course-name text-truncate me-1 btn-link text-decoration-none border-0 bg-transparent p-0 text-start"
+                  className="card-course-name me-1 btn-link text-decoration-none border-0 bg-transparent p-0 text-start"
                   title={tx("檢視課程詳細資訊與大綱", "View course details and syllabus")}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -383,7 +383,7 @@ export default function CourseBrowser({
                   href={course.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="card-course-name text-truncate me-1 text-decoration-none"
+                  className="card-course-name me-1 text-decoration-none"
                   title={tx("在學校原始頁開啟課程大綱", "Open the syllabus on the school's original page")}
                   aria-label={tx(`開啟 ${courseName(course)} 的學校大綱頁`, `Open the school outline page for ${courseName(course)}`)}
                   onClick={(e) => e.stopPropagation()}
@@ -391,7 +391,7 @@ export default function CourseBrowser({
                   {courseName(course)}
                 </a>
               ) : (
-                <span className="card-course-name text-truncate me-1">{courseName(course)}</span>
+                <span className="card-course-name me-1">{courseName(course)}</span>
               )}
               {course.dept && (
                 <span className="card-course-dept flex-shrink-0">{course.dept}</span>
@@ -428,7 +428,7 @@ export default function CourseBrowser({
           <div className="card-meta-line text-truncate">
             {metaParts.length > 0 ? metaParts.join(" · ") : tx("無詳細開課資訊", "No details available")}
             {course.name_en && (
-              <span className="text-muted ms-1 text-truncate opacity-75">· {course.name_en}</span>
+              <span className="text-muted ms-1 opacity-75">· {course.name_en}</span>
             )}
           </div>
 
@@ -550,7 +550,7 @@ export default function CourseBrowser({
           
           <button
             type="button"
-            className={`btn btn-sm ${showAdvancedFilters ? "btn-teal-700 bg-teal-50" : "btn-light border"} p-1 px-2 d-inline-flex align-items-center gap-1 rounded-pill`}
+            className={`btn btn-sm ${showAdvancedFilters ? "btn-teal-700 bg-teal-50" : "btn-light border"} p-1 px-2 d-inline-flex align-items-center gap-1 rounded-pill text-nowrap flex-shrink-0`}
             style={{ fontSize: "0.74rem" }}
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             title={tx("更多進階篩選", "More advanced filters")}
@@ -621,8 +621,7 @@ export default function CourseBrowser({
             </select>
 
             <select
-              className="compact-filter-select"
-              style={{ width: "180px" }}
+              className="compact-filter-select compact-filter-select-dept"
               value={filters.dept}
               onChange={(e) => updateFilter({ dept: e.target.value })}
               aria-label={tx("學系", "Department")}
