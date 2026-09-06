@@ -56,3 +56,21 @@ prod evidence corrected it). Fix: max-width:100% + overflow-x:auto on the shared
 never clip by themselves). Verification on prod after rebuild (HEAD a92577a, real account): /me docScrollW 384
 <= 390+2, pill clientWidth 350 / scrollWidth 420 = clips and scrolls inside itself; payment table headers
 single-line in card-contained scroll throughout. All earlier prerequisites stay within bounds; flow continues.
+
+## Async fan-out for login latency (commit 0ab9575, 2026-09-06 ~18:20, user-reported slow login)
+
+Root cause: M2 方案 A parked the two-family fan-out INSIDE the login round-trip; each leg pays up to several
+OCR captcha round-trips (33-100% per-solve success), and captcha traffic is globally serialized -> prod logins
+measured 3.32s (lucky) up to ~21s local worst, user-visible "按下登入後跑很久".
+
+Change: fan-out is scheduled AFTER the 200 response as a background asyncio task (same fail-soft + breaker
+school-verdict-only semantics); login response gains stu_enroll_pending; frontend polls /api/auth/me (2.5s x6)
+until flags flip to available.
+
+Verification (real reference account):
+- LOCAL (dev stack, flag on): login 0.224s / 0.204s; 20s later redis has regweb:* and stusco:* keys parked;
+  browser: hero pills flipped to 歷年成績：已連線 / 教務・繳費：已連線 within ~8s of a 0.2s login.
+- PROD (server HEAD 0ab9575, flag on): login #1 1.466s / #2 1.212s (vs blocked-era 3.3-21s); response carried
+  stu_enroll_pending=true; GET /api/auth/me ~7s later returned regweb_available=true, sco_available=true.
+- Test-isolation fix (found mid-work): Settings reads ../.env; a local flag-on leaked into tests spawning REAL
+  background school calls - conftest pins FEATURE_* envs to false session-wide (monkeypatch.setenv).

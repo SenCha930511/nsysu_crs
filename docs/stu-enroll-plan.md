@@ -109,6 +109,8 @@ M0 後的實際 jar 地圖：**regweb jar**（經 stu_enroll 3 跳鏈免費拿�
 
 **採 A，fail-soft**：子系統登入失敗**不得**阻斷站內登入；各功能卡獨立可用性旗標（`regweb_available`、`sco_available`）。登入 pipeline 在 SUCCESS 後追加子步驟，逾時上限建議 ~8s，超出即標不可用。
 
+> **2026-09-06 修訂（方案 A 仍成立，等待點改變）**：實測證明「登入當場等 fan-out」在高 OCR 失敗率時成本不可接受（prod 實測 3.3–21s，使用者反應太慢）。實作改為 **fan-out 背景化**：登入回應只做 SSO2＋site session＋selcrs 入袋（~0.2–1.5s），`_run_fanout_and_store` 以 `asyncio.create_task` 在背景落地 jars（fail-soft 與 breaker 只記校方判決語意完全不變）；回應新增 `stu_enroll_pending`，前端 AuthProvider 輪詢 `/api/auth/me`（2.5s×6）直到旗標 flip。等價結論：等待從「登入前」移到「卡片掛載前」，常見情況 ~5–8s 內全數就緒，且 login 本身不再被學校驗證碼綁架。驗收數字存 `qa/stuenroll-m4-evidence.log`。
+
 ### 5.3 Redis 儲存（鏡像 selcrs jar 模式，兩家族）
 
 - `regweb:{session_id}` / `regweb_hard:{session_id}` — regweb 家族 jar（涵蓋 tfstu/verify relay）
