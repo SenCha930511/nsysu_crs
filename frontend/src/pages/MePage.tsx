@@ -42,7 +42,13 @@ import type {
 import { useI18n } from "../lib/i18n";
 import { shouldForceRelogin } from "../lib/guards";
 import { meFeatureErrorKind } from "../lib/meErrors";
-import { checklistStatusTone, gradesDiffText } from "../lib/meExtras";
+import {
+  checklistStatusTone,
+  formatChecklistStatus,
+  gradesDiffText,
+  sanitizeChecklistPeriod,
+  splitBilingualText,
+} from "../lib/meExtras";
 import { useAuth } from "../state/auth";
 
 /** RecordsPage-style local timestamp (YYYY/MM/DD HH:mm:ss); "—" fallback. */
@@ -548,7 +554,7 @@ function CertCard() {
 }
 
 function ChecklistCard() {
-  const { tx } = useI18n();
+  const { tx, lang } = useI18n();
   const { regwebAvailable } = useAuth();
   const [data, setData] = useState<RegistrationChecklist | null>(null);
   const [loading, setLoading] = useState(regwebAvailable);
@@ -584,9 +590,11 @@ function ChecklistCard() {
   }, [regwebAvailable, tx]);
 
   const hasOutUrl = data !== null && data.items.some((item) => item.out_url !== null);
+  const totalCount = data ? data.items.length : 0;
   const completedCount = data
     ? data.items.filter((it) => checklistStatusTone(it.status_text) === "success").length
     : 0;
+  const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
     <section className="profile-card" aria-label={tx("註冊事項", "Registration Checklist")}>
@@ -606,11 +614,16 @@ function ChecklistCard() {
           </div>
         </div>
 
-        {data !== null && data.items.length > 0 && (
+        {totalCount > 0 && (
           <div className="card-header-actions">
-            <span className="studio-badge studio-badge-secondary">
-              <CheckCircleFill size={12} className="text-teal-600 me-1" />
-              <span>{tx(`已完成 ${completedCount} / ${data.items.length} 項`, `${completedCount} / ${data.items.length} completed`)}</span>
+            <span className="studio-badge studio-badge-secondary d-inline-flex align-items-center">
+              <CheckCircleFill size={12} className="text-teal-600 me-1.5 flex-shrink-0" />
+              <span>
+                {tx(
+                  `已完成 ${completedCount} / ${totalCount} 項 (${completionPercent}%)`,
+                  `${completedCount} / ${totalCount} completed (${completionPercent}%)`,
+                )}
+              </span>
             </span>
           </div>
         )}
@@ -628,34 +641,95 @@ function ChecklistCard() {
           </div>
         ) : data === null ? null : (
           <>
+            {totalCount > 0 && (
+              <div className="mb-3">
+                <div
+                  className="checklist-progress-bar-track mt-0"
+                  role="progressbar"
+                  aria-valuenow={completionPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="checklist-progress-bar-fill"
+                    style={{ width: `${completionPercent}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {data.items.length === 0 ? (
               <p className="text-muted small mb-0 p-3 text-center bg-light rounded-3">
                 {tx("目前無註冊事項資料", "No registration items right now")}
               </p>
             ) : (
-              <ul className="list-unstyled mb-0 d-flex flex-column gap-2">
-                {data.items.map((item, index) => (
-                  <li
-                    key={`${item.title}-${index}`}
-                    className="d-flex justify-content-between align-items-start gap-2 border rounded-3 px-3 py-2 bg-white"
-                  >
-                    <div className="min-w-0">
-                      <div className="fw-semibold small text-dark text-truncate">{item.title}</div>
-                      {item.period !== "" && (
-                        <div className="text-muted font-monospace" style={{ fontSize: "0.74rem" }}>{item.period}</div>
-                      )}
-                    </div>
-                    <span
-                      className={`studio-badge studio-badge-${checklistStatusTone(item.status_text)} flex-shrink-0`}
+              <div className="checklist-items-grid">
+                {data.items.map((item, index) => {
+                  const titleParts = splitBilingualText(item.title);
+                  const isEn = lang === "en";
+                  const titlePrimary = isEn && titleParts.en ? titleParts.en : titleParts.zh;
+                  const titleSecondary = isEn
+                    ? (titleParts.en ? titleParts.zh : "")
+                    : titleParts.en;
+                  const status = formatChecklistStatus(item.status_text, lang);
+                  const cleanPeriod = sanitizeChecklistPeriod(item.title, item.period, lang);
+
+                  let cardStatusClass = "is-secondary";
+                  if (status.tone === "success") cardStatusClass = "is-completed";
+                  else if (status.tone === "warning") cardStatusClass = "is-warning";
+
+                  return (
+                    <a
+                      href={item.out_url ?? "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="checklist-item-card-link"
                     >
-                      {item.status_text}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                      <div
+                        key={`${item.title}-${index}`}
+                        className={`checklist-item-card ${cardStatusClass}`}
+                      >
+                      <div className="d-flex align-items-start justify-content-between gap-2.5">
+                        <div className="d-flex align-items-baseline gap-2 min-w-0 flex-grow-1">
+                          <span className="checklist-item-index">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                          <div className="min-w-0 flex-grow-1">
+                            <div className="checklist-item-title">
+                              {titlePrimary}
+                            </div>
+                            {titleSecondary !== "" && (
+                              <div className="checklist-item-subtitle">
+                                {titleSecondary}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <span
+                          className={`studio-badge studio-badge-${status.tone} flex-shrink-0`}
+                          style={{ whiteSpace: "nowrap" }}
+                        >
+                          {status.label}
+                        </span>
+                      </div>
+
+                      {cleanPeriod !== "" && (
+                        <div className="d-flex align-items-center mt-1 pt-1">
+                          <span className="checklist-item-period-pill text-truncate">
+                            <Clock size={11} className="text-teal-600 flex-shrink-0" />
+                            <span className="text-truncate">{cleanPeriod}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div></a>
+                  );
+                })}
+              </div>
             )}
+
             {hasOutUrl && (
-              <p className="text-muted mt-2 mb-0" style={{ fontSize: "0.74rem" }}>
+              <p className="text-muted mt-3 mb-0" style={{ fontSize: "0.74rem" }}>
                 {tx(
                   "連結僅供參考（於校內系統開啟）",
                   "Links are for reference only (they open inside the campus system)",
@@ -674,7 +748,7 @@ function ChecklistCard() {
   );
 }
 
-type ProfileTab = "all" | "grades" | "payment" | "cert" | "checklist";
+type ProfileTab = "all" | "grades" | "payment" | "registration" | "cert";
 
 function MePage() {
   const { tx } = useI18n();
@@ -713,8 +787,8 @@ function MePage() {
             </h1>
             <p className="text-muted mb-0" style={{ fontSize: "0.88rem", lineHeight: 1.5 }}>
               {tx(
-                "歷年成績、繳費狀態與在學證明，皆由校內系統資料即時產生。",
-                "Your academic transcript, tuition billing records, and enrollment certificate — generated live from campus systems.",
+                "歷年成績、繳費狀態與註冊/在學證明，皆由校內系統資料即時產生。",
+                "Your academic transcript, tuition billing records, registration items, and enrollment certificate — generated live from campus systems.",
               )}
             </p>
           </div>
@@ -748,7 +822,7 @@ function MePage() {
         </div>
       </div>
 
-      {/* Filter Tabs (5-Segmented Control) */}
+      {/* Filter Tabs (4-Segmented Control) */}
       <div className="profile-nav-tabs-wrapper">
         <div className="record-filter-nav profile-nav-tabs" role="tablist" aria-label={tx("資料切換", "Profile tabs")}>
           <button
@@ -776,19 +850,11 @@ function MePage() {
           </button>
           <button
             type="button"
-            className={`record-filter-btn ${activeTab === "cert" ? "active" : ""}`}
-            onClick={() => setActiveTab("cert")}
+            className={`record-filter-btn ${activeTab === "registration" || activeTab === "cert" ? "active" : ""}`}
+            onClick={() => setActiveTab("registration")}
           >
             <Award size={14} />
-            <span>{tx("在學證明", "Certificate")}</span>
-          </button>
-          <button
-            type="button"
-            className={`record-filter-btn ${activeTab === "checklist" ? "active" : ""}`}
-            onClick={() => setActiveTab("checklist")}
-          >
-            <CardChecklist size={14} />
-            <span>{tx("註冊事項", "Checklist")}</span>
+            <span>{tx("註冊與在學證明", "Registration & Cert")}</span>
           </button>
         </div>
       </div>
@@ -797,8 +863,12 @@ function MePage() {
       <div className="d-flex flex-column" style={{ gap: "0.5rem" }}>
         {(activeTab === "all" || activeTab === "grades") && <GradesCard />}
         {(activeTab === "all" || activeTab === "payment") && <PaymentCard />}
-        {(activeTab === "all" || activeTab === "cert") && <CertCard />}
-        {(activeTab === "all" || activeTab === "checklist") && <ChecklistCard />}
+        {(activeTab === "all" || activeTab === "registration" || activeTab === "cert") && (
+          <>
+            <CertCard />
+            <ChecklistCard />
+          </>
+        )}
       </div>
     </div>
   );
