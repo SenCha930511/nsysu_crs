@@ -158,13 +158,26 @@ def parse_regweb_checklist(html: str) -> RegwebChecklist:
         cells = row.find_all("td", recursive=False) if row is not None else []
         if len(cells) < 2:
             continue
+        anchor_td = anchor.find_parent("td")
+        anchor_idx = cells.index(anchor_td) if anchor_td in cells else 0
         title = anchor.get_text(" ", strip=True)
-        period = cells[1].get_text(" ", strip=True)
+        # Period/instruction column immediately follows the title cell
+        period = (
+            cells[anchor_idx + 1].get_text(" ", strip=True)
+            if len(cells) > anchor_idx + 1
+            else ""
+        )
         status_text = ""
-        for cell in cells[2:]:
+        for cell in cells[anchor_idx + 2:]:
             text = cell.get_text(" ", strip=True).replace(" ", " ")
-            if "完成" in text or "未完成" in text:
+            if any(
+                k in text
+                for k in ("完成", "未完成", "已繳費", "Done", "complete", "Completed")
+            ):
                 status_text = text.split("(")[0].strip()
+                break
+            if "不影響" in text or "N/A" in text:
+                status_text = "免辦"
                 break
         items.append(
             ChecklistItem(title=title, period=period, status_text=status_text, out_url=href)
