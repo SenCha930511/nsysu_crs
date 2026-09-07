@@ -589,7 +589,10 @@ function ChecklistCard() {
     };
   }, [regwebAvailable, tx]);
 
-  const REGISTRATION_URL = "https://reg.nsysu.edu.tw/";
+  const REGWEB_BASE = "https://regweb.nsysu.edu.tw/webreg/";
+  const REGISTRATION_URL = `${REGWEB_BASE}WRegMain3.asp?act=11`;
+  const itemHref = (item: RegistrationChecklist["items"][number] | null): string =>
+    item?.out_url ? `${REGWEB_BASE}${item.out_url}` : REGISTRATION_URL;
   const totalCount = data ? data.items.length : 0;
   const completedCount = data
     ? data.items.filter((it) => checklistStatusTone(it.status_text) === "success").length
@@ -680,7 +683,7 @@ function ChecklistCard() {
 
                   return (
                     <a
-                      href={REGISTRATION_URL}
+                      href={itemHref(item)}
                       target="_blank"
                       rel="noopener noreferrer"
                       title={tx("前往學校註冊網站", "Go to the school's registration site")}
