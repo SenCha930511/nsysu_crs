@@ -2899,6 +2899,4 @@ thead th.studio-timeslot-header {
 .checklist-item-card-link:hover .checklist-item-card {
   background-color: var(--bs-light);
 }
-  max-width: 100%;
-  word-break: break-word;
-}
+
