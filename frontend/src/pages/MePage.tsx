@@ -589,7 +589,7 @@ function ChecklistCard() {
     };
   }, [regwebAvailable, tx]);
 
-  const hasOutUrl = data !== null && data.items.some((item) => item.out_url !== null);
+  const REGISTRATION_URL = "https://reg.nsysu.edu.tw/";
   const totalCount = data ? data.items.length : 0;
   const completedCount = data
     ? data.items.filter((it) => checklistStatusTone(it.status_text) === "success").length
@@ -680,9 +680,10 @@ function ChecklistCard() {
 
                   return (
                     <a
-                      href={item.out_url ?? "#"}
+                      href={REGISTRATION_URL}
                       target="_blank"
                       rel="noopener noreferrer"
+                      title={tx("前往學校註冊網站", "Go to the school's registration site")}
                       className="checklist-item-card-link"
                     >
                       <div
@@ -728,11 +729,11 @@ function ChecklistCard() {
               </div>
             )}
 
-            {hasOutUrl && (
+            {data.items.length > 0 && (
               <p className="text-muted mt-3 mb-0" style={{ fontSize: "0.74rem" }}>
                 {tx(
-                  "連結僅供參考（於校內系統開啟）",
-                  "Links are for reference only (they open inside the campus system)",
+                  "點擊卡片前往校內註冊系統（新視窗開啟）",
+                  "Click a card to open the campus registration system in a new tab",
                 )}
               </p>
             )}
