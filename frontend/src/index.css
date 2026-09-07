@@ -2216,22 +2216,129 @@ thead th.studio-timeslot-header {
   border-radius: var(--radius-full);
 }
 
+/* Profile Page Layout Container */
+.profile-page-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-bottom: 3.5rem;
+}
+
+@media (max-width: 767.98px) {
+  .profile-page-container {
+    padding-bottom: 6.5rem !important;
+  }
+}
+
 /* Profile Segmented Filter Navigation */
-.profile-nav-tabs {
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  width: 100% !important;
-  gap: 0.2rem !important;
-  background: #f1f5f9;
-  padding: 0.22rem;
-  border-radius: var(--radius-full);
+.profile-nav-tabs-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
   margin-bottom: 1.25rem;
 }
 
+.profile-nav-tabs {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: 100% !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  gap: 0.35rem !important;
+  background: #f1f5f9;
+  padding: 0.32rem 0.4rem;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  scrollbar-width: none;
+}
+
+.profile-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
 .profile-nav-tabs .record-filter-btn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding: 0.45rem 0.25rem;
-  font-size: 0.82rem;
+  padding: 0.48rem 0.95rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.profile-nav-tabs .record-filter-btn:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.profile-nav-tabs .record-filter-btn.active {
+  background: #ffffff;
+  color: var(--brand-700);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Responsive Payment Table / Card transformation */
+.responsive-payment-table td {
+  vertical-align: middle;
+}
+
+@media (max-width: 767.98px) {
+  .responsive-payment-table thead {
+    display: none;
+  }
+  .responsive-payment-table,
+  .responsive-payment-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .responsive-payment-table tr {
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xs);
+    gap: 0.45rem;
+  }
+  .responsive-payment-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 !important;
+    border: none !important;
+    white-space: normal !important;
+  }
+  .responsive-payment-table td::before {
+    content: attr(data-label);
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+  .responsive-payment-table td[data-col="item"] {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.15rem;
+    display: block;
+  }
+  .responsive-payment-table td[data-col="item"]::before {
+    display: none;
+  }
+  .responsive-payment-table td[data-col="receipt"] {
+    margin-top: 0.4rem;
+    padding-top: 0.5rem !important;
+    border-top: 1px dashed #e2e8f0 !important;
+  }
 }
 
 /* Small phones (<sm, 576px): Floor Layout & Touch targets */
@@ -2307,20 +2414,38 @@ thead th.studio-timeslot-header {
     padding: 0.35rem 0.75rem;
   }
 
-  .profile-badge-chip {
-    font-size: 0.78rem;
-    padding: 0.28rem 0.65rem;
+  .profile-info-chips-row {
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
   }
 
-  /* 4-column profile nav tabs on extra small mobile screens */
+  .profile-badge-chip {
+    font-size: 0.76rem;
+    padding: 0.25rem 0.55rem;
+    gap: 0.35rem;
+  }
+
+  /* Profile nav tabs on mobile */
+  .profile-nav-tabs-wrapper {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .profile-nav-tabs {
+    padding: 0.25rem 0.3rem;
+    gap: 0.25rem !important;
+  }
+
   .profile-nav-tabs .record-filter-btn {
-    padding: 0.38rem 0.15rem;
-    font-size: 0.75rem;
-    gap: 0.2rem;
+    padding: 0.4rem 0.72rem;
+    font-size: 0.8rem;
+    gap: 0.35rem;
   }
 
   .profile-nav-tabs .record-filter-btn svg {
-    display: none;
+    display: inline-block !important;
   }
 
   .card-header-actions {

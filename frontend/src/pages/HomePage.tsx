@@ -941,13 +941,24 @@ function HomePage() {
                 <CalendarCheck size={18} className="text-teal-600" />
                 <span>{tx("目前課表", "Current Timetable")}</span>
               </div>
-              <div className="d-inline-flex align-items-center px-3 py-1 bg-slate-100 rounded-pill border text-slate-700 fw-bold" style={{ fontSize: "0.82rem", gap: "0.6rem" }}>
-                <span>{tx(`已選 ${totals.courseCount} 門`, `${totals.courseCount} courses`)}</span>
-                <span className="text-slate-400">·</span>
-                <span>{tx(`${totals.totalCredits} 學分`, `${totals.totalCredits} cr`)}</span>
-                <span className="text-slate-400">·</span>
-                <span>{tx(`${totals.totalHours} 節`, `${totals.totalHours} hrs`)}</span>
-              </div>
+              <button
+                type="button"
+                className="btn p-0 border-0 d-inline-flex align-items-center text-start"
+                onClick={() => {
+                  setTab("selections");
+                  if (mobileTab === "schedule") changeMobileTab("selections");
+                }}
+                title={tx("切換至已選課程清單", "Switch to view selections list")}
+              >
+                <div className="d-inline-flex align-items-center px-3 py-1 bg-slate-100 hover-bg-slate-200 rounded-pill border text-slate-700 fw-bold transition-base cursor-pointer" style={{ fontSize: "0.82rem", gap: "0.6rem" }}>
+                  <span>{tx(`已選 ${totals.courseCount} 門`, `${totals.courseCount} courses`)}</span>
+                  <span className="text-slate-400">·</span>
+                  <span>{tx(`${totals.totalCredits} 學分`, `${totals.totalCredits} cr`)}</span>
+                  <span className="text-slate-400">·</span>
+                  <span>{tx(`${totals.totalHours} 節`, `${totals.totalHours} hrs`)}</span>
+                  <BookmarkCheck size={13} className="text-teal-600 ms-0.5" />
+                </div>
+              </button>
             </div>
 
             <div className="d-flex align-items-center flex-wrap" style={{ gap: "0.75rem" }}>
@@ -1256,6 +1267,8 @@ function HomePage() {
             baseCourses={gridCourses}
             pickState={pickStateOf}
             onToggleCourse={onToggleCourse}
+            onViewCourse={setDetailCourse}
+            headerTopSlot={segmentedTabs}
           />
         ) : (
           <section className="selections-pane-container" aria-label={tx("我的已選課程", "My selections")}>

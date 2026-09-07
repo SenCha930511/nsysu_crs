@@ -236,9 +236,9 @@ function GradesCard() {
               </span>
             )}
             {data?.synced_at && (
-              <span className="profile-sync-stamp font-monospace text-muted d-none d-sm-inline-flex align-items-center" role="status">
-                <Clock size={12} className="text-slate-400 me-1" />
-                {tx(`上次同步：${formatDateTime(data.synced_at)}`, `Synced: ${formatDateTime(data.synced_at)}`)}
+              <span className="profile-sync-stamp font-monospace text-muted d-inline-flex align-items-center" role="status">
+                <Clock size={12} className="text-slate-400 me-1 flex-shrink-0" />
+                <span>{tx(`上次同步：${formatDateTime(data.synced_at)}`, `Synced: ${formatDateTime(data.synced_at)}`)}</span>
               </span>
             )}
             <button
@@ -406,7 +406,7 @@ function PaymentCard() {
         ) : (
           <div className="profile-table-container">
             <div className="table-responsive">
-              <table className="table table-hover table-sm mb-0 align-middle text-nowrap">
+              <table className="table table-hover table-sm mb-0 align-middle responsive-payment-table">
                 <thead>
                   <tr>
                     <th scope="col">{tx("單據名稱", "Bill Item")}</th>
@@ -421,22 +421,22 @@ function PaymentCard() {
                     const paid = bill.pay_date !== null && bill.pay_date !== "";
                     return (
                       <tr key={`${bill.item}-${index}`}>
-                        <td className="fw-semibold text-dark">{bill.item}</td>
-                        <td className="font-monospace fw-bold text-slate-800">
+                        <td data-col="item" className="fw-semibold text-dark">{bill.item}</td>
+                        <td data-label={tx("應繳金額", "Amount")} className="font-monospace fw-bold text-slate-800">
                           {bill.amount ? `$${bill.amount}` : "—"}
                         </td>
-                        <td>
+                        <td data-label={tx("繳費狀態", "Status")}>
                           <span className={`studio-badge ${paid ? "studio-badge-success" : "studio-badge-warning"}`}>
                             {paid && <CheckCircleFill size={12} />}
                             <span>{bill.status}</span>
                           </span>
                         </td>
-                        <td className="font-monospace text-slate-600">
+                        <td data-label={tx("繳費日期", "Pay Date")} className="font-monospace text-slate-600">
                           {bill.pay_date !== null && bill.pay_date !== "" ? bill.pay_date : "—"}
                         </td>
-                        <td>
+                        <td data-col="receipt" data-label={tx("收據狀態", "Receipt")}>
                           {bill.receipt_available ? (
-                            <div className="d-flex flex-column align-items-start gap-1">
+                            <div className="d-flex flex-row flex-md-column align-items-center align-items-md-start gap-2 gap-md-1">
                               <span className="studio-badge studio-badge-indigo">
                                 <Receipt size={12} />
                                 <span>{tx("收據已開立", "Receipt Issued")}</span>
@@ -444,7 +444,7 @@ function PaymentCard() {
                               <button
                                 type="button"
                                 className="btn btn-sm btn-outline-brand rounded-pill px-2.5 py-0.5 d-inline-flex align-items-center gap-1"
-                                style={{ fontSize: "0.72rem" }}
+                                style={{ fontSize: "0.76rem" }}
                                 onClick={() => openPdf("/api/me/payment-receipt")}
                                 data-testid={`receipt-download-${index}`}
                               >
@@ -584,6 +584,9 @@ function ChecklistCard() {
   }, [regwebAvailable, tx]);
 
   const hasOutUrl = data !== null && data.items.some((item) => item.out_url !== null);
+  const completedCount = data
+    ? data.items.filter((it) => checklistStatusTone(it.status_text) === "success").length
+    : 0;
 
   return (
     <section className="profile-card" aria-label={tx("註冊事項", "Registration Checklist")}>
@@ -602,6 +605,15 @@ function ChecklistCard() {
             </span>
           </div>
         </div>
+
+        {data !== null && data.items.length > 0 && (
+          <div className="card-header-actions">
+            <span className="studio-badge studio-badge-secondary">
+              <CheckCircleFill size={12} className="text-teal-600 me-1" />
+              <span>{tx(`已完成 ${completedCount} / ${data.items.length} 項`, `${completedCount} / ${data.items.length} completed`)}</span>
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="profile-card-body">
@@ -625,12 +637,12 @@ function ChecklistCard() {
                 {data.items.map((item, index) => (
                   <li
                     key={`${item.title}-${index}`}
-                    className="d-flex justify-content-between align-items-start gap-2 border rounded-3 px-3 py-2"
+                    className="d-flex justify-content-between align-items-start gap-2 border rounded-3 px-3 py-2 bg-white"
                   >
                     <div className="min-w-0">
                       <div className="fw-semibold small text-dark text-truncate">{item.title}</div>
                       {item.period !== "" && (
-                        <div className="text-muted" style={{ fontSize: "0.74rem" }}>{item.period}</div>
+                        <div className="text-muted font-monospace" style={{ fontSize: "0.74rem" }}>{item.period}</div>
                       )}
                     </div>
                     <span
@@ -662,7 +674,7 @@ function ChecklistCard() {
   );
 }
 
-type ProfileTab = "all" | "grades" | "payment" | "cert";
+type ProfileTab = "all" | "grades" | "payment" | "cert" | "checklist";
 
 function MePage() {
   const { tx } = useI18n();
@@ -685,7 +697,7 @@ function MePage() {
   }, [status, featureStuEnroll, regwebAvailable, scoAvailable, requireRelogin]);
 
   return (
-    <div className="py-2 py-sm-3 pb-5" style={{ maxWidth: "1080px", margin: "0 auto" }}>
+    <div className="profile-page-container py-2 py-sm-3">
       {/* Hero Header Card */}
       <div className="records-hero-card profile-hero-card">
         <div className="d-flex align-items-center justify-content-between flex-wrap" style={{ gap: "1rem" }}>
@@ -736,47 +748,57 @@ function MePage() {
         </div>
       </div>
 
-      {/* Filter Tabs (4-Segmented Control on Mobile) */}
-      <div className="record-filter-nav profile-nav-tabs" role="tablist" aria-label={tx("資料切換", "Profile tabs")}>
-        <button
-          type="button"
-          className={`record-filter-btn ${activeTab === "all" ? "active" : ""}`}
-          onClick={() => setActiveTab("all")}
-        >
-          <span>{tx("全部", "All")}</span>
-        </button>
-        <button
-          type="button"
-          className={`record-filter-btn ${activeTab === "grades" ? "active" : ""}`}
-          onClick={() => setActiveTab("grades")}
-        >
-          <Mortarboard size={14} />
-          <span>{tx("歷年成績", "Grades")}</span>
-        </button>
-        <button
-          type="button"
-          className={`record-filter-btn ${activeTab === "payment" ? "active" : ""}`}
-          onClick={() => setActiveTab("payment")}
-        >
-          <CashStack size={14} />
-          <span>{tx("繳費狀態", "Payment")}</span>
-        </button>
-        <button
-          type="button"
-          className={`record-filter-btn ${activeTab === "cert" ? "active" : ""}`}
-          onClick={() => setActiveTab("cert")}
-        >
-          <FileEarmarkPdf size={14} />
-          <span>{tx("在學證明", "Certificate")}</span>
-        </button>
+      {/* Filter Tabs (5-Segmented Control) */}
+      <div className="profile-nav-tabs-wrapper">
+        <div className="record-filter-nav profile-nav-tabs" role="tablist" aria-label={tx("資料切換", "Profile tabs")}>
+          <button
+            type="button"
+            className={`record-filter-btn ${activeTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveTab("all")}
+          >
+            <span>{tx("全部", "All")}</span>
+          </button>
+          <button
+            type="button"
+            className={`record-filter-btn ${activeTab === "grades" ? "active" : ""}`}
+            onClick={() => setActiveTab("grades")}
+          >
+            <Mortarboard size={14} />
+            <span>{tx("歷年成績", "Grades")}</span>
+          </button>
+          <button
+            type="button"
+            className={`record-filter-btn ${activeTab === "payment" ? "active" : ""}`}
+            onClick={() => setActiveTab("payment")}
+          >
+            <CashStack size={14} />
+            <span>{tx("繳費狀態", "Payment")}</span>
+          </button>
+          <button
+            type="button"
+            className={`record-filter-btn ${activeTab === "cert" ? "active" : ""}`}
+            onClick={() => setActiveTab("cert")}
+          >
+            <Award size={14} />
+            <span>{tx("在學證明", "Certificate")}</span>
+          </button>
+          <button
+            type="button"
+            className={`record-filter-btn ${activeTab === "checklist" ? "active" : ""}`}
+            onClick={() => setActiveTab("checklist")}
+          >
+            <CardChecklist size={14} />
+            <span>{tx("註冊事項", "Checklist")}</span>
+          </button>
+        </div>
       </div>
 
       {/* Profile Cards Content */}
-      <div className="d-flex flex-column" style={{ gap: "0.25rem" }}>
+      <div className="d-flex flex-column" style={{ gap: "0.5rem" }}>
         {(activeTab === "all" || activeTab === "grades") && <GradesCard />}
         {(activeTab === "all" || activeTab === "payment") && <PaymentCard />}
         {(activeTab === "all" || activeTab === "cert") && <CertCard />}
-        {(activeTab === "all" || activeTab === "cert") && <ChecklistCard />}
+        {(activeTab === "all" || activeTab === "checklist") && <ChecklistCard />}
       </div>
     </div>
   );
