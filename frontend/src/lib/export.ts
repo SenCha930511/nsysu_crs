@@ -128,6 +128,14 @@ export async function gridToPng(
   return captureGridPng(node, 2);
 }
 
+function isIOSSafari(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isSafari = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
+  return isIOS && isSafari;
+}
+
 function triggerDownload(dataUrl: string, filename: string): void {
   const anchor = document.createElement("a");
   anchor.href = dataUrl;
@@ -135,6 +143,49 @@ function triggerDownload(dataUrl: string, filename: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
+}
+
+/** iOS Safari (iPhone/iPad) has no reliable `a.download` support for data/blob
+ * URLs. Use the Web Share API when available; fall back to opening in a new
+ * tab so the user can long-press to Save Image. Desktop gets a true download. */
+async function deliverFile(
+  payload: Blob | string,
+  filename: string,
+  mimeType: string,
+): Promise<void> {
+  if (isIOSSafari()) {
+    try {
+      const blob =
+        typeof payload === "string"
+          ? await fetch(payload).then((r) => r.blob())
+          : payload;
+      const file = new File([blob], filename, { type: mimeType });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: filename });
+          return;
+        } catch (err) {
+          if ((err as Error).name === "AbortError") return; // user cancelled
+          // fall through to open-in-tab fallback
+        }
+      }
+    } catch {
+      // fall through to tab-based fallback
+    }
+    const url =
+      typeof payload === "string" ? payload : URL.createObjectURL(payload);
+    window.open(url, "_blank");
+    if (typeof payload !== "string") {
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }
+    return;
+  }
+  const url =
+    typeof payload === "string" ? payload : URL.createObjectURL(payload);
+  triggerDownload(url, filename);
+  if (typeof payload !== "string") {
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
 }
 
 /** PNG download of the grid. Throws EmptyGridExportError on an empty plan. */
@@ -145,14 +196,11 @@ export async function downloadGridPng(
 ): Promise<string> {
   const dataUrl = await gridToPng(node, courseCount);
   const filename = buildPngFilename(planName);
-  triggerDownload(dataUrl, filename);
+  await deliverFile(dataUrl, filename, "image/png");
   return filename;
 }
 
-/** Blob download for server-streamed files (the timetable .ics). The object
- * URL is revoked on the next tick, after the click has been dispatched. */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  triggerDownload(url, filename);
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+/** Blob download for server-streamed files (the timetable .ics). */
+export async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+  await deliverFile(blob, filename, blob.type || "application/octet-stream");
 }
