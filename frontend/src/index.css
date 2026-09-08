@@ -829,7 +829,7 @@ h1, h2, h3, h4, h5, h6 {
   vertical-align: top;
   border-bottom: 1px solid #f1f5f9;
   border-right: 1px solid #f1f5f9;
-  height: 2.6rem;
+  height: 2.85rem;
   background: #ffffff;
   transition: background-color 0.15s ease;
 }
@@ -899,12 +899,54 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   gap: 0.35rem;
   height: 100%;
-  min-height: 3.4rem;
   box-sizing: border-box;
 }
 
+.course-block-single {
+  padding: 0.28rem 0.5rem;
+  gap: 0.15rem;
+  justify-content: center;
+  min-height: unset;
+}
+
+.course-block-single .course-block-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0;
+}
+
+.course-block-single .course-block-title-btn {
+  padding-block: 0;
+}
+
+.course-block-meta-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.course-block-meta-inline .course-block-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+
 .course-block-spanned {
-  min-height: 7.5rem;
+  min-height: unset;
   padding: 0.65rem 0.8rem;
 }
 
@@ -1899,6 +1941,31 @@ h1, h2, h3, h4, h5, h6 {
   .course-block-spanned {
     min-height: unset !important;
     padding: 2.5px 2px !important;
+  }
+
+  .course-block-single {
+    padding: 1.5px 2px !important;
+    gap: 1px !important;
+    justify-content: center !important;
+  }
+
+  .course-block-single .course-block-title {
+    font-size: 0.72rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .course-block-single .course-block-title-btn {
+    min-height: unset !important;
+    padding-block: 0 !important;
+  }
+
+  .course-block-single .course-block-meta-inline {
+    gap: 0.2rem !important;
+  }
+
+  .course-block-single .course-block-meta-item {
+    font-size: 0.58rem !important;
+    gap: 1px !important;
   }
 
   .course-block-header {

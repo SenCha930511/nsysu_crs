@@ -165,9 +165,11 @@ function CourseBlock({
     .filter((part) => part !== null && part !== "")
     .join(" / ");
 
+  const isSpanned = (spanCount ?? 1) > 1;
+
   return (
     <div
-      className={`course-block ${spanCount > 1 ? "course-block-spanned" : ""}`}
+      className={`course-block ${isSpanned ? "course-block-spanned" : "course-block-single"}`}
       style={style}
       title={title}
       {...(readOnly
@@ -177,26 +179,28 @@ function CourseBlock({
             onMouseLeave: () => onHover(null),
           })}
     >
-      {/* Top Meta Pill: Category + Period Count + Clock Time */}
-      <div className="course-block-header">
-        <span
-          className="course-block-badge"
-          style={{
-            backgroundColor: lit ? "rgba(255, 255, 255, 0.2)" : palette.badgeBg,
-            color: lit ? "#ffffff" : palette.badgeText,
-          }}
-        >
-          {categoryLabel} • {spanCount}{tx("節", "p")}
-        </span>
-        {timeRange && (
+      {/* Top Meta Pill: Category + Period Count + Clock Time (shown on multi-period spanned blocks) */}
+      {isSpanned && (
+        <div className="course-block-header">
           <span
-            className="course-block-time"
-            style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : "var(--studio-text-muted)" }}
+            className="course-block-badge"
+            style={{
+              backgroundColor: lit ? "rgba(255, 255, 255, 0.2)" : palette.badgeBg,
+              color: lit ? "#ffffff" : palette.badgeText,
+            }}
           >
-            {timeRange}
+            {categoryLabel} • {spanCount}{tx("節", "p")}
           </span>
-        )}
-      </div>
+          {timeRange && (
+            <span
+              className="course-block-time"
+              style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : "var(--studio-text-muted)" }}
+            >
+              {timeRange}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* readOnly only locks edit affordances; title links stay interactive. */}
       {course.url !== null ? (
@@ -231,26 +235,49 @@ function CourseBlock({
 
       {/* Bottom Meta: Teacher & Classroom */}
       {(teacher !== "" || room !== "") && (
-        <div className="course-block-meta">
-          {teacher !== "" && (
-            <div
-              className="course-block-teacher"
-              style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
-            >
-              <PersonFill size={10.5} className="flex-shrink-0" />
-              <span>{teacher}</span>
-            </div>
-          )}
-          {room !== "" && (
-            <div
-              className="course-block-room"
-              style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
-            >
-              <GeoAltFill size={9.5} className="flex-shrink-0" />
-              <span>{room}</span>
-            </div>
-          )}
-        </div>
+        isSpanned ? (
+          <div className="course-block-meta">
+            {teacher !== "" && (
+              <div
+                className="course-block-teacher"
+                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+              >
+                <PersonFill size={10.5} className="flex-shrink-0" />
+                <span>{teacher}</span>
+              </div>
+            )}
+            {room !== "" && (
+              <div
+                className="course-block-room"
+                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+              >
+                <GeoAltFill size={9.5} className="flex-shrink-0" />
+                <span>{room}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="course-block-meta-inline">
+            {teacher !== "" && (
+              <span
+                className="course-block-meta-item"
+                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+              >
+                <PersonFill size={10} className="flex-shrink-0" />
+                <span>{teacher}</span>
+              </span>
+            )}
+            {room !== "" && (
+              <span
+                className="course-block-meta-item"
+                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+              >
+                <GeoAltFill size={9} className="flex-shrink-0" />
+                <span>{room}</span>
+              </span>
+            )}
+          </div>
+        )
       )}
 
       {/* Delete Action */}
