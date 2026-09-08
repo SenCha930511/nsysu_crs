@@ -829,7 +829,7 @@ h1, h2, h3, h4, h5, h6 {
   vertical-align: top;
   border-bottom: 1px solid #f1f5f9;
   border-right: 1px solid #f1f5f9;
-  height: 2.85rem;
+  height: 2.6rem;
   background: #ffffff;
   transition: background-color 0.15s ease;
 }
@@ -899,41 +899,12 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   gap: 0.35rem;
   height: 100%;
+  min-height: 3.4rem;
   box-sizing: border-box;
 }
 
-.course-block-single {
-  padding: 0.24rem 0.3rem;
-  gap: 0;
-  justify-content: center;
-  align-items: center;
-  min-height: unset;
-}
-
-.course-block-single .course-block-title {
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.28;
-  text-align: center;
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  padding: 0;
-  width: 100%;
-}
-
-.course-block-single .course-block-title-btn {
-  padding-block: 0;
-  min-height: unset;
-  width: 100%;
-  text-align: center;
-}
-
 .course-block-spanned {
-  min-height: unset;
+  min-height: 7.5rem;
   padding: 0.65rem 0.8rem;
 }
 
@@ -1928,25 +1899,6 @@ h1, h2, h3, h4, h5, h6 {
   .course-block-spanned {
     min-height: unset !important;
     padding: 2.5px 2px !important;
-  }
-
-  .course-block-single {
-    padding: 2px 3px !important;
-    gap: 0 !important;
-    justify-content: center !important;
-    align-items: center !important;
-  }
-
-  .course-block-single .course-block-title {
-    font-size: 0.7rem !important;
-    line-height: 1.25 !important;
-    -webkit-line-clamp: 2 !important;
-    line-clamp: 2 !important;
-  }
-
-  .course-block-single .course-block-title-btn {
-    min-height: unset !important;
-    padding-block: 0 !important;
   }
 
   .course-block-header {

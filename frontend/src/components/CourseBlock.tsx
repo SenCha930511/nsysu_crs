@@ -165,11 +165,9 @@ function CourseBlock({
     .filter((part) => part !== null && part !== "")
     .join(" / ");
 
-  const isSpanned = (spanCount ?? 1) > 1;
-
   return (
     <div
-      className={`course-block ${isSpanned ? "course-block-spanned" : "course-block-single"}`}
+      className={`course-block ${spanCount > 1 ? "course-block-spanned" : ""}`}
       style={style}
       title={title}
       {...(readOnly
@@ -179,28 +177,26 @@ function CourseBlock({
             onMouseLeave: () => onHover(null),
           })}
     >
-      {/* Top Meta Pill: Category + Period Count + Clock Time (shown on multi-period spanned blocks) */}
-      {isSpanned && (
-        <div className="course-block-header">
+      {/* Top Meta Pill: Category + Period Count + Clock Time */}
+      <div className="course-block-header">
+        <span
+          className="course-block-badge"
+          style={{
+            backgroundColor: lit ? "rgba(255, 255, 255, 0.2)" : palette.badgeBg,
+            color: lit ? "#ffffff" : palette.badgeText,
+          }}
+        >
+          {categoryLabel} • {spanCount}{tx("節", "p")}
+        </span>
+        {timeRange && (
           <span
-            className="course-block-badge"
-            style={{
-              backgroundColor: lit ? "rgba(255, 255, 255, 0.2)" : palette.badgeBg,
-              color: lit ? "#ffffff" : palette.badgeText,
-            }}
+            className="course-block-time"
+            style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : "var(--studio-text-muted)" }}
           >
-            {categoryLabel} • {spanCount}{tx("節", "p")}
+            {timeRange}
           </span>
-          {timeRange && (
-            <span
-              className="course-block-time"
-              style={{ color: lit ? "rgba(255, 255, 255, 0.9)" : "var(--studio-text-muted)" }}
-            >
-              {timeRange}
-            </span>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* readOnly only locks edit affordances; title links stay interactive. */}
       {course.url !== null ? (
@@ -233,8 +229,8 @@ function CourseBlock({
         </div>
       )}
 
-      {/* Bottom Meta: Teacher & Classroom - only full layout for spanned blocks */}
-      {isSpanned && (teacher !== "" || room !== "") && (
+      {/* Bottom Meta: Teacher & Classroom */}
+      {(teacher !== "" || room !== "") && (
         <div className="course-block-meta">
           {teacher !== "" && (
             <div
