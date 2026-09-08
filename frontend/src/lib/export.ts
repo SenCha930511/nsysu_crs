@@ -145,38 +145,36 @@ function triggerDownload(dataUrl: string, filename: string): void {
   document.body.removeChild(anchor);
 }
 
-/** iOS Safari (iPhone/iPad) has no reliable `a.download` support for data/blob
- * URLs. Use the Web Share API when available; fall back to opening in a new
- * tab so the user can long-press to Save Image. Desktop gets a true download. */
+/** iOS Safari (iPhone/iPad) has no reliable `a.download` support for data
+ * URLs and does not render data URLs in new tabs. On iOS the delivery path is
+ * Web Share API (native share sheet) → blob-URL new tab → in-page overlay. */
 async function deliverFile(
   payload: Blob | string,
   filename: string,
   mimeType: string,
 ): Promise<void> {
   if (isIOSSafari()) {
-    try {
-      const blob =
-        typeof payload === "string"
-          ? await fetch(payload).then((r) => r.blob())
-          : payload;
-      const file = new File([blob], filename, { type: mimeType });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: filename });
-          return;
-        } catch (err) {
-          if ((err as Error).name === "AbortError") return; // user cancelled
-          // fall through to open-in-tab fallback
-        }
+    const blob =
+      typeof payload === "string"
+        ? await (await fetch(payload)).blob()
+        : payload;
+    const file = new File([blob], filename, { type: mimeType });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return; // user cancelled
       }
-    } catch {
-      // fall through to tab-based fallback
     }
-    const url =
-      typeof payload === "string" ? payload : URL.createObjectURL(payload);
-    window.open(url, "_blank");
-    if (typeof payload !== "string") {
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank");
+    if (win !== null) {
+      window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+    } else {
+      showSaveSheet(url);
     }
     return;
   }
@@ -186,6 +184,39 @@ async function deliverFile(
   if (typeof payload !== "string") {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
+}
+
+function showSaveSheet(blobUrl: string): void {
+  const overlay = document.createElement("div");
+  overlay.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;" +
+    "display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.75rem;padding:1rem";
+  const img = document.createElement("img");
+  img.src = blobUrl;
+  img.style.cssText = "max-width:100%;max-height:80vh;border-radius:8px";
+  img.alt = "timetable";
+  const hint = document.createElement("div");
+  hint.textContent = "長壓圖片可儲存至相簿";
+  hint.style.cssText = "color:#fff;font-size:.85rem";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = "關閉";
+  btn.style.cssText =
+    "padding:.55rem 1.6rem;border:0;border-radius:999px;font-weight:600;background:#fff;color:#111";
+  btn.addEventListener("click", () => {
+    overlay.remove();
+    window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+  });
+  overlay.appendChild(img);
+  overlay.appendChild(hint);
+  overlay.appendChild(btn);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+    }
+  });
+  document.body.appendChild(overlay);
 }
 
 /** PNG download of the grid. Throws EmptyGridExportError on an empty plan. */
