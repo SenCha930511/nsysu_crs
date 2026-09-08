@@ -55,7 +55,7 @@ export function buildPngFilename(
   return `${base}-${stamp}.png`;
 }
 
-/** Render the grid node to a 2x-scale PNG data URL. Uses html2canvas (a
+/** Render the grid node to a 2x-scale PNG Blob. Uses html2canvas (a
  * DOM-walking canvas painter) instead of SVG-foreignObject serialization —
  * the latter silently returns all-white under this environment family, and
  * the white grid makes the failure indistinguishable without a detector. The
@@ -64,7 +64,7 @@ export function buildPngFilename(
 export async function captureGridPng(
   node: HTMLElement,
   pixelRatio = 2,
-): Promise<string> {
+): Promise<Blob> {
   const tableWrapper =
     (node.querySelector(".schedule-table-wrapper") as HTMLElement | null) ??
     (node.classList.contains("schedule-table-wrapper") ? node : null) ??
@@ -116,14 +116,22 @@ export async function captureGridPng(
   if (contentPoints === 0) {
     throw new Error("PNG 匯出結果為空白，請重新整理後再試；若持續發生請回報");
   }
-  return canvas.toDataURL("image/png");
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => {
+      if (b === null) {
+        reject(new Error("PNG 匯出失敗：無法轉換畫布內容"));
+      } else {
+        resolve(b);
+      }
+    }, "image/png");
+  });
 }
 
 /** Guard + capture: the friendly-throwing entry the buttons call. */
 export async function gridToPng(
   node: HTMLElement,
   courseCount: number,
-): Promise<string> {
+): Promise<Blob> {
   assertExportable(courseCount);
   return captureGridPng(node, 2);
 }
@@ -145,20 +153,16 @@ function triggerDownload(dataUrl: string, filename: string): void {
   document.body.removeChild(anchor);
 }
 
-/** iOS Safari (iPhone/iPad) has no reliable `a.download` support for data
- * URLs and does not render data URLs in new tabs. On iOS the delivery path is
+/** iOS Safari (iPhone/iPad) has no reliable `a.download` support for blob
+ * URLs and does not render blob URLs in new tabs. On iOS the delivery path is
  * Web Share API (native share sheet) → blob-URL new tab → in-page overlay. */
 async function deliverFile(
-  payload: Blob | string,
+  payload: Blob,
   filename: string,
   mimeType: string,
 ): Promise<void> {
   if (isIOSSafari()) {
-    const blob =
-      typeof payload === "string"
-        ? await (await fetch(payload)).blob()
-        : payload;
-    const file = new File([blob], filename, { type: mimeType });
+    const file = new File([payload], filename, { type: mimeType });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
@@ -169,7 +173,7 @@ async function deliverFile(
       }
     }
 
-    const url = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(payload);
     const win = window.open(url, "_blank");
     if (win !== null) {
       window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
@@ -178,12 +182,9 @@ async function deliverFile(
     }
     return;
   }
-  const url =
-    typeof payload === "string" ? payload : URL.createObjectURL(payload);
+  const url = URL.createObjectURL(payload);
   triggerDownload(url, filename);
-  if (typeof payload !== "string") {
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-  }
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function showSaveSheet(blobUrl: string): void {
@@ -225,9 +226,9 @@ export async function downloadGridPng(
   planName: string | null | undefined,
   courseCount: number,
 ): Promise<string> {
-  const dataUrl = await gridToPng(node, courseCount);
+  const pngBlob = await gridToPng(node, courseCount);
   const filename = buildPngFilename(planName);
-  await deliverFile(dataUrl, filename, "image/png");
+  await deliverFile(pngBlob, filename, "image/png");
   return filename;
 }
 

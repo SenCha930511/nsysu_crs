@@ -233,51 +233,28 @@ function CourseBlock({
         </div>
       )}
 
-      {/* Bottom Meta: Teacher & Classroom */}
-      {(teacher !== "" || room !== "") && (
-        isSpanned ? (
-          <div className="course-block-meta">
-            {teacher !== "" && (
-              <div
-                className="course-block-teacher"
-                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
-              >
-                <PersonFill size={10.5} className="flex-shrink-0" />
-                <span>{teacher}</span>
-              </div>
-            )}
-            {room !== "" && (
-              <div
-                className="course-block-room"
-                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
-              >
-                <GeoAltFill size={9.5} className="flex-shrink-0" />
-                <span>{room}</span>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="course-block-meta-inline">
-            {teacher !== "" && (
-              <span
-                className="course-block-meta-item"
-                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
-              >
-                <PersonFill size={10} className="flex-shrink-0" />
-                <span>{teacher}</span>
-              </span>
-            )}
-            {room !== "" && (
-              <span
-                className="course-block-meta-item"
-                style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
-              >
-                <GeoAltFill size={9} className="flex-shrink-0" />
-                <span>{room}</span>
-              </span>
-            )}
-          </div>
-        )
+      {/* Bottom Meta: Teacher & Classroom - only full layout for spanned blocks */}
+      {isSpanned && (teacher !== "" || room !== "") && (
+        <div className="course-block-meta">
+          {teacher !== "" && (
+            <div
+              className="course-block-teacher"
+              style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+            >
+              <PersonFill size={10.5} className="flex-shrink-0" />
+              <span>{teacher}</span>
+            </div>
+          )}
+          {room !== "" && (
+            <div
+              className="course-block-room"
+              style={{ color: lit ? "rgba(255, 255, 255, 0.92)" : palette.roomText }}
+            >
+              <GeoAltFill size={9.5} className="flex-shrink-0" />
+              <span>{room}</span>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Delete Action */}
