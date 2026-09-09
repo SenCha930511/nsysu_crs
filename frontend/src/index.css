@@ -1912,7 +1912,13 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .course-block-time {
-    display: none !important;
+    font-size: 0.62rem !important;
+    white-space: nowrap;
+    letter-spacing: -0.03em;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .course-block-title {
