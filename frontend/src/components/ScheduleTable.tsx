@@ -264,7 +264,7 @@ function ScheduleTable({
               <tr key={timeslot.code}>
                 <th scope="row" className="studio-timeslot-header">
                   <div className="timeslot-code-chip">{timeslot.code}</div>
-                  <div className="timeslot-clock-sub">{timeslot.start}</div>
+                  <div className="timeslot-clock-sub">{timeslot.start}–{timeslot.end}</div>
                 </th>
                 {displayedWeekdays.map((day) => {
                   const dayIndex = day.index;
