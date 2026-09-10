@@ -53,6 +53,7 @@ interface Filters {
   english: string; // "" | "true" | "false"
   weekday: string; // "" | "1".."7"
   period: string; // "" | period code (requires weekday)
+  available: string; // "" | "true" (seats remaining > 0)
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -64,6 +65,7 @@ const EMPTY_FILTERS: Filters = {
   english: "",
   weekday: "",
   period: "",
+  available: "",
 };
 
 const CATEGORIES: { key: string }[] = [
@@ -86,6 +88,7 @@ function filtersToQuery(filters: Filters, page: number): CourseQuery {
     query.compulsory = filters.compulsory === "true";
   }
   if (filters.english !== "") query.english = filters.english === "true";
+  if (filters.available !== "") query.available = filters.available === "true";
   if (filters.weekday !== "") query.weekday = Number(filters.weekday);
   if (filters.weekday !== "" && filters.period !== "") {
     query.period = filters.period;
@@ -278,13 +281,15 @@ export default function CourseBrowser({
   const handleCategorySelect = (key: string) => {
     setSelectedCategory(key);
     if (key === "all") {
-      updateFilter({ compulsory: "", english: "" });
+      updateFilter({ compulsory: "", english: "", available: "" });
     } else if (key === "compulsory") {
-      updateFilter({ compulsory: "true", english: "" });
+      updateFilter({ compulsory: "true", english: "", available: "" });
     } else if (key === "elective") {
-      updateFilter({ compulsory: "false", english: "" });
+      updateFilter({ compulsory: "false", english: "", available: "" });
     } else if (key === "english") {
-      updateFilter({ english: "true", compulsory: "" });
+      updateFilter({ english: "true", compulsory: "", available: "" });
+    } else if (key === "available") {
+      updateFilter({ available: "true", compulsory: "", english: "" });
     }
   };
 

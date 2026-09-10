@@ -102,6 +102,7 @@ export interface CourseQuery {
   english?: boolean;
   weekday?: number; // 1 (Mon) .. 7 (Sun)
   period?: string; // single period code, requires weekday
+  available?: boolean; // true when seats remain
   page?: number; // 1-based, 50 rows per page (server-fixed)
 }
 

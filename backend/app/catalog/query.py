@@ -34,7 +34,7 @@ GRADES: Final = frozenset("01234")
 #: Recognized query parameter names on GET /api/courses.
 QUERY_PARAMS: Final = frozenset(
     {"year_sem", "q", "dept", "grade", "credit", "compulsory",
-     "english", "weekday", "period", "page"}
+     "english", "weekday", "period", "page", "available"}
 )
 
 _BOOL_VALUES: Final = {"true": True, "false": False, "1": True, "0": False}
@@ -58,6 +58,7 @@ class CourseFilter:
     weekday: int | None  # 1 (Mon) .. 7 (Sun)
     period: str | None  # single timeslot code, only meaningful with weekday
     page: int  # 1-based
+    available: bool | None  # True when remaining seats > 0
 
 
 def parse_course_params(
@@ -160,6 +161,7 @@ def parse_course_params(
         weekday=weekday,
         period=period,
         page=page,
+        available=parse_bool("available"),
     )
 
 
@@ -189,6 +191,8 @@ def _filters(f: CourseFilter) -> list[ColumnElement[bool]]:
         clauses.append(Course.compulsory.is_(f.compulsory))
     if f.english is not None:
         clauses.append(Course.english.is_(f.english))
+    if f.available is True:
+        clauses.append(Course.remaining > 0)
     if f.weekday is not None:
         # class_time slots are Monday..Sunday at indexes 0..6 (JSONB ->> text).
         slot = Course.class_time[f.weekday - 1].astext
