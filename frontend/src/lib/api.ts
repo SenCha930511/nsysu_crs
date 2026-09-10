@@ -230,6 +230,9 @@ export function fetchCourses(
   if (query.english !== undefined) {
     params.set("english", String(query.english));
   }
+  if (query.available !== undefined) {
+    params.set("available", String(query.available));
+  }
   if (query.weekday !== undefined) {
     params.set("weekday", String(query.weekday));
   }
