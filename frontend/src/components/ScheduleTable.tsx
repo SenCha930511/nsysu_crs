@@ -277,7 +277,7 @@ function ScheduleTable({
                   const coursesInCell = plan?.courses ?? [];
                   const isGhostCell =
                     ghostSlots.has(`${dayIndex}-${timeslot.code}`) &&
-                    !coursesInCell.some((c) => c.id === previewCourse?.id);
+                    coursesInCell.length === 0;
 
                   return (
                     <td
